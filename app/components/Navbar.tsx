@@ -1,82 +1,68 @@
 import Image from "next/image";
+import { Menu } from "lucide-react";
 
-const ChevronDown = () => (
-  <svg
-    width="12"
-    height="8"
-    viewBox="0 0 12 8"
-    fill="none"
-    className="ml-1 inline-block"
-  >
-    <path
-      d="M1 1.5L6 6.5L11 1.5"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+const navLinks = [
+  { label: "Beranda", href: "#", active: true },
+  { label: "Program", href: "#" },
+  { label: "Aktivitas", href: "#" },
+  { label: "Event", href: "#" },
+  { label: "FAQ", href: "#" },
+];
 
 export default function Navbar() {
   return (
-    <header className="relative z-30 bg-marica-orange">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4 lg:px-10">
+    <header className="relative z-30">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10">
         {/* Logo */}
-        <a href="/" className="shrink-0">
+        <a href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src="/images/logo-marica.png"
-            alt="Marica - Math with a Smile"
-            width={140}
-            height={46}
+            alt="Marica"
+            width={24}
+            height={24}
             priority
-            className="h-10 w-auto lg:h-11"
+            className="h-6 w-6 rounded-md object-contain lg:h-7 lg:w-7"
           />
+          <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
+            Marica
+          </span>
         </a>
 
         {/* Nav links */}
-        <div className="hidden items-center gap-7 font-display text-[15px] font-medium text-[#3a2a12] lg:flex">
-          <a
-            href="#"
-            className="rounded-full bg-marica-teal px-5 py-2 text-white shadow-sm transition hover:brightness-105"
-          >
-            Beranda
-          </a>
-          <a href="#" className="transition hover:opacity-70">
-            Jadi KLC
-          </a>
-          <a href="#" className="flex items-center transition hover:opacity-70">
-            Informasi dan Berita
-            <ChevronDown />
-          </a>
-          <a href="#" className="flex items-center transition hover:opacity-70">
-            Tentang Kami
-            <ChevronDown />
-          </a>
-          <a href="#" className="transition hover:opacity-70">
-            Kontak
-          </a>
-          <button className="flex items-center transition hover:opacity-70" aria-label="Pilih bahasa">
-            <span className="text-lg leading-none">🇮🇩</span>
-            <ChevronDown />
-          </button>
+        <div className="hidden items-center gap-8 font-body text-[15px] font-medium text-marica-ink-soft lg:flex">
+          {navLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              className={
+                link.active
+                  ? "relative pb-1 text-marica-amber-text after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-marica-amber-dark"
+                  : "transition hover:text-marica-ink"
+              }
+            >
+              {link.label}
+            </a>
+          ))}
         </div>
 
-        {/* Auth buttons */}
-        <div className="flex shrink-0 items-center gap-3">
+        {/* Auth button */}
+        <div className="hidden shrink-0 items-center gap-3 lg:flex">
           <a
             href="#"
-            className="rounded-full bg-white px-6 py-2 font-display text-[15px] font-medium text-marica-orange-dark shadow-sm transition hover:brightness-95"
+            className="rounded-full bg-gradient-to-b from-marica-amber to-marica-amber-dark px-7 py-2.5 font-display text-[15px] font-medium text-white shadow-sm shadow-marica-amber-dark/30 transition hover:brightness-105"
           >
             Masuk
           </a>
-          <a
-            href="#"
-            className="rounded-full bg-white px-6 py-2 font-display text-[15px] font-medium text-marica-orange-dark shadow-sm transition hover:brightness-95"
-          >
-            Daftar
-          </a>
         </div>
+
+        {/* Mobile menu button */}
+        <button
+          type="button"
+          aria-label="Buka menu"
+          className="flex shrink-0 items-center justify-center rounded-full p-1 text-marica-ink lg:hidden"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
       </nav>
     </header>
   );
