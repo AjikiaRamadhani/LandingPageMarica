@@ -14,18 +14,18 @@ export default function Navbar() {
     <header className="relative z-30">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10">
         {/* Logo */}
-        <a href="/" className="flex shrink-0 items-center gap-2">
+        <a href="/" className="flex shrink-0 items-center gap-3">
           <Image
-            src="/images/logo-marica.png"
+            src="/images/logo.png"
             alt="Marica"
-            width={24}
-            height={24}
+            width={500}
+            height={500}
             priority
-            className="h-6 w-6 rounded-md object-contain lg:h-7 lg:w-7"
+            className="h-15 w-20 object-contain"
           />
-          <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
+          {/* <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
             Marica
-          </span>
+          </span> */}
         </a>
 
         {/* Nav links */}
