@@ -2,25 +2,35 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #2b2b2b;
+
+  /* Marica brand tokens */
+  --marica-orange: #fdb018;
+  --marica-orange-dark: #f5a300;
+  --marica-teal: #15a8bc;
+  --marica-teal-light: #63dbf8;
+  --marica-maroon: #9d3872;
+  --marica-maroon-dark: #832d5f;
+  --marica-green: #29cc7a;
+  --marica-cream: #fff6e6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-marica-orange: var(--marica-orange);
+  --color-marica-orange-dark: var(--marica-orange-dark);
+  --color-marica-teal: var(--marica-teal);
+  --color-marica-teal-light: var(--marica-teal-light);
+  --color-marica-maroon: var(--marica-maroon);
+  --color-marica-maroon-dark: var(--marica-maroon-dark);
+  --color-marica-green: var(--marica-green);
+  --color-marica-cream: var(--marica-cream);
+  --font-display: "Fredoka", "Segoe UI Rounded", sans-serif;
+  --font-body: "Plus Jakarta Sans", "Segoe UI", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
