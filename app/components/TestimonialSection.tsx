@@ -68,7 +68,7 @@ export default function TestimonialSection() {
       const step = firstCard.offsetWidth + gap;
       setCardStep(step);
 
-      const visibleCount = Math.max(1, Math.round(viewport.offsetWidth / step));
+      const visibleCount = Math.max(1, Math.floor(viewport.offsetWidth / step));
       setMaxIndex(Math.max(0, testimonials.length - visibleCount));
     };
 

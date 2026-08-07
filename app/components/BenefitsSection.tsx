@@ -140,10 +140,10 @@ export default function BenefitsSection() {
         {benefits.map((item, i) => (
           <motion.div
             key={item.key}
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
+            initial={{ opacity: 0, x: item.reverse ? 96 : -96 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.4, margin: "0px 0px -100px 0px" }}
+            transition={{ duration: 0.65, ease: "easeOut" }}
             className={`flex flex-col items-center gap-10 rounded-[32px] bg-white p-7 shadow-[0_20px_50px_rgba(120,60,10,0.15)] sm:p-9 lg:gap-14 lg:p-12 ${
               item.reverse ? "lg:flex-row-reverse" : "lg:flex-row"
             }`}
