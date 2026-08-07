@@ -33,9 +33,6 @@ const logos = Array.from({ length: 15 }, (_, i) => ({
   src: `/images/partners/logo-${i + 1}.png`,
 }));
 
-const logoRow1 = logos.slice(0, 8);
-const logoRow2 = logos.slice(8);
-
 function LogoMarqueeRow({
   items,
   direction,
@@ -72,24 +69,51 @@ function LogoMarqueeRow({
   );
 }
 
+function CloudShape({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 64 40"
+      className={className}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M50 40H14C6.268 40 0 33.732 0 26C0 18.268 6.268 12 14 12C14.676 12 15.343 12.048 16 12.14C18.28 5.06 24.928 0 32.8 0C41.316 0 48.44 5.936 50.28 13.868C50.52 13.856 50.76 13.848 51 13.848C58.18 13.848 64 19.668 64 26.848C64 34.028 58.18 40 51 40H50Z" />
+    </svg>
+  );
+}
+
 export default function TrustSection() {
   return (
-    <section className="relative overflow-hidden bg-marica-sky pb-20 pt-4 lg:pb-28">
-      {/* curved transition from the warm section above into blue */}
-      <div className="relative -mt-1 h-14 sm:h-20 lg:h-28">
+    <section className="relative overflow-hidden bg-marica-amber pb-20 pt-4 lg:pb-28">
+      {/* curved transition from the warm section above, melting down into the blue */}
+      <div className="relative -mt-1 h-20 overflow-hidden sm:h-28 lg:h-40">
+        {/* soft blurred echo of the wave to sell the "merging" feel */}
         <svg
-          viewBox="0 0 1440 120"
+          viewBox="0 0 1440 160"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full text-marica-amber/50 blur-2xl"
+        >
+          <path
+            d="M0,10 L1440,10 L1440,80 C1160,145 720,145 0,65 Z"
+            fill="currentColor"
+          />
+        </svg>
+        {/* crisp foreground wave */}
+        <svg
+          viewBox="0 0 1440 160"
           preserveAspectRatio="none"
           className="absolute inset-0 h-full w-full text-marica-amber"
         >
           <path
-            d="M0,0 L1440,0 L1440,60 C1160,110 720,110 0,40 Z"
+            d="M0,0 L1440,0 L1440,75 C1160,150 720,150 0,55 Z"
             fill="currentColor"
           />
         </svg>
+        {/* gradient seam so the wave dissolves into the sky background beneath it */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-marica-amber" />
       </div>
 
-      {/* animated background blobs */}
+      {/* animated background blobs (glow) */}
       <div
         aria-hidden
         className="animate-blob-drift pointer-events-none absolute -left-10 top-24 h-64 w-64 rounded-full bg-white/40 blur-3xl"
@@ -99,6 +123,40 @@ export default function TrustSection() {
         className="animate-blob-drift pointer-events-none absolute right-0 top-6 h-48 w-48 rounded-full bg-white/30 blur-3xl"
         style={{ animationDelay: "3s" }}
       />
+
+      {/* decorative clouds scattered through the section */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -left-4 top-4 z-0 h-14 w-24 text-white/95 drop-shadow-sm sm:h-20 sm:w-36"
+        animate={{ x: [0, 10, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <CloudShape className="h-full w-full" />
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute right-2 top-8 z-0 h-16 w-28 text-white sm:h-24 sm:w-44 lg:top-4"
+        animate={{ x: [0, -12, 0] }}
+        transition={{ duration: 8.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <CloudShape className="h-full w-full" />
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute left-2 top-[38%] z-0 h-10 w-20 text-white/80 sm:h-14 sm:w-28"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      >
+        <CloudShape className="h-full w-full" />
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute right-6 top-[52%] z-0 h-9 w-16 text-white/70 sm:h-12 sm:w-24"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+      >
+        <CloudShape className="h-full w-full" />
+      </motion.div>
 
       <div className="relative z-10 mx-auto max-w-2xl px-6 text-center lg:px-10">
         <motion.h2
@@ -115,7 +173,7 @@ export default function TrustSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mx-auto mt-3 max-w-xl font-body text-sm leading-relaxed text-[#3b5568]/80 sm:text-base"
+          className="mx-auto mt-3 max-w-xl font-body text-sm leading-relaxed text-marica-ink/80 sm:text-base"
         >
           Marica berkolaborasi dengan berbagai lembaga pendidikan, komunitas,
           dan institusi untuk menghadirkan solusi belajar yang menyenangkan
@@ -228,10 +286,9 @@ export default function TrustSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="relative z-10 mx-auto mt-14 max-w-6xl space-y-4 lg:mt-16"
+        className="relative z-10 mx-auto mt-14 max-w-6xl lg:mt-16"
       >
-        <LogoMarqueeRow items={logoRow1} direction="left" duration={32} />
-        <LogoMarqueeRow items={logoRow2} direction="right" duration={26} />
+        <LogoMarqueeRow items={logos} direction="left" duration={42} />
       </motion.div>
     </section>
   );
