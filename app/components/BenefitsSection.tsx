@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -12,100 +13,105 @@ import {
   Package,
   GraduationCap,
   Pin,
+  type LucideIcon,
 } from "lucide-react";
 
-const benefits = [
-  {
-    key: "logika-kreativitas",
-    category: "Logika & Kreativitas",
+type Benefit = {
+  id: string;
+  category: string | null;
+  icon: string | null;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  tags: string[];
+  order: number;
+};
+
+type CategoryStyle = {
+  categoryIcon: LucideIcon;
+  pillClass: string;
+  tagIcon: LucideIcon;
+  tagClass: string;
+  fallbackImage: string;
+  imageAlt: string;
+};
+
+// Normalize category text jadi key sederhana ("LOGIKA & KREATIVITAS" -> "logikakreativitas")
+// biar nggak sensitif ke huruf besar/kecil atau spasi dari data API
+function normalizeCategory(category: string | null): string {
+  return (category ?? "").toLowerCase().replace(/[^a-z]/g, "");
+}
+
+const categoryStyles: Record<string, CategoryStyle> = {
+  logikakreativitas: {
     categoryIcon: MapPin,
     pillClass: "bg-marica-amber/20 text-marica-amber-text",
     tagIcon: Puzzle,
     tagClass: "bg-marica-amber/15 text-marica-amber-text",
-    emoji: "💡",
-    title: "Bermain Sambil Melatih Logika & Kreativitas",
-    description:
-      "Anak-anak diajak berpikir kritis, memecahkan masalah, dan mengasah imajinasi melalui board game, buku interaktif, workshop sains, dan craft kit.",
-    tags: ["Board Game", "Buku Interaktif", "Workshop", "Craft Kit"],
-    image: "/images/benefit-logika-kreativitas.png",
+    fallbackImage: "/images/benefit-logika-kreativitas.png",
     imageAlt: "Ruang belajar Marica yang hangat dan nyaman",
-    reverse: false,
-    rotate: -2,
   },
-  {
-    key: "family-bonding",
-    category: "Family Bonding",
+  familybonding: {
     categoryIcon: Heart,
     pillClass: "bg-[#e0507a]/15 text-[#e0507a]",
     tagIcon: Heart,
     tagClass: "bg-[#e0507a]/10 text-[#e0507a]",
-    emoji: "🤝",
-    title: "Menguatkan Bonding Ibu & Anak",
-    description:
-      "Menciptakan quality time yang hangat dan menyenangkan melalui sesi bermain meja serta kelas edukasi interaktif.",
-    tags: ["Quality Time", "Table Fee", "Kelas Edukasi"],
-    image: "/images/benefit-family-bonding.png",
+    fallbackImage: "/images/benefit-family-bonding.png",
     imageAlt: "Ibu dan anak tertawa bersama sambil bermain",
-    reverse: true,
-    rotate: 2,
   },
-  {
-    key: "edu-recreation",
-    category: "Edu-Recreation",
+  edurecreation: {
     categoryIcon: Rocket,
     pillClass: "bg-marica-blue/20 text-[#1f5f83]",
     tagIcon: Sparkles,
     tagClass: "bg-marica-blue/10 text-[#1f5f83]",
-    emoji: "🎉",
-    title: "Rekreasi Seru yang Berbobot Edukasi",
-    description:
-      "Playpass menghadirkan pengalaman bermain yang aman, nyaman, dan mendukung perkembangan karakter anak.",
-    tags: ["Playpass", "Aman", "Sosialisasi", "Karakter Positif"],
-    image: "/images/benefit-edu-recreation.png",
+    fallbackImage: "/images/benefit-edu-recreation.png",
     imageAlt: "Ibu dan anak bermain board game Woodland Adventure",
-    reverse: false,
-    rotate: -2,
   },
-  {
-    key: "home-learning",
-    category: "Home Learning",
+  homelearning: {
     categoryIcon: HomeIcon,
     pillClass: "bg-[#29cc7a]/15 text-[#1f9c5c]",
     tagIcon: Package,
     tagClass: "bg-[#29cc7a]/10 text-[#1f9c5c]",
-    emoji: "📦",
-    title: "Praktis! Inspirasi Main Tanpa Ribet di Rumah",
-    description:
-      "Edu-Kit bulanan menghadirkan aktivitas kreatif lengkap langsung ke rumah dengan panduan yang mudah diikuti.",
-    tags: ["Edu Kit", "Langganan", "Aktivitas Rumah", "Panduan"],
-    image: "/images/benefit-home-learning.png",
+    fallbackImage: "/images/benefit-home-learning.png",
     imageAlt: "Ibu dan anak membuka paket Marica Edu Kit di rumah",
-    reverse: true,
-    rotate: 2,
   },
-  {
-    key: "holistic-support",
-    category: "Holistic Support",
+  holisticsupport: {
     categoryIcon: MapPin,
     pillClass: "bg-marica-violet/25 text-marica-violet-deep",
     tagIcon: GraduationCap,
     tagClass: "bg-marica-violet/15 text-marica-violet-deep",
-    emoji: "🏫",
-    title: "Dukungan Tumbuh Kembang Terpadu",
-    description:
-      "Parenting class, ulang tahun edukatif, dan pelatihan guru untuk mendukung tumbuh kembang anak secara menyeluruh.",
-    tags: ["Parenting Class", "Birthday Package", "Pelatihan Guru", "Sekolah"],
-    image: "/images/benefit-holistic-support.png",
+    fallbackImage: "/images/benefit-holistic-support.png",
     imageAlt: "Kelas parenting orang tua Marica",
-    reverse: false,
-    rotate: -2,
   },
-];
+};
+
+const defaultStyle: CategoryStyle = categoryStyles.logikakreativitas;
 
 export default function BenefitsSection() {
+  const [benefits, setBenefits] = useState<Benefit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/benefits")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setBenefits(data);
+        } else {
+          console.error("Unexpected /api/benefits response:", data);
+          setError("Gagal memuat data.");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load benefits", err);
+        setError("Gagal memuat data.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-marica-amber via-marica-amber to-marica-amber-dark px-6 py-20 lg:px-10 lg:py-28">
-      {/* decorative cloud blobs */}
       <div
         aria-hidden
         className="pointer-events-none absolute -left-10 top-6 h-56 w-56 rounded-full bg-white/10 blur-3xl"
@@ -136,99 +142,114 @@ export default function BenefitsSection() {
         </motion.p>
       </div>
 
-      <div className="relative z-10 mx-auto mt-14 flex max-w-5xl flex-col gap-8 lg:mt-16 lg:gap-10">
-        {benefits.map((item, i) => (
-          <motion.div
-            key={item.key}
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
-            className={`flex flex-col items-center gap-10 rounded-[32px] bg-white p-7 shadow-[0_20px_50px_rgba(120,60,10,0.15)] sm:p-9 lg:gap-14 lg:p-12 ${
-              item.reverse ? "lg:flex-row-reverse" : "lg:flex-row"
-            }`}
-          >
-            {/* Photo */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotate: 0 }}
-              whileInView={{ opacity: 1, scale: 1, rotate: item.rotate }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-              whileHover={{ scale: 1.03, rotate: 0 }}
-              className="relative w-full max-w-[420px] shrink-0 lg:w-[42%]"
-            >
-              <div className="overflow-hidden rounded-2xl border-[6px] border-white bg-white shadow-[0_18px_35px_rgba(120,60,10,0.25)]">
-                <Image
-                  src={item.image}
-                  alt={item.imageAlt}
-                  width={520}
-                  height={420}
-                  className="h-auto w-full object-cover"
-                />
-              </div>
+      {loading ? (
+        <div className="relative z-10 mt-14 text-center font-body text-sm text-white/80">
+          Memuat data...
+        </div>
+      ) : error ? (
+        <div className="relative z-10 mt-14 text-center font-body text-sm text-red-100">
+          {error}
+        </div>
+      ) : (
+        <div className="relative z-10 mx-auto mt-14 flex max-w-5xl flex-col gap-8 lg:mt-16 lg:gap-10">
+          {benefits.map((item, i) => {
+            const style = categoryStyles[normalizeCategory(item.category)] ?? defaultStyle;
+            const reverse = i % 2 === 1;
+            const rotate = reverse ? 2 : -2;
 
-              <motion.span
-                animate={{ y: [0, -4, 0], rotate: [-8, 4, -8] }}
-                transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-4 right-6 text-marica-amber-dark drop-shadow-md"
-              >
-                <Pin className="h-7 w-7 fill-marica-amber" strokeWidth={2} />
-              </motion.span>
-            </motion.div>
-
-            {/* Copy */}
-            <div className="w-full text-left">
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 32 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.5 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-display text-xs font-semibold uppercase tracking-wide ${item.pillClass}`}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
+                className={`flex flex-col items-center gap-10 rounded-[32px] bg-white p-7 shadow-[0_20px_50px_rgba(120,60,10,0.15)] sm:p-9 lg:gap-14 lg:p-12 ${reverse ? "lg:flex-row-reverse" : "lg:flex-row"
+                  }`}
               >
-                <item.categoryIcon className="h-3.5 w-3.5" />
-                {item.category}
-              </motion.span>
+                {/* Photo */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, rotate: 0 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+                  whileHover={{ scale: 1.03, rotate: 0 }}
+                  className="relative w-full max-w-[420px] shrink-0 lg:w-[42%]"
+                >
+                  <div className="overflow-hidden rounded-2xl border-[6px] border-white bg-white shadow-[0_18px_35px_rgba(120,60,10,0.25)]">
+                    <Image
+                      src={item.imageUrl ?? style.fallbackImage}
+                      alt={style.imageAlt}
+                      width={520}
+                      height={420}
+                      className="h-auto w-full object-cover"
+                    />
+                  </div>
 
-              <motion.h3
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.5 }}
-                transition={{ duration: 0.4, delay: 0.28 }}
-                className="mt-4 font-display text-xl font-bold leading-snug text-marica-ink sm:text-2xl"
-              >
-                <span className="mr-1.5">{item.emoji}</span>
-                {item.title}
-              </motion.h3>
-
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.5 }}
-                transition={{ duration: 0.4, delay: 0.36 }}
-                className="mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink-soft sm:text-base"
-              >
-                {item.description}
-              </motion.p>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {item.tags.map((tag, ti) => (
                   <motion.span
-                    key={tag}
-                    initial={{ opacity: 0, scale: 0.75 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true, amount: 0.6 }}
-                    transition={{ duration: 0.35, delay: 0.45 + ti * 0.07 }}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-body text-xs font-medium ${item.tagClass}`}
+                    animate={{ y: [0, -4, 0], rotate: [-8, 4, -8] }}
+                    transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -top-4 right-6 text-marica-amber-dark drop-shadow-md"
                   >
-                    <item.tagIcon className="h-3.5 w-3.5" />
-                    {tag}
+                    <Pin className="h-7 w-7 fill-marica-amber" strokeWidth={2} />
                   </motion.span>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                </motion.div>
+
+                {/* Copy */}
+                <div className="w-full text-left">
+                  <motion.span
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.5 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-display text-xs font-semibold uppercase tracking-wide ${style.pillClass}`}
+                  >
+                    <style.categoryIcon className="h-3.5 w-3.5" />
+                    {item.category}
+                  </motion.span>
+
+                  <motion.h3
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.5 }}
+                    transition={{ duration: 0.4, delay: 0.28 }}
+                    className="mt-4 font-display text-xl font-bold leading-snug text-marica-ink sm:text-2xl"
+                  >
+                    {item.icon && <span className="mr-1.5">{item.icon}</span>}
+                    {item.title}
+                  </motion.h3>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.5 }}
+                    transition={{ duration: 0.4, delay: 0.36 }}
+                    className="mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink-soft sm:text-base"
+                  >
+                    {item.description}
+                  </motion.p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {item.tags.map((tag, ti) => (
+                      <motion.span
+                        key={tag}
+                        initial={{ opacity: 0, scale: 0.75 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true, amount: 0.6 }}
+                        transition={{ duration: 0.35, delay: 0.45 + ti * 0.07 }}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-body text-xs font-medium ${style.tagClass}`}
+                      >
+                        <style.tagIcon className="h-3.5 w-3.5" />
+                        {tag}
+                      </motion.span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

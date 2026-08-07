@@ -1,33 +1,47 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-const problems = [
-  {
-    key: "ajak-main",
-    title: "Bingung Mau Ajak Anak Main?",
-    description:
-      "Bosan dengan tempat rekreasi yang itu-itu saja dan cuma bikin anak muter-muter tanpa dapat manfaat atau stimulasi belajar yang berarti.",
-    image: "/images/problem-playground.png",
-  },
-  {
-    key: "ide-aktivitas",
-    title: "Habis Ide Aktivitas di Rumah",
-    description:
-      "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri.",
-    image: "/images/problem-athome.png",
-  },
-  {
-    key: "mainan-bosan",
-    title: "Mainan Cepat Membosankan",
-    description:
-      "Sudah beli banyak mainan, tapi cuma dimainkan sekali-dua kali lalu ditinggal begitu saja karena kurang interaktif dan nggak ada alur permainan yang seru untuk dimainkan bareng.",
-    image: "/images/problem-bored.png",
-  },
+type PainPoint = {
+  id: string;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  order: number;
+};
+
+// Fallback image kalau field imageUrl belum diisi di database
+const fallbackImages = [
+  "/images/problem-playground.png",
+  "/images/problem-athome.png",
+  "/images/problem-bored.png",
 ];
 
 export default function ProblemSection() {
+  const [problems, setProblems] = useState<PainPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/pain-points")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setProblems(data);
+        } else {
+          console.error("Unexpected /api/pain-points response:", data);
+          setError("Gagal memuat data.");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load pain points", err);
+        setError("Gagal memuat data.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#fff8ef] via-marica-amber to-marica-amber-dark px-6 py-20 lg:px-10 lg:py-28">
       <div className="mx-auto max-w-3xl text-center">
@@ -52,35 +66,45 @@ export default function ProblemSection() {
         </motion.p>
       </div>
 
-      <div className="mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3">
-        {problems.map((item, i) => (
-          <motion.div
-            key={item.key}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: i * 0.12 }}
-            className="rounded-[28px] bg-white p-7 text-left shadow-[0_20px_50px_rgba(120,60,10,0.14)]"
-          >
-            <div className="relative h-32 w-32 overflow-hidden rounded-full bg-marica-cream">
-              <Image
-                src={item.image}
-                alt={item.title}
-                fill
-                sizes="128px"
-                className="object-cover"
-              />
-            </div>
+      {loading ? (
+        <div className="mt-12 text-center font-body text-sm text-marica-ink/60">
+          Memuat data...
+        </div>
+      ) : error ? (
+        <div className="mt-12 text-center font-body text-sm text-red-600">
+          {error}
+        </div>
+      ) : (
+        <div className="mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3">
+          {problems.map((item, i) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: i * 0.12 }}
+              className="rounded-[28px] bg-white p-7 text-left shadow-[0_20px_50px_rgba(120,60,10,0.14)]"
+            >
+              <div className="relative h-32 w-32 overflow-hidden rounded-full bg-marica-cream">
+                <Image
+                  src={fallbackImages[i % fallbackImages.length]}
+                  alt={item.title}
+                  fill
+                  sizes="128px"
+                  className="object-cover"
+                />
+              </div>
 
-            <h3 className="mt-6 font-display text-lg font-semibold text-marica-ink">
-              {item.title}
-            </h3>
-            <p className="mt-2.5 font-body text-sm leading-relaxed text-marica-ink-soft">
-              {item.description}
-            </p>
-          </motion.div>
-        ))}
-      </div>
+              <h3 className="mt-6 font-display text-lg font-semibold text-marica-ink">
+                {item.title}
+              </h3>
+              <p className="mt-2.5 font-body text-sm leading-relaxed text-marica-ink-soft">
+                {item.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
