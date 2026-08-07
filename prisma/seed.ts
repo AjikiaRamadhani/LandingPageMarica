@@ -5,6 +5,26 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  // Bersihin data lama biar seed bisa dijalanin ulang tanpa duplikat
+  await prisma.testimonial.deleteMany();
+  await prisma.activity.deleteMany();
+  await prisma.heroBadge.deleteMany();
+  await prisma.heroSection.deleteMany();
+  await prisma.statistic.deleteMany();
+  await prisma.painPoint.deleteMany();
+  await prisma.solution.deleteMany();
+  await prisma.learningCategory.deleteMany();
+  await prisma.subject.deleteMany();
+  await prisma.benefit.deleteMany();
+  await prisma.howItWorksStep.deleteMany();
+  await prisma.trustStat.deleteMany();
+  await prisma.partner.deleteMany();
+  await prisma.programDetail.deleteMany();
+  await prisma.program.deleteMany();
+  await prisma.event.deleteMany();
+  await prisma.faq.deleteMany();
+  await prisma.companyProfile.deleteMany();
+
   // 1. Company Profile
   await prisma.companyProfile.create({
     data: {
@@ -27,6 +47,7 @@ async function main() {
       headline: "Ciptakan Momen Belajar Ceria dan Bermakna Bersama Si Kecil Setiap Hari",
       subheadline:
         "Bingung mencari aktivitas bermanfaat untuk anak? Dari area bermain fisik, workshop akhir pekan, hingga Edu-Kit bulanan, Marica hadir menemani perjalanan belajar keluarga.",
+      imageUrl: "/images/hero-character.png",
       ctaText: "Eksplor Serunya Marica",
       ctaLink: "#program",
       badges: {
@@ -49,45 +70,64 @@ async function main() {
     ],
   });
 
-  // 4. Pain Points (Problem)
+  // 4. Pain Points (Problem) - sekarang dengan imageUrl asli
   await prisma.painPoint.createMany({
     data: [
       {
         title: "Bingung Mau Ajak Anak Main?",
         description:
           "Bosan dengan tempat rekreasi yang itu-itu saja dan cuma bikin anak muter-muter tanpa dapat manfaat atau stimulasi belajar yang berarti.",
+        imageUrl: "/images/problem-playground.png",
         order: 1,
       },
       {
         title: "Habis Ide Aktivitas di Rumah",
         description:
           "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri.",
+        imageUrl: "/images/problem-athome.png",
         order: 2,
       },
       {
         title: "Mainan Cepat Membosankan",
         description:
           "Sudah beli banyak mainan, tapi cuma dimainkan sekali-dua kali lalu ditinggal begitu saja karena kurang interaktif dan nggak ada alur permainan yang seru untuk dimainkan bareng.",
+        imageUrl: "/images/problem-bored.png",
         order: 3,
       },
     ],
   });
 
-  // 5. Learning Categories ("Mengapa Memilih Marica?")
+  // 5. Learning Categories ("Mengapa Memilih Marica?") - dengan imageUrl asli
   await prisma.learningCategory.createMany({
     data: [
-      { name: "Story Telling", colorTag: "purple", order: 1 },
-      { name: "Play Based Learning", colorTag: "teal", order: 2 },
-      { name: "Problem Solving", colorTag: "pink", order: 3 },
+      {
+        name: "Story Telling",
+        colorTag: "purple",
+        imageUrl: "/images/why-story-telling.png",
+        order: 1,
+      },
+      {
+        name: "Play Based Learning",
+        colorTag: "teal",
+        imageUrl: "/images/why-play-based-learning.png",
+        order: 2,
+      },
+      {
+        name: "Problem Solving",
+        colorTag: "pink",
+        imageUrl: "/images/why-problem-solving.png",
+        order: 3,
+      },
     ],
   });
 
-  // 6. Subjects ("Apa yang Ingin Dipelajari Si Kecil?")
+  // 6. Subjects ("Apa yang Ingin Dipelajari Si Kecil?") - dengan mascotImageUrl asli
   await prisma.subject.createMany({
     data: [
       {
         title: "Matematika",
         colorTag: "purple",
+        mascotImageUrl: "/images/program-matematika-mascot.png",
         cognitiveDomainTags: ["Knowing", "Applying", "Reasoning"],
         contentDomainItems: [
           "Number & Operation",
@@ -101,6 +141,7 @@ async function main() {
       {
         title: "Bahasa",
         colorTag: "pink",
+        mascotImageUrl: "/images/program-bahasa-mascot.png",
         cognitiveDomainTags: ["Pre Reading", "Reading", "Post Reading"],
         contentDomainItems: [
           "Six Syllables",
@@ -114,7 +155,7 @@ async function main() {
     ],
   });
 
-  // 7. Benefits ("Apa yang Didapatkan Bunda & Si Kecil?")
+  // 7. Benefits ("Apa yang Didapatkan Bunda & Si Kecil?") - dengan imageUrl asli
   await prisma.benefit.createMany({
     data: [
       {
@@ -123,6 +164,7 @@ async function main() {
         title: "Bermain Sambil Melatih Logika & Kreativitas",
         description:
           "Anak-anak diajak berpikir kritis, memecahkan masalah, dan mengasah imajinasi melalui board game, buku interaktif, workshop sains, dan craft kit.",
+        imageUrl: "/images/benefit-logika-kreativitas.png",
         tags: ["Board Game", "Buku Interaktif", "Workshop", "Craft Kit"],
         order: 1,
       },
@@ -132,6 +174,7 @@ async function main() {
         title: "Menguatkan Bonding Ibu & Anak",
         description:
           "Menciptakan quality time yang hangat dan menyenangkan melalui sesi bermain meja serta kelas edukasi interaktif.",
+        imageUrl: "/images/benefit-family-bonding.png",
         tags: ["Quality Time", "Table Fee", "Kelas Edukasi"],
         order: 2,
       },
@@ -141,6 +184,7 @@ async function main() {
         title: "Rekreasi Seru yang Berbobot Edukasi",
         description:
           "Playpass menghadirkan pengalaman bermain yang aman, nyaman, dan mendukung perkembangan karakter anak.",
+        imageUrl: "/images/benefit-edu-recreation.png",
         tags: ["Playpass", "Aman", "Sosialisasi", "Karakter Positif"],
         order: 3,
       },
@@ -150,6 +194,7 @@ async function main() {
         title: "Praktis! Inspirasi Main Tanpa Ribet di Rumah",
         description:
           "Edu-Kit bulanan menghadirkan aktivitas kreatif lengkap langsung ke rumah dengan panduan yang mudah diikuti.",
+        imageUrl: "/images/benefit-home-learning.png",
         tags: ["Edu Kit", "Langganan", "Aktivitas Rumah", "Panduan"],
         order: 4,
       },
@@ -159,6 +204,7 @@ async function main() {
         title: "Dukungan Tumbuh Kembang Terpadu",
         description:
           "Parenting class, ulang tahun edukatif, dan pelatihan guru untuk mendukung tumbuh kembang anak secara menyeluruh.",
+        imageUrl: "/images/benefit-holistic-support.png",
         tags: ["Parenting Class", "Birthday Package", "Pelatihan Guru", "Sekolah"],
         order: 5,
       },
@@ -192,7 +238,41 @@ async function main() {
     ],
   });
 
-  // 9. Activities + nested Testimonials ("Aktivitas Seru di Marica")
+  // 9a. Testimoni UMUM ("Apa Kata Bunda?") - standalone, activityId null, pakai field role
+  await prisma.testimonial.createMany({
+    data: [
+      {
+        customerName: "Bunda Sarah",
+        role: "Ibu Rumah Tangga",
+        message:
+          "Marica benar-benar jadi penyelamat di akhir pekan! Si Kecil betah banget main board game dan workshop-nya sangat edukatif.",
+        order: 1,
+      },
+      {
+        customerName: "Bunda Maya",
+        role: "Working Mom",
+        message:
+          "Edu-Kit bulanannya sangat membantu saya yang sibuk untuk tetap bisa memberikan aktivitas berkualitas di rumah.",
+        order: 2,
+      },
+      {
+        customerName: "Bunda Rina",
+        role: "Guru PAUD",
+        message:
+          "Standar keamanannya luar biasa. Saya merasa tenang membiarkan anak bereksplorasi di Experience Store Marica.",
+        order: 3,
+      },
+      {
+        customerName: "Bunda Ani",
+        role: "Entrepreneur",
+        message:
+          "Konsep phygital-nya keren banget. Anak belajar mandiri tapi tetap ada interaksi nyata.",
+        order: 4,
+      },
+    ],
+  });
+
+  // 9b. Activities + nested Testimonials ("Aktivitas Seru di Marica")
   await prisma.activity.create({
     data: {
       title: "Area Bermain",
@@ -256,33 +336,33 @@ async function main() {
   });
 
   // 10. Trust Stats ("Dipercaya oleh Mitra & Institusi Terkemuka")
+  // order 1-2 = kartu angka, order 3 = kartu foto (imageUrl diisi), order 4 = kartu angka lagi
   await prisma.trustStat.createMany({
     data: [
       { value: "4 dari 5", label: "Tingkat kepuasan pelanggan", dotColor: "purple", order: 1 },
       { value: "90%", label: "Tingkat kepuasan pelanggan", dotColor: "pink", order: 2 },
-      { label: "Sesi validasi bersama mitra & institusi", imageUrl: "/trust/validation-session.jpg", dotColor: "teal", order: 3 },
-      { value: "100", label: "Validasi ahli untuk Marica Kit, yang mencakup kontribusi dari psikolog, guru, dan dosen", dotColor: "teal", order: 4 },
+      {
+        label: "Tim Marica berkolaborasi dengan mitra",
+        imageUrl: "/images/trust-team-photo.png",
+        dotColor: "teal",
+        order: 3,
+      },
+      {
+        value: "100",
+        label: "Validasi ahli untuk Marica Kit, yang mencakup kontribusi dari psikolog, guru, dan dosen.",
+        dotColor: "teal",
+        order: 4,
+      },
     ],
   });
 
-  // 11. Partners
+  // 11. Partners - 15 logo asli dari public/images/partners/
   await prisma.partner.createMany({
-    data: [
-      { name: "Kementerian/Lembaga Pemerintah", logoUrl: "/partners/gov.png", order: 1 },
-      { name: "Ristekdikti", logoUrl: "/partners/ristekdikti.png", order: 2 },
-      { name: "Kominfo", logoUrl: "/partners/kominfo.png", order: 3 },
-      { name: "Southeast Asian Ministers of Education Organization", logoUrl: "/partners/seameo.png", order: 4 },
-      { name: "TWC", logoUrl: "/partners/twc.png", order: 5 },
-      { name: "Kementerian Perindustrian", logoUrl: "/partners/perindustrian.png", order: 6 },
-      { name: "Partner Institusi 7", logoUrl: "/partners/partner7.png", order: 7 },
-      { name: "Partner Institusi 8", logoUrl: "/partners/partner8.png", order: 8 },
-      { name: "Kemendikbud", logoUrl: "/partners/kemendikbud.png", order: 9 },
-      { name: "SD Gagasceria", logoUrl: "/partners/sdgagasceria.png", order: 10 },
-      { name: "Sekolah Tumbuh", logoUrl: "/partners/sekolahtumbuh.png", order: 11 },
-      { name: "Partner Institusi 12", logoUrl: "/partners/partner12.png", order: 12 },
-      { name: "Tadana", logoUrl: "/partners/tadana.png", order: 13 },
-      { name: "Partner Institusi 14", logoUrl: "/partners/partner14.png", order: 14 },
-    ],
+    data: Array.from({ length: 15 }, (_, i) => ({
+      name: `Mitra Institusi ${i + 1}`,
+      logoUrl: `/images/partners/logo-${i + 1}.png`,
+      order: i + 1,
+    })),
   });
 
   // 12. Programs + Program Details ("Detail Program")
