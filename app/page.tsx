@@ -1,10 +1,12 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import WhatsAppButton from "./components/WhatsAppButton";
 import ProblemSection from "./components/Problemsection";
 import WhyChooseSection from "./components/WhyChooseSection";
 import ProgramSection from "./components/ProgramSection";
+import TestimonialSection from "./components/TestimonialSection";
 import BenefitsSection from "./components/BenefitsSection";
+import WhatsAppButton from "./components/WhatsAppButton";
+import TrustSection from "./components/TrustSection";
 
 export default function Home() {
   return (
@@ -15,6 +17,8 @@ export default function Home() {
       <WhyChooseSection />
       <ProgramSection />
       <BenefitsSection />
+      <TestimonialSection />
+      <TrustSection />
       <WhatsAppButton />
     </main>
   );

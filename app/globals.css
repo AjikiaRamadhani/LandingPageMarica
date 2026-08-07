@@ -26,6 +26,8 @@
   --marica-rose: #ffb99a;
   --marica-rose-deep: #e8785a;
   --marica-tan: #b18843;
+  --marica-sky: #bfe4f6;
+  --marica-sky-light: #e3f4fb;
 }
 
 @theme inline {
@@ -50,6 +52,8 @@
   --color-marica-rose: var(--marica-rose);
   --color-marica-rose-deep: var(--marica-rose-deep);
   --color-marica-tan: var(--marica-tan);
+  --color-marica-sky: var(--marica-sky);
+  --color-marica-sky-light: var(--marica-sky-light);
   --font-display: "Fredoka", "Segoe UI Rounded", sans-serif;
   --font-body: "Plus Jakarta Sans", "Segoe UI", sans-serif;
 }
@@ -69,4 +73,31 @@ body {
 @keyframes float-y {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
+}
+
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes blob-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -14px) scale(1.08); }
+}
+
+.animate-marquee-left {
+  animation: marquee-left 32s linear infinite;
+}
+
+.animate-marquee-right {
+  animation: marquee-right 26s linear infinite;
+}
+
+.animate-blob-drift {
+  animation: blob-drift 9s ease-in-out infinite;
 }
