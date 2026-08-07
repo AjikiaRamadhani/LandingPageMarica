@@ -12,7 +12,7 @@ const faqs = [
     iconText: "text-[#e0507a]",
     question: "Untuk anak usia berapa saja aktivitas dan produk di Marica?",
     answer:
-      "Aktivitas dan produk Marica dirancang untuk anak usia 2–10 tahun, dengan tingkat kesulitan yang disesuaikan pada setiap modul agar sesuai tahap tumbuh kembang Si Kecil.",
+      "Aktivitas dan produk Marica dirancang khusus untuk anak usia 2 hingga 12 tahun, mulai dari balita (pendampingan orang tua) hingga anak usia sekolah dasar.",
   },
   {
     key: "reservasi",
@@ -22,7 +22,7 @@ const faqs = [
     question:
       "Apakah harus reservasi terlebih dahulu jika ingin datang main ke Marica Experience Store?",
     answer:
-      "Disarankan untuk melakukan reservasi terlebih dahulu, terutama di akhir pekan, agar kami dapat menyiapkan aktivitas dan tempat terbaik untuk keluarga Anda.",
+      "Bunda bisa langsung datang (walk-in) untuk area bermain (Playpass) dan sewa meja board game. Namun, untuk Weekend Workshop dan kelas khusus, kami menyarankan reservasi terlebih dahulu agar kepastian slot tempat terjamin.",
   },
   {
     key: "edukit",
@@ -31,7 +31,7 @@ const faqs = [
     iconText: "text-marica-amber-dark",
     question: "Apa isi dari paket berlangganan Edu-Kit bulanan Marica?",
     answer:
-      "Setiap paket Edu-Kit bulanan berisi modul aktivitas, alat belajar, dan panduan bermain yang dikembangkan bersama psikolog dan pendidik anak.",
+      "Paket Edu-Kit berisi kotak aktivitas mandiri terstruktur (craft kit, permainan logika/sains, atau board game) yang dilengkapi panduan belajar interaktif dan dikirim rutin langsung ke rumah setiap bulan.",
   },
   {
     key: "keamanan",
@@ -40,7 +40,7 @@ const faqs = [
     iconText: "text-marica-maroon",
     question: "Apakah tempatnya nyaman dan aman untuk balita dan keluarga?",
     answer:
-      "Ya, seluruh area dan produk Marica telah melalui standar keamanan yang ketat serta divalidasi oleh ahli agar nyaman digunakan balita dan keluarga.",
+      "Sangat aman dan nyaman! Seluruh area bermain fisik, fasilitas meja, dan alat peraga kami selalu dibersihkan secara berkala, ramah anak, serta didampingi oleh staf/fasilitator yang telaten.",
   },
   {
     key: "acara",
@@ -50,13 +50,18 @@ const faqs = [
     question:
       "Bisakah Marica menyelenggarakan acara sekolah, privat, atau ulang tahun?",
     answer:
-      "Tentu! Marica menyediakan paket acara sekolah, kelas privat, hingga ulang tahun edukatif yang bisa disesuaikan dengan kebutuhan Anda.",
+      "Sangat bisa! Kami menyediakan paket perayaan ulang tahun edukatif, penyewaan seluruh area toko (space renting), hingga program pelatihan media ajar edugame untuk guru dan sekolah.",
   },
 ];
 
 function CloudShape({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 64 40" className={className} fill="currentColor" aria-hidden>
+    <svg
+      viewBox="0 0 64 40"
+      className={className}
+      fill="currentColor"
+      aria-hidden
+    >
       <path d="M50 40H14C6.268 40 0 33.732 0 26C0 18.268 6.268 12 14 12C14.676 12 15.343 12.048 16 12.14C18.28 5.06 24.928 0 32.8 0C41.316 0 48.44 5.936 50.28 13.868C50.52 13.856 50.76 13.848 51 13.848C58.18 13.848 64 19.668 64 26.848C64 34.028 58.18 40 51 40H50Z" />
     </svg>
   );
@@ -81,7 +86,7 @@ export default function FaqSection() {
           transition={{ duration: 0.5 }}
           className="font-display text-[1.7rem] font-semibold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
         >
-          Frequently Asked Questions
+          FAQ
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 16 }}
@@ -103,7 +108,11 @@ export default function FaqSection() {
               key={item.key}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3, margin: "0px 0px -60px 0px" }}
+              viewport={{
+                once: true,
+                amount: 0.3,
+                margin: "0px 0px -60px 0px",
+              }}
               transition={{ duration: 0.5, delay: i * 0.08, ease: "easeOut" }}
               className="overflow-hidden rounded-2xl bg-white/70 shadow-[0_6px_18px_rgba(120,60,10,0.06)]"
             >
