@@ -7,7 +7,11 @@ import BenefitsSection from "./components/BenefitsSection";
 import WhatsAppButton from "./components/WhatsAppButton";
 import TrustSection from "./components/TrustSection";
 import SubjectSection from "./components/SubjectSection";
-
+import HowItWorksSection from "./components/HowItWorksSection";
+import ProgramDetailSection from "./components/ProgramDetailSection";
+import EventSection from "./components/EventSection";
+import FaqSection from "./components/FaqSection";
+import CtaSection from "./components/CtaSection";
 export default function Home() {
   return (
     <main className="hero-gradient-bg flex min-h-screen flex-col">
@@ -19,6 +23,11 @@ export default function Home() {
       <BenefitsSection />
       <TestimonialSection />
       <TrustSection />
+      <HowItWorksSection />
+      <ProgramDetailSection />
+      <EventSection />
+      <FaqSection />
+      <CtaSection />
       <WhatsAppButton />
     </main>
   );
