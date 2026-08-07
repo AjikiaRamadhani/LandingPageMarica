@@ -29,7 +29,7 @@ export default function WhatsAppButton() {
       .catch((err) => console.error("Failed to load company profile", err));
   }, []);
 
-  const href = phone ? `https://wa.me/${toWhatsAppNumber(phone)}` : "https://wa.me/6282221491429";
+  const href = phone ? `https://wa.me/${toWhatsAppNumber(phone)}` : "https://wa.me/628190658196";
 
   return (
     <a
