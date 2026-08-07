@@ -1871,6 +1871,7 @@ export const PainPointScalarFieldEnum = {
   title: 'title',
   description: 'description',
   icon: 'icon',
+  imageUrl: 'imageUrl',
   order: 'order',
   isActive: 'isActive',
   createdAt: 'createdAt',
@@ -1975,6 +1976,7 @@ export type ActivityScalarFieldEnum = (typeof ActivityScalarFieldEnum)[keyof typ
 export const TestimonialScalarFieldEnum = {
   id: 'id',
   customerName: 'customerName',
+  role: 'role',
   avatarUrl: 'avatarUrl',
   message: 'message',
   rating: 'rating',

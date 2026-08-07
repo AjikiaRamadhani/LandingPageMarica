@@ -75,6 +75,7 @@ model PainPoint {
   title       String
   description String?
   icon        String?
+  imageUrl    String?
   order       Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -172,9 +173,12 @@ model Activity {
   @@map("activities")
 }
 
+// Testimoni umum ("Apa Kata Bunda?") kalau activityId null,
+// atau testimoni yang nempel ke Activity tertentu ("Aktivitas Seru di Marica") kalau activityId diisi
 model Testimonial {
   id           String    @id @default(cuid())
   customerName String
+  role         String?
   avatarUrl    String?
   message      String
   rating       Int?      @default(5)

@@ -39,6 +39,7 @@ export type TestimonialSumAggregateOutputType = {
 export type TestimonialMinAggregateOutputType = {
   id: string | null
   customerName: string | null
+  role: string | null
   avatarUrl: string | null
   message: string | null
   rating: number | null
@@ -52,6 +53,7 @@ export type TestimonialMinAggregateOutputType = {
 export type TestimonialMaxAggregateOutputType = {
   id: string | null
   customerName: string | null
+  role: string | null
   avatarUrl: string | null
   message: string | null
   rating: number | null
@@ -65,6 +67,7 @@ export type TestimonialMaxAggregateOutputType = {
 export type TestimonialCountAggregateOutputType = {
   id: number
   customerName: number
+  role: number
   avatarUrl: number
   message: number
   rating: number
@@ -90,6 +93,7 @@ export type TestimonialSumAggregateInputType = {
 export type TestimonialMinAggregateInputType = {
   id?: true
   customerName?: true
+  role?: true
   avatarUrl?: true
   message?: true
   rating?: true
@@ -103,6 +107,7 @@ export type TestimonialMinAggregateInputType = {
 export type TestimonialMaxAggregateInputType = {
   id?: true
   customerName?: true
+  role?: true
   avatarUrl?: true
   message?: true
   rating?: true
@@ -116,6 +121,7 @@ export type TestimonialMaxAggregateInputType = {
 export type TestimonialCountAggregateInputType = {
   id?: true
   customerName?: true
+  role?: true
   avatarUrl?: true
   message?: true
   rating?: true
@@ -216,6 +222,7 @@ export type TestimonialGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 export type TestimonialGroupByOutputType = {
   id: string
   customerName: string
+  role: string | null
   avatarUrl: string | null
   message: string
   rating: number | null
@@ -252,6 +259,7 @@ export type TestimonialWhereInput = {
   NOT?: Prisma.TestimonialWhereInput | Prisma.TestimonialWhereInput[]
   id?: Prisma.StringFilter<"Testimonial"> | string
   customerName?: Prisma.StringFilter<"Testimonial"> | string
+  role?: Prisma.StringNullableFilter<"Testimonial"> | string | null
   avatarUrl?: Prisma.StringNullableFilter<"Testimonial"> | string | null
   message?: Prisma.StringFilter<"Testimonial"> | string
   rating?: Prisma.IntNullableFilter<"Testimonial"> | number | null
@@ -266,6 +274,7 @@ export type TestimonialWhereInput = {
 export type TestimonialOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
+  role?: Prisma.SortOrderInput | Prisma.SortOrder
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   message?: Prisma.SortOrder
   rating?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -283,6 +292,7 @@ export type TestimonialWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.TestimonialWhereInput[]
   NOT?: Prisma.TestimonialWhereInput | Prisma.TestimonialWhereInput[]
   customerName?: Prisma.StringFilter<"Testimonial"> | string
+  role?: Prisma.StringNullableFilter<"Testimonial"> | string | null
   avatarUrl?: Prisma.StringNullableFilter<"Testimonial"> | string | null
   message?: Prisma.StringFilter<"Testimonial"> | string
   rating?: Prisma.IntNullableFilter<"Testimonial"> | number | null
@@ -297,6 +307,7 @@ export type TestimonialWhereUniqueInput = Prisma.AtLeast<{
 export type TestimonialOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
+  role?: Prisma.SortOrderInput | Prisma.SortOrder
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   message?: Prisma.SortOrder
   rating?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -318,6 +329,7 @@ export type TestimonialScalarWhereWithAggregatesInput = {
   NOT?: Prisma.TestimonialScalarWhereWithAggregatesInput | Prisma.TestimonialScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Testimonial"> | string
   customerName?: Prisma.StringWithAggregatesFilter<"Testimonial"> | string
+  role?: Prisma.StringNullableWithAggregatesFilter<"Testimonial"> | string | null
   avatarUrl?: Prisma.StringNullableWithAggregatesFilter<"Testimonial"> | string | null
   message?: Prisma.StringWithAggregatesFilter<"Testimonial"> | string
   rating?: Prisma.IntNullableWithAggregatesFilter<"Testimonial"> | number | null
@@ -331,6 +343,7 @@ export type TestimonialScalarWhereWithAggregatesInput = {
 export type TestimonialCreateInput = {
   id?: string
   customerName: string
+  role?: string | null
   avatarUrl?: string | null
   message: string
   rating?: number | null
@@ -344,6 +357,7 @@ export type TestimonialCreateInput = {
 export type TestimonialUncheckedCreateInput = {
   id?: string
   customerName: string
+  role?: string | null
   avatarUrl?: string | null
   message: string
   rating?: number | null
@@ -357,6 +371,7 @@ export type TestimonialUncheckedCreateInput = {
 export type TestimonialUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -370,6 +385,7 @@ export type TestimonialUpdateInput = {
 export type TestimonialUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -383,6 +399,7 @@ export type TestimonialUncheckedUpdateInput = {
 export type TestimonialCreateManyInput = {
   id?: string
   customerName: string
+  role?: string | null
   avatarUrl?: string | null
   message: string
   rating?: number | null
@@ -396,6 +413,7 @@ export type TestimonialCreateManyInput = {
 export type TestimonialUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -408,6 +426,7 @@ export type TestimonialUpdateManyMutationInput = {
 export type TestimonialUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -431,6 +450,7 @@ export type TestimonialOrderByRelationAggregateInput = {
 export type TestimonialCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
   message?: Prisma.SortOrder
   rating?: Prisma.SortOrder
@@ -449,6 +469,7 @@ export type TestimonialAvgOrderByAggregateInput = {
 export type TestimonialMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
   message?: Prisma.SortOrder
   rating?: Prisma.SortOrder
@@ -462,6 +483,7 @@ export type TestimonialMaxOrderByAggregateInput = {
 export type TestimonialMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
   message?: Prisma.SortOrder
   rating?: Prisma.SortOrder
@@ -530,6 +552,7 @@ export type NullableIntFieldUpdateOperationsInput = {
 export type TestimonialCreateWithoutActivityInput = {
   id?: string
   customerName: string
+  role?: string | null
   avatarUrl?: string | null
   message: string
   rating?: number | null
@@ -542,6 +565,7 @@ export type TestimonialCreateWithoutActivityInput = {
 export type TestimonialUncheckedCreateWithoutActivityInput = {
   id?: string
   customerName: string
+  role?: string | null
   avatarUrl?: string | null
   message: string
   rating?: number | null
@@ -583,6 +607,7 @@ export type TestimonialScalarWhereInput = {
   NOT?: Prisma.TestimonialScalarWhereInput | Prisma.TestimonialScalarWhereInput[]
   id?: Prisma.StringFilter<"Testimonial"> | string
   customerName?: Prisma.StringFilter<"Testimonial"> | string
+  role?: Prisma.StringNullableFilter<"Testimonial"> | string | null
   avatarUrl?: Prisma.StringNullableFilter<"Testimonial"> | string | null
   message?: Prisma.StringFilter<"Testimonial"> | string
   rating?: Prisma.IntNullableFilter<"Testimonial"> | number | null
@@ -596,6 +621,7 @@ export type TestimonialScalarWhereInput = {
 export type TestimonialCreateManyActivityInput = {
   id?: string
   customerName: string
+  role?: string | null
   avatarUrl?: string | null
   message: string
   rating?: number | null
@@ -608,6 +634,7 @@ export type TestimonialCreateManyActivityInput = {
 export type TestimonialUpdateWithoutActivityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -620,6 +647,7 @@ export type TestimonialUpdateWithoutActivityInput = {
 export type TestimonialUncheckedUpdateWithoutActivityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -632,6 +660,7 @@ export type TestimonialUncheckedUpdateWithoutActivityInput = {
 export type TestimonialUncheckedUpdateManyWithoutActivityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   message?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -646,6 +675,7 @@ export type TestimonialUncheckedUpdateManyWithoutActivityInput = {
 export type TestimonialSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   customerName?: boolean
+  role?: boolean
   avatarUrl?: boolean
   message?: boolean
   rating?: boolean
@@ -660,6 +690,7 @@ export type TestimonialSelect<ExtArgs extends runtime.Types.Extensions.InternalA
 export type TestimonialSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   customerName?: boolean
+  role?: boolean
   avatarUrl?: boolean
   message?: boolean
   rating?: boolean
@@ -674,6 +705,7 @@ export type TestimonialSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
 export type TestimonialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   customerName?: boolean
+  role?: boolean
   avatarUrl?: boolean
   message?: boolean
   rating?: boolean
@@ -688,6 +720,7 @@ export type TestimonialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
 export type TestimonialSelectScalar = {
   id?: boolean
   customerName?: boolean
+  role?: boolean
   avatarUrl?: boolean
   message?: boolean
   rating?: boolean
@@ -698,7 +731,7 @@ export type TestimonialSelectScalar = {
   updatedAt?: boolean
 }
 
-export type TestimonialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "customerName" | "avatarUrl" | "message" | "rating" | "order" | "isActive" | "activityId" | "createdAt" | "updatedAt", ExtArgs["result"]["testimonial"]>
+export type TestimonialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "customerName" | "role" | "avatarUrl" | "message" | "rating" | "order" | "isActive" | "activityId" | "createdAt" | "updatedAt", ExtArgs["result"]["testimonial"]>
 export type TestimonialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   activity?: boolean | Prisma.Testimonial$activityArgs<ExtArgs>
 }
@@ -717,6 +750,7 @@ export type $TestimonialPayload<ExtArgs extends runtime.Types.Extensions.Interna
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     customerName: string
+    role: string | null
     avatarUrl: string | null
     message: string
     rating: number | null
@@ -1151,6 +1185,7 @@ export interface Prisma__TestimonialClient<T, Null = never, ExtArgs extends runt
 export interface TestimonialFieldRefs {
   readonly id: Prisma.FieldRef<"Testimonial", 'String'>
   readonly customerName: Prisma.FieldRef<"Testimonial", 'String'>
+  readonly role: Prisma.FieldRef<"Testimonial", 'String'>
   readonly avatarUrl: Prisma.FieldRef<"Testimonial", 'String'>
   readonly message: Prisma.FieldRef<"Testimonial", 'String'>
   readonly rating: Prisma.FieldRef<"Testimonial", 'Int'>

@@ -39,6 +39,7 @@ export type PainPointMinAggregateOutputType = {
   title: string | null
   description: string | null
   icon: string | null
+  imageUrl: string | null
   order: number | null
   isActive: boolean | null
   createdAt: Date | null
@@ -50,6 +51,7 @@ export type PainPointMaxAggregateOutputType = {
   title: string | null
   description: string | null
   icon: string | null
+  imageUrl: string | null
   order: number | null
   isActive: boolean | null
   createdAt: Date | null
@@ -61,6 +63,7 @@ export type PainPointCountAggregateOutputType = {
   title: number
   description: number
   icon: number
+  imageUrl: number
   order: number
   isActive: number
   createdAt: number
@@ -82,6 +85,7 @@ export type PainPointMinAggregateInputType = {
   title?: true
   description?: true
   icon?: true
+  imageUrl?: true
   order?: true
   isActive?: true
   createdAt?: true
@@ -93,6 +97,7 @@ export type PainPointMaxAggregateInputType = {
   title?: true
   description?: true
   icon?: true
+  imageUrl?: true
   order?: true
   isActive?: true
   createdAt?: true
@@ -104,6 +109,7 @@ export type PainPointCountAggregateInputType = {
   title?: true
   description?: true
   icon?: true
+  imageUrl?: true
   order?: true
   isActive?: true
   createdAt?: true
@@ -202,6 +208,7 @@ export type PainPointGroupByOutputType = {
   title: string
   description: string | null
   icon: string | null
+  imageUrl: string | null
   order: number
   isActive: boolean
   createdAt: Date
@@ -236,6 +243,7 @@ export type PainPointWhereInput = {
   title?: Prisma.StringFilter<"PainPoint"> | string
   description?: Prisma.StringNullableFilter<"PainPoint"> | string | null
   icon?: Prisma.StringNullableFilter<"PainPoint"> | string | null
+  imageUrl?: Prisma.StringNullableFilter<"PainPoint"> | string | null
   order?: Prisma.IntFilter<"PainPoint"> | number
   isActive?: Prisma.BoolFilter<"PainPoint"> | boolean
   createdAt?: Prisma.DateTimeFilter<"PainPoint"> | Date | string
@@ -247,6 +255,7 @@ export type PainPointOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   icon?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   order?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -261,6 +270,7 @@ export type PainPointWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"PainPoint"> | string
   description?: Prisma.StringNullableFilter<"PainPoint"> | string | null
   icon?: Prisma.StringNullableFilter<"PainPoint"> | string | null
+  imageUrl?: Prisma.StringNullableFilter<"PainPoint"> | string | null
   order?: Prisma.IntFilter<"PainPoint"> | number
   isActive?: Prisma.BoolFilter<"PainPoint"> | boolean
   createdAt?: Prisma.DateTimeFilter<"PainPoint"> | Date | string
@@ -272,6 +282,7 @@ export type PainPointOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   icon?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   order?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -291,6 +302,7 @@ export type PainPointScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"PainPoint"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"PainPoint"> | string | null
   icon?: Prisma.StringNullableWithAggregatesFilter<"PainPoint"> | string | null
+  imageUrl?: Prisma.StringNullableWithAggregatesFilter<"PainPoint"> | string | null
   order?: Prisma.IntWithAggregatesFilter<"PainPoint"> | number
   isActive?: Prisma.BoolWithAggregatesFilter<"PainPoint"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"PainPoint"> | Date | string
@@ -302,6 +314,7 @@ export type PainPointCreateInput = {
   title: string
   description?: string | null
   icon?: string | null
+  imageUrl?: string | null
   order?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -313,6 +326,7 @@ export type PainPointUncheckedCreateInput = {
   title: string
   description?: string | null
   icon?: string | null
+  imageUrl?: string | null
   order?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -324,6 +338,7 @@ export type PainPointUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   order?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -335,6 +350,7 @@ export type PainPointUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   order?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -346,6 +362,7 @@ export type PainPointCreateManyInput = {
   title: string
   description?: string | null
   icon?: string | null
+  imageUrl?: string | null
   order?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -357,6 +374,7 @@ export type PainPointUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   order?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -368,6 +386,7 @@ export type PainPointUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   icon?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   order?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -379,6 +398,7 @@ export type PainPointCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
   order?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -394,6 +414,7 @@ export type PainPointMaxOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
   order?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -405,6 +426,7 @@ export type PainPointMinOrderByAggregateInput = {
   title?: Prisma.SortOrder
   description?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
   order?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -422,6 +444,7 @@ export type PainPointSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   title?: boolean
   description?: boolean
   icon?: boolean
+  imageUrl?: boolean
   order?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -433,6 +456,7 @@ export type PainPointSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   title?: boolean
   description?: boolean
   icon?: boolean
+  imageUrl?: boolean
   order?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -444,6 +468,7 @@ export type PainPointSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   title?: boolean
   description?: boolean
   icon?: boolean
+  imageUrl?: boolean
   order?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -455,13 +480,14 @@ export type PainPointSelectScalar = {
   title?: boolean
   description?: boolean
   icon?: boolean
+  imageUrl?: boolean
   order?: boolean
   isActive?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PainPointOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "icon" | "order" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["painPoint"]>
+export type PainPointOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "icon" | "imageUrl" | "order" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["painPoint"]>
 
 export type $PainPointPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PainPoint"
@@ -471,6 +497,7 @@ export type $PainPointPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     title: string
     description: string | null
     icon: string | null
+    imageUrl: string | null
     order: number
     isActive: boolean
     createdAt: Date
@@ -902,6 +929,7 @@ export interface PainPointFieldRefs {
   readonly title: Prisma.FieldRef<"PainPoint", 'String'>
   readonly description: Prisma.FieldRef<"PainPoint", 'String'>
   readonly icon: Prisma.FieldRef<"PainPoint", 'String'>
+  readonly imageUrl: Prisma.FieldRef<"PainPoint", 'String'>
   readonly order: Prisma.FieldRef<"PainPoint", 'Int'>
   readonly isActive: Prisma.FieldRef<"PainPoint", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"PainPoint", 'DateTime'>

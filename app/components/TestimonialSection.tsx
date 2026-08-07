@@ -4,42 +4,19 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, useAnimationControls, type PanInfo } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 
+type Testimonial = {
+  id: string;
+  customerName: string;
+  role: string | null;
+  message: string;
+  order: number;
+};
+
 const avatarColors = [
   "bg-marica-maroon",
   "bg-marica-teal",
   "bg-[#e0507a]",
   "bg-marica-violet-deep",
-];
-
-const testimonials = [
-  {
-    key: "sarah",
-    name: "Bunda Sarah",
-    role: "Ibu Rumah Tangga",
-    quote:
-      "Marica benar-benar jadi penyelamat di akhir pekan! Si Kecil betah banget main board game dan workshop-nya sangat edukatif.",
-  },
-  {
-    key: "maya",
-    name: "Bunda Maya",
-    role: "Working Mom",
-    quote:
-      "Edu-Kit bulanannya sangat membantu saya yang sibuk untuk tetap bisa memberikan aktivitas berkualitas di rumah.",
-  },
-  {
-    key: "rina",
-    name: "Bunda Rina",
-    role: "Guru PAUD",
-    quote:
-      "Standar keamanannya luar biasa. Saya merasa tenang membiarkan anak bereksplorasi di Experience Store Marica.",
-  },
-  {
-    key: "ani",
-    name: "Bunda Ani",
-    role: "Entrepreneur",
-    quote:
-      "Konsep phygital-nya keren banget. Anak belajar mandiri tapi tetap ada interaksi nyata.",
-  },
 ];
 
 const AUTOPLAY_INTERVAL = 4500;
@@ -49,10 +26,28 @@ export default function TestimonialSection() {
   const trackRef = useRef<HTMLDivElement>(null);
   const controls = useAnimationControls();
 
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(0);
   const [cardStep, setCardStep] = useState(0);
-  const [maxIndex, setMaxIndex] = useState(testimonials.length - 1);
+  const [maxIndex, setMaxIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/testimonials")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          // Section ini cuma nampilin testimoni umum (activityId null),
+          // bukan yang nempel ke Activity tertentu ("Aktivitas Seru di Marica")
+          const general = data.filter((t: any) => !t.activityId);
+          setTestimonials(general);
+          setMaxIndex(Math.max(0, general.length - 1));
+        }
+      })
+      .catch((err) => console.error("Failed to load testimonials", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   // Measure card width + gap responsively
   useEffect(() => {
@@ -75,7 +70,7 @@ export default function TestimonialSection() {
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, []);
+  }, [testimonials]);
 
   const goTo = useCallback(
     (next: number) => {
@@ -150,109 +145,117 @@ export default function TestimonialSection() {
         </motion.p>
       </div>
 
-      {/* Carousel */}
-      <div className="relative z-10 mx-auto mt-12 max-w-6xl lg:mt-16">
-        <div ref={viewportRef} className="overflow-hidden">
-          <motion.div
-            ref={trackRef}
-            className="flex cursor-grab gap-5 active:cursor-grabbing"
-            drag="x"
-            dragConstraints={{ left: -maxIndex * cardStep, right: 0 }}
-            dragElastic={0.12}
-            animate={controls}
-            onDragEnd={handleDragEnd}
-          >
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.key}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
-                whileHover={{ y: -6, scale: 1.02 }}
-                className="relative w-[78%] shrink-0 select-none overflow-hidden rounded-[24px] bg-marica-cream p-6 shadow-[0_14px_35px_rgba(120,60,10,0.14)] transition-shadow hover:shadow-[0_20px_45px_rgba(120,60,10,0.22)] sm:w-[46%] lg:w-[24%]"
-              >
-                <Quote
-                  className="pointer-events-none absolute -right-2 -top-2 h-16 w-16 text-marica-amber/25"
-                  fill="currentColor"
-                />
-
-                <div className="relative flex items-center gap-3">
-                  <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-base font-semibold text-white ring-4 ring-white ${avatarColors[i % avatarColors.length]}`}
-                  >
-                    {t.name.replace("Bunda ", "")[0]}
-                  </div>
-                  <div className="leading-tight">
-                    <p className="font-display text-[15px] font-semibold text-marica-ink">
-                      {t.name}
-                    </p>
-                    <p className="font-body text-xs text-marica-ink-soft">
-                      {t.role}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative mt-4 flex items-center gap-0.5">
-                  {Array.from({ length: 5 }).map((_, si) => (
-                    <motion.span
-                      key={si}
-                      initial={{ opacity: 0, scale: 0.4 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true, amount: 0.6 }}
-                      transition={{ duration: 0.3, delay: i * 0.1 + 0.2 + si * 0.06 }}
-                    >
-                      <Star
-                        className="h-4 w-4 text-marica-amber-dark"
-                        fill="currentColor"
-                      />
-                    </motion.span>
-                  ))}
-                </div>
-
-                <p className="relative mt-4 font-body text-sm italic leading-relaxed text-marica-ink-soft">
-                  &quot;{t.quote}&quot;
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
+      {loading ? (
+        <div className="mt-12 text-center font-body text-sm text-marica-ink/60">
+          Memuat data...
         </div>
+      ) : testimonials.length === 0 ? (
+        <div className="mt-12 text-center font-body text-sm text-marica-ink/60">
+          Belum ada testimoni.
+        </div>
+      ) : (
+        <>
+          {/* Carousel */}
+          <div className="relative z-10 mx-auto mt-12 max-w-6xl lg:mt-16">
+            <div ref={viewportRef} className="overflow-hidden">
+              <motion.div
+                ref={trackRef}
+                className="flex cursor-grab gap-5 active:cursor-grabbing"
+                drag="x"
+                dragConstraints={{ left: -maxIndex * cardStep, right: 0 }}
+                dragElastic={0.12}
+                animate={controls}
+                onDragEnd={handleDragEnd}
+              >
+                {testimonials.map((t, i) => (
+                  <motion.div
+                    key={t.id}
+                    initial={{ opacity: 0, y: 28 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    className="relative w-[78%] shrink-0 select-none overflow-hidden rounded-[24px] bg-marica-cream p-6 shadow-[0_14px_35px_rgba(120,60,10,0.14)] transition-shadow hover:shadow-[0_20px_45px_rgba(120,60,10,0.22)] sm:w-[46%] lg:w-[24%]"
+                  >
+                    <Quote
+                      className="pointer-events-none absolute -right-2 -top-2 h-16 w-16 text-marica-amber/25"
+                      fill="currentColor"
+                    />
 
-        {/* Arrows */}
-        <button
-          type="button"
-          aria-label="Testimoni sebelumnya"
-          onClick={() => goTo(index - 1)}
-          disabled={index === 0}
-          className="absolute left-0 top-1/2 hidden -translate-x-4 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 text-marica-ink shadow-lg transition hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 lg:flex"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          aria-label="Testimoni berikutnya"
-          onClick={() => goTo(index + 1)}
-          disabled={index >= maxIndex}
-          className="absolute right-0 top-1/2 hidden translate-x-4 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 text-marica-ink shadow-lg transition hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 lg:flex"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
+                    <div className="relative flex items-center gap-3">
+                      <div
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-base font-semibold text-white ring-4 ring-white ${avatarColors[i % avatarColors.length]}`}
+                      >
+                        {t.customerName.replace("Bunda ", "")[0]}
+                      </div>
+                      <div className="leading-tight">
+                        <p className="font-display text-[15px] font-semibold text-marica-ink">
+                          {t.customerName}
+                        </p>
+                        {t.role && (
+                          <p className="font-body text-xs text-marica-ink-soft">{t.role}</p>
+                        )}
+                      </div>
+                    </div>
 
-      {/* Dots */}
-      <div className="relative z-10 mt-6 flex items-center justify-center gap-2">
-        {Array.from({ length: maxIndex + 1 }).map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Ke slide ${i + 1}`}
-            onClick={() => goTo(i)}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              index === i ? "w-6 bg-marica-ink" : "w-2 bg-marica-ink/30"
-            }`}
-          />
-        ))}
-      </div>
+                    <div className="relative mt-4 flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, si) => (
+                        <motion.span
+                          key={si}
+                          initial={{ opacity: 0, scale: 0.4 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true, amount: 0.6 }}
+                          transition={{ duration: 0.3, delay: i * 0.1 + 0.2 + si * 0.06 }}
+                        >
+                          <Star className="h-4 w-4 text-marica-amber-dark" fill="currentColor" />
+                        </motion.span>
+                      ))}
+                    </div>
+
+                    <p className="relative mt-4 font-body text-sm italic leading-relaxed text-marica-ink-soft">
+                      &quot;{t.message}&quot;
+                    </p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Arrows */}
+            <button
+              type="button"
+              aria-label="Testimoni sebelumnya"
+              onClick={() => goTo(index - 1)}
+              disabled={index === 0}
+              className="absolute left-0 top-1/2 hidden -translate-x-4 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 text-marica-ink shadow-lg transition hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 lg:flex"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Testimoni berikutnya"
+              onClick={() => goTo(index + 1)}
+              disabled={index >= maxIndex}
+              className="absolute right-0 top-1/2 hidden translate-x-4 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 text-marica-ink shadow-lg transition hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 lg:flex"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Dots */}
+          <div className="relative z-10 mt-6 flex items-center justify-center gap-2">
+            {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Ke slide ${i + 1}`}
+                onClick={() => goTo(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${index === i ? "w-6 bg-marica-ink" : "w-2 bg-marica-ink/30"
+                  }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }
