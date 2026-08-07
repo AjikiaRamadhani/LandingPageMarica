@@ -12,6 +12,7 @@ import ProgramDetailSection from "./components/ProgramDetailSection";
 import EventSection from "./components/EventSection";
 import FaqSection from "./components/FaqSection";
 import CtaSection from "./components/CtaSection";
+import Footer from "./components/Footer";
 export default function Home() {
   return (
     <main className="hero-gradient-bg flex min-h-screen flex-col">
@@ -28,6 +29,7 @@ export default function Home() {
       <EventSection />
       <FaqSection />
       <CtaSection />
+      <Footer />
       <WhatsAppButton />
     </main>
   );
