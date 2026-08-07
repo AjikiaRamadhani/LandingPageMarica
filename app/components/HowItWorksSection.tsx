@@ -1,0 +1,180 @@
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Compass, Gift, Wand2 } from "lucide-react";
+
+const steps = [
+  {
+    key: "pilih-aktivitas",
+    step: "STEP 1",
+    title: "Pilih Aktivitas",
+    description:
+      "Jelajahi berbagai modul pembelajaran dan pilih aktivitas yang paling sesuai dengan minat anak.",
+    icon: Compass,
+    iconBg: "bg-marica-amber/20",
+    iconText: "text-marica-amber-text",
+    labelText: "text-marica-amber-text",
+    image: "/images/how-it-works-step-1.png",
+    imageAlt: "Ibu dan anak memilih aktivitas belajar lewat tablet Marica",
+  },
+  {
+    key: "terima-kit",
+    step: "STEP 2",
+    title: "Datang atau Terima Kit",
+    description:
+      "Kunjungi Experience Store kami atau tunggu Edu Kit premium kami tiba langsung di depan pintu rumah Anda.",
+    icon: Gift,
+    iconBg: "bg-[#e0507a]/15",
+    iconText: "text-[#e0507a]",
+    labelText: "text-[#e0507a]",
+    image: "/images/how-it-works-step-2.png",
+    imageAlt: "Kotak Edu Kit Marica berisi perlengkapan aktivitas belajar",
+  },
+  {
+    key: "nikmati-momen",
+    step: "STEP 3",
+    title: "Nikmati Momen Belajar",
+    description:
+      "Ciptakan momen berharga saat mendampingi anak bermain sambil belajar dengan materi berkualitas tinggi.",
+    icon: Wand2,
+    iconBg: "bg-marica-blue/20",
+    iconText: "text-[#1f5f83]",
+    labelText: "text-[#1f5f83]",
+    image: "/images/how-it-works-step-3.png",
+    imageAlt: "Keluarga bermain dan belajar bersama di meja",
+  },
+];
+
+export default function HowItWorksSection() {
+  return (
+    <section className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
+      {/* decorative glow blobs, consistent with the rest of the page */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-14 top-10 h-56 w-56 rounded-full bg-white/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 bottom-0 h-64 w-64 rounded-full bg-white/10 blur-3xl"
+      />
+
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
+        <motion.h2
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.5 }}
+          className="font-display text-[1.7rem] font-semibold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
+        >
+          Bagaimana Marica Membantu?
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mx-auto mt-3 max-w-xl font-body text-sm leading-relaxed text-marica-ink/80 sm:text-base"
+        >
+          Tiga langkah sederhana untuk memulai pengalaman belajar yang
+          menyenangkan dan interaktif bersama Marica. Kami hadir untuk
+          membuat edukasi lebih ceria.
+        </motion.p>
+      </div>
+
+      {/* Steps */}
+      <div className="relative z-10 mx-auto mt-14 max-w-6xl lg:mt-16">
+        {/* connecting line drawn across the three steps on desktop */}
+        <motion.div
+          aria-hidden
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 1, ease: "easeInOut", delay: 0.3 }}
+          style={{ originX: 0 }}
+          className="absolute left-[16.5%] right-[16.5%] top-[68px] hidden h-0.5 bg-white/50 lg:block"
+        />
+
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+          {steps.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={item.key}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3, margin: "0px 0px -60px 0px" }}
+                transition={{ duration: 0.6, delay: i * 0.15, ease: "easeOut" }}
+                whileHover={{ y: -6 }}
+                className={`relative flex flex-col items-center rounded-[28px] bg-white p-6 text-center shadow-[0_18px_40px_rgba(120,60,10,0.15)] transition-shadow hover:shadow-[0_24px_50px_rgba(120,60,10,0.22)] sm:p-7 ${
+                  i === 2 ? "sm:col-span-2 sm:mx-auto sm:max-w-sm lg:col-span-1 lg:mx-0 lg:max-w-none" : ""
+                }`}
+              >
+                {/* icon badge */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 320,
+                    damping: 16,
+                    delay: i * 0.15 + 0.15,
+                  }}
+                  className={`relative z-10 flex h-16 w-16 items-center justify-center rounded-full ${item.iconBg}`}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{
+                      duration: 2.4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.4,
+                    }}
+                  >
+                    <Icon className={`h-7 w-7 ${item.iconText}`} strokeWidth={2} />
+                  </motion.div>
+                </motion.div>
+
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.4, delay: i * 0.15 + 0.25 }}
+                  className={`mt-4 font-display text-xs font-bold uppercase tracking-wider ${item.labelText}`}
+                >
+                  {item.step}
+                </motion.span>
+
+                <h3 className="mt-1.5 font-display text-lg font-bold leading-snug text-marica-ink sm:text-xl">
+                  {item.title}
+                </h3>
+
+                <p className="mt-2.5 font-body text-sm leading-relaxed text-marica-ink-soft">
+                  {item.description}
+                </p>
+
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.5, delay: i * 0.15 + 0.3, ease: "easeOut" }}
+                  whileHover={{ scale: 1.04 }}
+                  className="relative mt-5 w-full overflow-hidden rounded-2xl"
+                >
+                  <Image
+                    src={item.image}
+                    alt={item.imageAlt}
+                    width={420}
+                    height={260}
+                    className="h-40 w-full object-cover sm:h-44"
+                  />
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}

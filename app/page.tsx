@@ -7,6 +7,11 @@ import TestimonialSection from "./components/TestimonialSection";
 import BenefitsSection from "./components/BenefitsSection";
 import WhatsAppButton from "./components/WhatsAppButton";
 import TrustSection from "./components/TrustSection";
+import HowItWorksSection from "./components/HowItWorksSection";
+import ProgramDetailSection from "./components/ProgramDetailSection";
+import EventSection from "./components/EventSection";
+import FaqSection from "./components/FaqSection";
+import CtaSection from "./components/CtaSection";
 
 export default function Home() {
   return (
@@ -19,6 +24,11 @@ export default function Home() {
       <BenefitsSection />
       <TestimonialSection />
       <TrustSection />
+      <HowItWorksSection />
+      <ProgramDetailSection />
+      <EventSection />
+      <FaqSection />
+      <CtaSection />
       <WhatsAppButton />
     </main>
   );
