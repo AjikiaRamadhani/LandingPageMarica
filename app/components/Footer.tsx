@@ -38,10 +38,12 @@ const socials = [
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden rounded-t-[2.5rem] bg-marica-cream px-6 py-14 sm:px-10 lg:px-16">
+    <footer className="relative overflow-hidden rounded-t-[2.5rem] bg-marica-amber">
       {/* soft decorative blobs */}
-      <div className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-marica-amber/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-marica-amber/10 blur-3xl" />
+      <div className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-white/15 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+
+      <div className="relative px-6 py-14 sm:px-10 lg:px-16">
 
       <motion.div
         initial={{ opacity: 0, y: 28 }}
@@ -93,11 +95,11 @@ export default function Footer() {
               <li key={item.label}>
                 <Link
                   href={item.href}
-                  className="group inline-flex items-center font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-amber-dark"
+                  className="group inline-flex items-center font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
                 >
                   <span className="relative">
                     {item.label}
-                    <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-marica-amber-dark transition-all duration-300 group-hover:w-full" />
+                    <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-marica-ink transition-all duration-300 group-hover:w-full" />
                   </span>
                 </Link>
               </li>
@@ -121,11 +123,11 @@ export default function Footer() {
               <li key={item.label}>
                 <Link
                   href={item.href}
-                  className="group inline-flex items-center font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-amber-dark"
+                  className="group inline-flex items-center font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
                 >
                   <span className="relative">
                     {item.label}
-                    <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-marica-amber-dark transition-all duration-300 group-hover:w-full" />
+                    <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-marica-ink transition-all duration-300 group-hover:w-full" />
                   </span>
                 </Link>
               </li>
@@ -148,7 +150,7 @@ export default function Footer() {
             <li>
               <a
                 href="tel:+6282221491429"
-                className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-amber-dark"
+                className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
               >
                 <Phone className="h-4 w-4 shrink-0" />
                 +62 822 2149 1429
@@ -158,7 +160,7 @@ export default function Footer() {
             <li>
               <a
                 href="mailto:pt.sebangku@gmail.com"
-                className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-amber-dark"
+                className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
               >
                 <Mail className="h-4 w-4 shrink-0" />
                 pt.sebangku@gmail.com
@@ -168,7 +170,7 @@ export default function Footer() {
             <li>
               <a
                 href="https://marica.id"
-                className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-amber-dark"
+                className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
               >
                 <Globe className="h-4 w-4 shrink-0" />
                 www.marica.id
@@ -193,7 +195,7 @@ export default function Footer() {
                 }}
                 whileHover={{ scale: 1.15, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-marica-amber/15 text-marica-amber-dark transition-colors hover:bg-marica-amber-dark hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-marica-amber-dark transition-colors hover:bg-marica-ink hover:text-white"
               >
                 <s.icon className="h-4 w-4" />
               </motion.a>
@@ -204,28 +206,31 @@ export default function Footer() {
             </span>
           </div>
         </motion.div>
-      </motion.div>
+        </motion.div>
+      </div>
 
-      {/* divider */}
-      <motion.div
-        initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: 1 }}
-        viewport={{ once: true, amount: 0.6 }}
-        transition={{ duration: 0.8, ease: "easeInOut", delay: 0.2 }}
-        style={{ originX: 0.5 }}
-        className="relative mx-auto mt-10 h-px w-full max-w-7xl bg-marica-ink/10"
-      />
+      {/* bottom bar */}
+      <div className="relative bg-marica-amber-dark px-6 py-5 sm:px-10 lg:px-16">
+        <motion.div
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+          style={{ originX: 0.5 }}
+          className="mx-auto mb-4 h-px w-full max-w-7xl bg-white/15"
+        />
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true, amount: 0.6 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="relative mt-6 text-center font-body text-xs text-marica-ink-soft/80"
-      >
-        © 2025 Marica Calistung - PT Sebangku Jaya Abadi. All rights
-        reserved.
-      </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="text-center font-body text-xs text-white/80"
+        >
+          © 2025 Marica Calistung - PT Sebangku Jaya Abadi. All rights
+          reserved.
+        </motion.p>
+      </div>
     </footer>
   );
 }

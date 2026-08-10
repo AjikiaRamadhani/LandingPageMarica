@@ -8,8 +8,6 @@ import WhatsAppButton from "./components/WhatsAppButton";
 import TrustSection from "./components/TrustSection";
 import SubjectSection from "./components/SubjectSection";
 import HowItWorksSection from "./components/HowItWorksSection";
-import ProgramDetailSection from "./components/ProgramDetailSection";
-import EventSection from "./components/EventSection";
 import FaqSection from "./components/FaqSection";
 import CtaSection from "./components/CtaSection";
 import Footer from "./components/Footer";
@@ -25,8 +23,6 @@ export default function Home() {
       <TestimonialSection />
       <TrustSection />
       <HowItWorksSection />
-      <ProgramDetailSection />
-      <EventSection />
       <FaqSection />
       <CtaSection />
       <Footer />

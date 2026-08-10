@@ -71,11 +71,27 @@ export default function FaqSection() {
   const [openKey, setOpenKey] = useState<string | null>(faqs[0].key);
 
   return (
-    <section className="relative overflow-hidden bg-marica-cream px-6 py-20 lg:px-10 lg:py-28">
-      <CloudShape className="pointer-events-none absolute -left-4 top-6 h-12 w-20 text-marica-amber/25 sm:h-16 sm:w-28" />
+    <section className="relative overflow-hidden bg-marica-amber px-6 pb-24 pt-20 lg:px-10 lg:pb-32 lg:pt-28">
+      {/* decorative floating clouds */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -left-4 top-16 text-white/25"
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <CloudShape className="h-12 w-20 sm:h-16 sm:w-28" />
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute right-4 top-10 text-white/20"
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+      >
+        <CloudShape className="h-10 w-16 sm:h-14 sm:w-24" />
+      </motion.div>
       <div
         aria-hidden
-        className="pointer-events-none absolute right-0 top-1/3 h-56 w-56 rounded-full bg-marica-amber/10 blur-3xl"
+        className="pointer-events-none absolute right-0 top-1/3 h-56 w-56 rounded-full bg-white/10 blur-3xl"
       />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
@@ -93,7 +109,7 @@ export default function FaqSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink-soft sm:text-base"
+          className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink/75 sm:text-base"
         >
           Masih ada pertanyaan? Kami sudah merangkum pertanyaan yang paling
           sering ditanyakan oleh Bunda.
@@ -114,7 +130,7 @@ export default function FaqSection() {
                 margin: "0px 0px -60px 0px",
               }}
               transition={{ duration: 0.5, delay: i * 0.08, ease: "easeOut" }}
-              className="overflow-hidden rounded-2xl bg-white/70 shadow-[0_6px_18px_rgba(120,60,10,0.06)]"
+              className="overflow-hidden rounded-2xl bg-marica-cream shadow-[0_8px_20px_rgba(120,60,10,0.15)]"
             >
               <button
                 type="button"
@@ -158,6 +174,25 @@ export default function FaqSection() {
             </motion.div>
           );
         })}
+      </div>
+
+      {/* animated wave at the bottom edge */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-8 overflow-hidden leading-[0] sm:h-10"
+      >
+        <motion.svg
+          viewBox="0 0 2400 60"
+          className="h-full w-[200%]"
+          preserveAspectRatio="none"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        >
+          <path
+            d="M0 30C100 5 200 5 300 30C400 55 500 55 600 30C700 5 800 5 900 30C1000 55 1100 55 1200 30C1300 5 1400 5 1500 30C1600 55 1700 55 1800 30C1900 5 2000 5 2100 30C2200 55 2300 55 2400 30V60H0V30Z"
+            fill="#a9d9f0"
+          />
+        </motion.svg>
       </div>
     </section>
   );
