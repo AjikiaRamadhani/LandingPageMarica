@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import BackgroundDoodles from "./BackgroundDoodles";
 
 type PainPoint = {
   id: string;
@@ -43,8 +44,10 @@ export default function ProblemSection() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#fff8ef] via-marica-amber to-marica-amber-dark px-6 py-20 lg:px-10 lg:py-28">
-      <div className="mx-auto max-w-3xl text-center">
+    <section className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
+      <BackgroundDoodles />
+
+      <div className="relative z-10 mx-auto max-w-3xl text-center">
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -67,15 +70,15 @@ export default function ProblemSection() {
       </div>
 
       {loading ? (
-        <div className="mt-12 text-center font-body text-sm text-marica-ink/60">
+        <div className="relative z-10 mt-12 text-center font-body text-sm text-marica-ink/60">
           Memuat data...
         </div>
       ) : error ? (
-        <div className="mt-12 text-center font-body text-sm text-red-600">
+        <div className="relative z-10 mt-12 text-center font-body text-sm text-red-600">
           {error}
         </div>
       ) : (
-        <div className="mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3">
+        <div className="relative z-10 mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3">
           {problems.map((item, i) => (
             <motion.div
               key={item.id}

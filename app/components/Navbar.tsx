@@ -15,9 +15,10 @@ const navLinks = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <header className="relative z-30">
+    <header className="relative z-30 bg-gradient-to-b from-marica-cream via-marica-cream/70 to-transparent">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10">
         {/* Logo */}
         <a href="/" className="flex shrink-0 items-center gap-3">
@@ -35,20 +36,32 @@ export default function Navbar() {
         </a>
 
         {/* Nav links */}
-        <div className="hidden items-center gap-8 font-body text-[15px] font-medium text-marica-ink-soft lg:flex">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={
-                link.active
-                  ? "relative pb-1 text-marica-amber-text after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-marica-amber-dark"
-                  : "transition hover:text-marica-ink"
-              }
-            >
-              {link.label}
-            </a>
-          ))}
+        <div
+          className="relative hidden items-center gap-1 font-body text-[15px] font-medium text-marica-ink-soft lg:flex"
+          onMouseLeave={() => setHoveredIndex(null)}
+        >
+          {navLinks.map((link, i) => {
+            const isHighlighted = hoveredIndex === i || (hoveredIndex === null && link.active);
+            return (
+              <a
+                key={link.label}
+                href={link.href}
+                onMouseEnter={() => setHoveredIndex(i)}
+                className={`relative rounded-full px-4 py-2 transition-colors ${
+                  isHighlighted ? "text-marica-amber-text" : "hover:text-marica-ink"
+                }`}
+              >
+                {isHighlighted && (
+                  <motion.span
+                    layoutId="nav-hover-pill"
+                    className="absolute inset-0 -z-10 rounded-full bg-marica-amber/15"
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                  />
+                )}
+                <span className="relative z-10">{link.label}</span>
+              </a>
+            );
+          })}
         </div>
 
         {/* Auth button */}

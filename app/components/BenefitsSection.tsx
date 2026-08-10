@@ -15,6 +15,7 @@ import {
   Pin,
   type LucideIcon,
 } from "lucide-react";
+import BackgroundDoodles from "./BackgroundDoodles";
 
 type Benefit = {
   id: string;
@@ -112,14 +113,7 @@ export default function BenefitsSection() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-marica-amber via-marica-amber to-marica-amber-dark px-6 py-20 lg:px-10 lg:py-28">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-10 top-6 h-56 w-56 rounded-full bg-white/10 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute right-0 top-40 h-48 w-48 rounded-full bg-white/10 blur-3xl"
-      />
+      <BackgroundDoodles />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
         <motion.h2
