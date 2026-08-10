@@ -18,6 +18,26 @@ export { Prisma }
 export * as $Enums from './enums'
 export * from './enums';
 /**
+ * Model User
+ * 
+ */
+export type User = Prisma.UserModel
+/**
+ * Model Account
+ * 
+ */
+export type Account = Prisma.AccountModel
+/**
+ * Model Session
+ * 
+ */
+export type Session = Prisma.SessionModel
+/**
+ * Model VerificationToken
+ * 
+ */
+export type VerificationToken = Prisma.VerificationTokenModel
+/**
  * Model CompanyProfile
  * 
  */
@@ -48,16 +68,6 @@ export type PainPoint = Prisma.PainPointModel
  */
 export type Solution = Prisma.SolutionModel
 /**
- * Model LearningCategory
- * 
- */
-export type LearningCategory = Prisma.LearningCategoryModel
-/**
- * Model Subject
- * 
- */
-export type Subject = Prisma.SubjectModel
-/**
  * Model Benefit
  * 
  */
@@ -68,40 +78,10 @@ export type Benefit = Prisma.BenefitModel
  */
 export type HowItWorksStep = Prisma.HowItWorksStepModel
 /**
- * Model Activity
- * 
- */
-export type Activity = Prisma.ActivityModel
-/**
  * Model Testimonial
  * 
  */
 export type Testimonial = Prisma.TestimonialModel
-/**
- * Model Partner
- * 
- */
-export type Partner = Prisma.PartnerModel
-/**
- * Model TrustStat
- * 
- */
-export type TrustStat = Prisma.TrustStatModel
-/**
- * Model Program
- * 
- */
-export type Program = Prisma.ProgramModel
-/**
- * Model ProgramDetail
- * 
- */
-export type ProgramDetail = Prisma.ProgramDetailModel
-/**
- * Model Event
- * 
- */
-export type Event = Prisma.EventModel
 /**
  * Model Faq
  * 

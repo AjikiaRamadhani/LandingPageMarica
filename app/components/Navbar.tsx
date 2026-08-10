@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -13,9 +13,26 @@ const navLinks = [
   { label: "FAQ", href: "#faq" },
 ];
 
+type ApiCompany = {
+  name: string;
+  logoUrl: string | null;
+};
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [company, setCompany] = useState<ApiCompany | null>(null);
+
+  useEffect(() => {
+    fetch("/api/company")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error) {
+          setCompany(data);
+        }
+      })
+      .catch((err) => console.error("Failed to load company profile", err));
+  }, []);
 
   return (
     <header className="relative z-30 bg-gradient-to-b from-marica-cream via-marica-cream/70 to-transparent">
@@ -23,15 +40,15 @@ export default function Navbar() {
         {/* Logo */}
         <a href="/" className="flex shrink-0 items-center gap-3">
           <Image
-            src="/images/logo.png"
-            alt="Marica"
+            src={company?.logoUrl || "/images/logo.png"}
+            alt={company?.name || "Marica"}
             width={500}
             height={500}
             priority
             className="h-15 w-20 object-contain"
           />
           {/* <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
-            Marica
+            {company?.name || "Marica"}
           </span> */}
         </a>
 

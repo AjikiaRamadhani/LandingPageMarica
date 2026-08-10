@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, MapPin, MessageCircle } from "lucide-react";
@@ -21,13 +22,38 @@ function StarShape({ className }: { className?: string }) {
   );
 }
 
-const contacts = [
-  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
-  { key: "instagram", label: "Instagram", icon: Instagram },
-  { key: "location", label: "Location", icon: MapPin },
-];
+type ApiCompany = {
+  phone: string | null;
+  instagram: string | null;
+  address: string | null;
+};
 
 export default function CtaSection() {
+  const [company, setCompany] = useState<ApiCompany | null>(null);
+
+  useEffect(() => {
+    fetch("/api/company")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error) {
+          setCompany(data);
+        }
+      })
+      .catch((err) => console.error("Failed to load company profile", err));
+  }, []);
+
+  const phoneRaw = company?.phone || "+62 822 2149 1429";
+  const phoneClean = phoneRaw.replace(/[^0-9+]/g, "");
+  const waLink = `https://wa.me/${phoneClean.replace('+', '')}`;
+  const igLink = company?.instagram ? `https://instagram.com/${company.instagram.replace('@', '')}` : "#";
+  const mapsLink = company?.address ? `https://maps.google.com/?q=${encodeURIComponent(company.address)}` : "#";
+
+  const contacts = [
+    { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, href: waLink },
+    { key: "instagram", label: "Instagram", icon: Instagram, href: igLink },
+    { key: "location", label: "Location", icon: MapPin, href: mapsLink },
+  ];
+
   return (
     <section className="relative bg-marica-cream px-6 pb-20 lg:px-10 lg:pb-28">
       <motion.div
@@ -119,7 +145,9 @@ export default function CtaSection() {
               {contacts.map((c) => (
                 <a
                   key={c.key}
-                  href="#"
+                  href={c.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-1.5 font-body text-xs font-medium text-marica-ink/70 transition-colors hover:text-marica-ink"
                 >
                   <c.icon className="h-3.5 w-3.5" />

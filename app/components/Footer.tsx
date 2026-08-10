@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -15,28 +16,63 @@ import {
 const navigasi = [
   { label: "Beranda", href: "#" },
   { label: "Tentang Kami", href: "#" },
-  { label: "Kursus", href: "#" },
-  { label: "Kontak", href: "#" },
+  { label: "Program & Aktivitas", href: "#" },
+  { label: "FAQ", href: "#" },
 ];
 
 const layanan = [
-  { label: "Kursus Membaca", href: "#" },
-  { label: "Kursus Menulis", href: "#" },
-  { label: "Kursus Berhitung", href: "#" },
-  { label: "Workshop", href: "#" },
+  { label: "Area Bermain (Playpass)", href: "#" },
+  { label: "Weekend Workshop", href: "#" },
+  { label: "Edu-Kit Bulanan", href: "#" },
+  { label: "Kemitraan & Event", href: "#" },
 ];
 
 function TikTokIcon({ className }: { className?: string }) {
   return <FaTiktok className={className} />;
 }
 
-const socials = [
-  { key: "youtube", icon: Youtube, href: "#", label: "YouTube" },
-  { key: "tiktok", icon: TikTokIcon, href: "#", label: "TikTok" },
-  { key: "instagram", icon: Instagram, href: "#", label: "Instagram" },
-];
+type ApiCompany = {
+  name: string;
+  description: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  instagram: string | null;
+  tiktok: string | null;
+  youtube: string | null;
+  logoUrl: string | null;
+};
 
 export default function Footer() {
+  const [company, setCompany] = useState<ApiCompany | null>(null);
+
+  useEffect(() => {
+    fetch("/api/company")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error) {
+          setCompany(data);
+        }
+      })
+      .catch((err) => console.error("Failed to load company profile", err));
+  }, []);
+
+  // Fallbacks
+  const description = company?.description || "Pusat pengalaman edukasi keluarga berkonsep phygital yang memadukan ritel buku, board game edukatif, dan aktivitas interaktif.";
+  const phone = company?.phone || "+62 822 2149 1429";
+  const email = company?.email || "pt.sebangku@gmail.com";
+  const website = company?.website || "www.marica.id";
+  const instagramId = company?.instagram || "@kids.marica";
+  
+  // Clean phone for tel: link
+  const phoneClean = phone.replace(/[^0-9+]/g, "");
+
+  const socials = [
+    { key: "youtube", icon: Youtube, href: company?.youtube || "#", label: "YouTube" },
+    { key: "tiktok", icon: TikTokIcon, href: company?.tiktok || "#", label: "TikTok" },
+    { key: "instagram", icon: Instagram, href: company?.instagram ? `https://instagram.com/${company.instagram.replace('@', '')}` : "#", label: "Instagram" },
+  ];
+
   return (
     <footer className="relative overflow-hidden rounded-t-[2.5rem] bg-marica-amber">
       {/* soft decorative blobs */}
@@ -65,8 +101,8 @@ export default function Footer() {
             className="w-32"
           >
             <Image
-              src="/images/logo.png"
-              alt="Marica - Math with a Smile"
+              src={company?.logoUrl || "/images/logo.png"}
+              alt={`${company?.name || "Marica"} - Math with a Smile`}
               width={200}
               height={80}
               className="h-auto w-full select-none"
@@ -75,7 +111,7 @@ export default function Footer() {
           </motion.div>
 
           <p className="mt-4 max-w-xs font-body text-sm leading-relaxed text-marica-ink-soft">
-            Platform edukasi Calistung terbaik untuk anak-anak Indonesia
+            {description}
           </p>
         </motion.div>
 
@@ -149,31 +185,31 @@ export default function Footer() {
           <ul className="mt-4 space-y-3">
             <li>
               <a
-                href="tel:+6282221491429"
+                href={`tel:${phoneClean}`}
                 className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
               >
                 <Phone className="h-4 w-4 shrink-0" />
-                +62 822 2149 1429
+                {phone}
               </a>
             </li>
 
             <li>
               <a
-                href="mailto:pt.sebangku@gmail.com"
+                href={`mailto:${email}`}
                 className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
               >
                 <Mail className="h-4 w-4 shrink-0" />
-                pt.sebangku@gmail.com
+                {email}
               </a>
             </li>
 
             <li>
               <a
-                href="https://marica.id"
+                href={website.startsWith("http") ? website : `https://${website}`}
                 className="flex items-center gap-2.5 font-body text-sm text-marica-ink-soft transition-colors hover:text-marica-ink"
               >
                 <Globe className="h-4 w-4 shrink-0" />
-                www.marica.id
+                {website.replace(/^https?:\/\//, '')}
               </a>
             </li>
           </ul>
@@ -202,7 +238,7 @@ export default function Footer() {
             ))}
 
             <span className="ml-1 font-body text-sm text-marica-ink-soft">
-              @kids.marica
+              {instagramId}
             </span>
           </div>
         </motion.div>
@@ -227,7 +263,7 @@ export default function Footer() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-center font-body text-xs text-white/80"
         >
-          © 2025 Marica Calistung - PT Sebangku Jaya Abadi. All rights
+          © 2025 {company?.name || "Marica Experience Store"} - PT Sebangku Jaya Abadi. All rights
           reserved.
         </motion.p>
       </div>

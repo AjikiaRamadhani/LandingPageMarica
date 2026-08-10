@@ -4,49 +4,92 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Compass, Gift, Wand2 } from "lucide-react";
 
-const steps = [
+const defaultSteps = [
   {
     key: "pilih-aktivitas",
-    step: "STEP 1",
-    title: "Pilih Aktivitas",
+    step: "LANGKAH 1",
+    title: "Pilih Aktivitas Favorit",
+    subtitle: "Jelajahi Pilihan Bermain & Belajar",
     description:
-      "Jelajahi berbagai modul pembelajaran dan pilih aktivitas yang paling sesuai dengan minat anak.",
+      "Pilih pengalaman yang cocok untuk Si Kecil melalui situs web kami—mulai dari main di area Playpass, ikutan Workshop akhir pekan, atau berlangganan Edu-Kit bulanan untuk di rumah.",
     icon: Compass,
     iconBg: "bg-marica-amber/20",
     iconText: "text-marica-amber-text",
     labelText: "text-marica-amber-text",
     image: "/images/how-it-works-step-1.png",
-    imageAlt: "Ibu dan anak memilih aktivitas belajar lewat tablet Marica",
+    imageAlt: "Memilih aktivitas favorit",
   },
   {
     key: "terima-kit",
-    step: "STEP 2",
-    title: "Datang atau Terima Kit",
+    step: "LANGKAH 2",
+    title: "Datang Langsung atau Terima di Rumah",
+    subtitle: "Fleksibel Sesuai Kebutuhan Bunda",
     description:
-      "Kunjungi Experience Store kami atau tunggu Edu Kit premium kami tiba langsung di depan pintu rumah Anda.",
+      "Datang langsung ke toko fisik Marica Experience Store untuk seru-seruan bersama, atau cukup duduk manis di rumah menunggu paket Edu-Kit dikirim langsung ke depan pintu.",
     icon: Gift,
     iconBg: "bg-[#e0507a]/15",
     iconText: "text-[#e0507a]",
     labelText: "text-[#e0507a]",
     image: "/images/how-it-works-step-2.png",
-    imageAlt: "Kotak Edu Kit Marica berisi perlengkapan aktivitas belajar",
+    imageAlt: "Datang langsung atau terima di rumah",
   },
   {
     key: "nikmati-momen",
-    step: "STEP 3",
-    title: "Nikmati Momen Belajar",
+    step: "LANGKAH 3",
+    title: "Nikmati Momen Belajar Ceria",
+    subtitle: "Lihat Si Kecil Tumbuh Makin Kreatif & Cerdas",
     description:
-      "Ciptakan momen berharga saat mendampingi anak bermain sambil belajar dengan materi berkualitas tinggi.",
+      "Nikmati momen quality time yang hangat, bebas pusing, dan penuh tawa saat melihat anak aktif mengeksplorasi imajinasi serta logikanya lewat cara yang menyenangkan.",
     icon: Wand2,
     iconBg: "bg-marica-blue/20",
     iconText: "text-[#1f5f83]",
     labelText: "text-[#1f5f83]",
     image: "/images/how-it-works-step-3.png",
-    imageAlt: "Keluarga bermain dan belajar bersama di meja",
+    imageAlt: "Momen belajar ceria",
   },
 ];
 
+type ApiStep = {
+  id: string;
+  stepNumber: number;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  imageUrl: string | null;
+  order: number;
+};
+
+import { useEffect, useState } from "react";
+
 export default function HowItWorksSection() {
+  const [steps, setSteps] = useState(defaultSteps);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/how-it-works")
+      .then((res) => res.json())
+      .then((data: ApiStep[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Merge API data with default styling
+          const mergedSteps = data.map((item, i) => {
+            const defaultStep = defaultSteps[i % defaultSteps.length];
+            return {
+              ...defaultStep,
+              key: item.id,
+              step: `LANGKAH ${item.stepNumber}`,
+              title: item.title,
+              description: item.description || defaultStep.description,
+              image: item.imageUrl || defaultStep.image,
+              subtitle: "", // API doesn't provide subtitle, we can either clear it or keep default
+            };
+          });
+          setSteps(mergedSteps);
+        }
+      })
+      .catch((err) => console.error("Failed to load how-it-works", err))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
       {/* decorative glow blobs, consistent with the rest of the page */}
@@ -151,6 +194,11 @@ export default function HowItWorksSection() {
                   <h3 className="mt-1 font-display text-base font-bold leading-snug text-marica-ink">
                     {item.title}
                   </h3>
+                  {item.subtitle && (
+                    <p className="mt-0.5 font-display text-sm font-semibold text-marica-amber-dark">
+                      {item.subtitle}
+                    </p>
+                  )}
 
                   <p className="mt-2 font-body text-sm leading-relaxed text-marica-ink-soft">
                     {item.description}
@@ -246,6 +294,11 @@ export default function HowItWorksSection() {
                 <h3 className="mt-1.5 font-display text-lg font-bold leading-snug text-marica-ink sm:text-xl">
                   {item.title}
                 </h3>
+                {item.subtitle && (
+                  <p className="mt-1 font-display text-sm font-semibold text-marica-amber-dark sm:text-base">
+                    {item.subtitle}
+                  </p>
+                )}
 
                 <p className="mt-2.5 font-body text-sm leading-relaxed text-marica-ink-soft">
                   {item.description}

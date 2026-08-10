@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 
-const faqs = [
+const defaultFaqs = [
   {
     key: "usia",
     emoji: "👶",
@@ -48,11 +48,19 @@ const faqs = [
     iconBg: "bg-marica-amber/20",
     iconText: "text-marica-amber-text",
     question:
-      "Bisakah Marica menyelenggarakan acara sekolah, privat, atau ulang tahun?",
+      "Bisakah Marica menyelenggarkan acara sekolah, privat, atau ulang tahun?",
     answer:
       "Sangat bisa! Kami menyediakan paket perayaan ulang tahun edukatif, penyewaan seluruh area toko (space renting), hingga program pelatihan media ajar edugame untuk guru dan sekolah.",
   },
 ];
+
+type ApiFaq = {
+  id: string;
+  question: string;
+  answer: string;
+  icon: string | null;
+  order: number;
+};
 
 function CloudShape({ className }: { className?: string }) {
   return (
@@ -67,8 +75,33 @@ function CloudShape({ className }: { className?: string }) {
   );
 }
 
+import { useEffect } from "react";
+
 export default function FaqSection() {
-  const [openKey, setOpenKey] = useState<string | null>(faqs[0].key);
+  const [faqs, setFaqs] = useState(defaultFaqs);
+  const [openKey, setOpenKey] = useState<string | null>(defaultFaqs[0].key);
+
+  useEffect(() => {
+    fetch("/api/faqs")
+      .then((res) => res.json())
+      .then((data: ApiFaq[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mergedFaqs = data.map((item, i) => {
+            const defaultFaq = defaultFaqs[i % defaultFaqs.length];
+            return {
+              ...defaultFaq,
+              key: item.id,
+              question: item.question,
+              answer: item.answer,
+              emoji: item.icon || defaultFaq.emoji,
+            };
+          });
+          setFaqs(mergedFaqs);
+          setOpenKey(mergedFaqs[0].key);
+        }
+      })
+      .catch((err) => console.error("Failed to load faqs", err));
+  }, []);
 
   return (
     <section className="relative overflow-hidden bg-marica-amber px-6 pb-24 pt-20 lg:px-10 lg:pb-32 lg:pt-28">

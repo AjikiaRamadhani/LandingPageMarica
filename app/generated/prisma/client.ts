@@ -31,8 +31,8 @@ export * from "./enums"
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more CompanyProfiles
- * const companyProfiles = await prisma.companyProfile.findMany()
+ * // Fetch zero or more Users
+ * const users = await prisma.user.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -41,6 +41,26 @@ export const PrismaClient = $Class.getPrismaClientClass()
 export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"], ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>
 export { Prisma }
 
+/**
+ * Model User
+ * 
+ */
+export type User = Prisma.UserModel
+/**
+ * Model Account
+ * 
+ */
+export type Account = Prisma.AccountModel
+/**
+ * Model Session
+ * 
+ */
+export type Session = Prisma.SessionModel
+/**
+ * Model VerificationToken
+ * 
+ */
+export type VerificationToken = Prisma.VerificationTokenModel
 /**
  * Model CompanyProfile
  * 
@@ -72,16 +92,6 @@ export type PainPoint = Prisma.PainPointModel
  */
 export type Solution = Prisma.SolutionModel
 /**
- * Model LearningCategory
- * 
- */
-export type LearningCategory = Prisma.LearningCategoryModel
-/**
- * Model Subject
- * 
- */
-export type Subject = Prisma.SubjectModel
-/**
  * Model Benefit
  * 
  */
@@ -92,40 +102,10 @@ export type Benefit = Prisma.BenefitModel
  */
 export type HowItWorksStep = Prisma.HowItWorksStepModel
 /**
- * Model Activity
- * 
- */
-export type Activity = Prisma.ActivityModel
-/**
  * Model Testimonial
  * 
  */
 export type Testimonial = Prisma.TestimonialModel
-/**
- * Model Partner
- * 
- */
-export type Partner = Prisma.PartnerModel
-/**
- * Model TrustStat
- * 
- */
-export type TrustStat = Prisma.TrustStatModel
-/**
- * Model Program
- * 
- */
-export type Program = Prisma.ProgramModel
-/**
- * Model ProgramDetail
- * 
- */
-export type ProgramDetail = Prisma.ProgramDetailModel
-/**
- * Model Event
- * 
- */
-export type Event = Prisma.EventModel
 /**
  * Model Faq
  * 

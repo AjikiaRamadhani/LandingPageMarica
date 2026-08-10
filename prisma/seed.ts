@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaClient } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -5,23 +6,15 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Bersihin data lama biar seed bisa dijalanin ulang tanpa duplikat
+  // Bersihin data lama
   await prisma.testimonial.deleteMany();
-  await prisma.activity.deleteMany();
   await prisma.heroBadge.deleteMany();
   await prisma.heroSection.deleteMany();
   await prisma.statistic.deleteMany();
   await prisma.painPoint.deleteMany();
   await prisma.solution.deleteMany();
-  await prisma.learningCategory.deleteMany();
-  await prisma.subject.deleteMany();
   await prisma.benefit.deleteMany();
   await prisma.howItWorksStep.deleteMany();
-  await prisma.trustStat.deleteMany();
-  await prisma.partner.deleteMany();
-  await prisma.programDetail.deleteMany();
-  await prisma.program.deleteMany();
-  await prisma.event.deleteMany();
   await prisma.faq.deleteMany();
   await prisma.companyProfile.deleteMany();
 
@@ -46,7 +39,7 @@ async function main() {
     data: {
       headline: "Ciptakan Momen Belajar Ceria dan Bermakna Bersama Si Kecil Setiap Hari",
       subheadline:
-        "Bingung mencari aktivitas bermanfaat untuk anak? Dari area bermain fisik, workshop akhir pekan, hingga Edu-Kit bulanan, Marica hadir menemani perjalanan belajar keluarga.",
+        "Bingung mencari aktivitas bermanfaat untuk anak? Dari keseruan area bermain fisik, workshop akhir pekan, hingga paket edukasi rutin di rumah, Marica siap mendampingi tiap tahapan tumbuh kembang anak Anda.",
       imageUrl: "/images/hero-character.png",
       ctaText: "Eksplor Serunya Marica",
       ctaLink: "#program",
@@ -70,25 +63,25 @@ async function main() {
     ],
   });
 
-  // 4. Pain Points (Problem) - sekarang dengan imageUrl asli
+  // 4. Pain Points (Problem)
   await prisma.painPoint.createMany({
     data: [
       {
-        title: "Bingung Mau Ajak Anak Main?",
+        title: "Bingung Mau Ajak Anak Main ke Mana Lagi?",
         description:
           "Bosan dengan tempat rekreasi yang itu-itu saja dan cuma bikin anak muter-muter tanpa dapat manfaat atau stimulasi belajar yang berarti.",
         imageUrl: "/images/problem-playground.png",
         order: 1,
       },
       {
-        title: "Habis Ide Aktivitas di Rumah",
+        title: "Habis Ide Bikin Aktivitas Seru di Rumah",
         description:
-          "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri.",
+          "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri dari nol.",
         imageUrl: "/images/problem-athome.png",
         order: 2,
       },
       {
-        title: "Mainan Cepat Membosankan",
+        title: "Mainan Anak Cuma Jadi Pajangan & Gampang Bikin Bosan",
         description:
           "Sudah beli banyak mainan, tapi cuma dimainkan sekali-dua kali lalu ditinggal begitu saja karena kurang interaktif dan nggak ada alur permainan yang seru untuk dimainkan bareng.",
         imageUrl: "/images/problem-bored.png",
@@ -97,65 +90,7 @@ async function main() {
     ],
   });
 
-  // 5. Learning Categories ("Mengapa Memilih Marica?") - dengan imageUrl asli
-  await prisma.learningCategory.createMany({
-    data: [
-      {
-        name: "Story Telling",
-        colorTag: "purple",
-        imageUrl: "/images/why-story-telling.png",
-        order: 1,
-      },
-      {
-        name: "Play Based Learning",
-        colorTag: "teal",
-        imageUrl: "/images/why-play-based-learning.png",
-        order: 2,
-      },
-      {
-        name: "Problem Solving",
-        colorTag: "pink",
-        imageUrl: "/images/why-problem-solving.png",
-        order: 3,
-      },
-    ],
-  });
-
-  // 6. Subjects ("Apa yang Ingin Dipelajari Si Kecil?") - dengan mascotImageUrl asli
-  await prisma.subject.createMany({
-    data: [
-      {
-        title: "Matematika",
-        colorTag: "purple",
-        mascotImageUrl: "/images/program-matematika-mascot.png",
-        cognitiveDomainTags: ["Knowing", "Applying", "Reasoning"],
-        contentDomainItems: [
-          "Number & Operation",
-          "Algebra",
-          "Geometry",
-          "Measurement",
-          "Data Analysis & Probability",
-        ],
-        order: 1,
-      },
-      {
-        title: "Bahasa",
-        colorTag: "pink",
-        mascotImageUrl: "/images/program-bahasa-mascot.png",
-        cognitiveDomainTags: ["Pre Reading", "Reading", "Post Reading"],
-        contentDomainItems: [
-          "Six Syllables",
-          "A I U E O",
-          "Sound Recognition",
-          "Reading Stories",
-          "Upper & Lower Letters",
-        ],
-        order: 2,
-      },
-    ],
-  });
-
-  // 7. Benefits ("Apa yang Didapatkan Bunda & Si Kecil?") - dengan imageUrl asli
+  // 7. Benefits ("Apa yang Didapatkan Bunda & Si Kecil?")
   await prisma.benefit.createMany({
     data: [
       {
@@ -163,7 +98,7 @@ async function main() {
         icon: "💡",
         title: "Bermain Sambil Melatih Logika & Kreativitas",
         description:
-          "Anak-anak diajak berpikir kritis, memecahkan masalah, dan mengasah imajinasi melalui board game, buku interaktif, workshop sains, dan craft kit.",
+          "Anak-anak diajak berpikir kritis, memecahkan masalah, dan mengasah imajinasi lewat ratusan board game pilihan, buku interaktif, dan workshop sains serta kriya (craft kit).",
         imageUrl: "/images/benefit-logika-kreativitas.png",
         tags: ["Board Game", "Buku Interaktif", "Workshop", "Craft Kit"],
         order: 1,
@@ -173,7 +108,7 @@ async function main() {
         icon: "🤝",
         title: "Menguatkan Bonding Ibu & Anak",
         description:
-          "Menciptakan quality time yang hangat dan menyenangkan melalui sesi bermain meja serta kelas edukasi interaktif.",
+          "Menciptakan quality time yang hangat dan penuh tawa bersama keluarga melalui sesi bermain meja (Table-fee) dan kelas edukasi interaktif.",
         imageUrl: "/images/benefit-family-bonding.png",
         tags: ["Quality Time", "Table Fee", "Kelas Edukasi"],
         order: 2,
@@ -183,7 +118,7 @@ async function main() {
         icon: "🎉",
         title: "Rekreasi Seru yang Berbobot Edukasi",
         description:
-          "Playpass menghadirkan pengalaman bermain yang aman, nyaman, dan mendukung perkembangan karakter anak.",
+          "Alternatif tempat main fisik (Playpass) yang tidak hanya menyenangkan, tetapi juga aman, nyaman, dan mendukung perkembangan karakter serta sosialisasi anak.",
         imageUrl: "/images/benefit-edu-recreation.png",
         tags: ["Playpass", "Aman", "Sosialisasi", "Karakter Positif"],
         order: 3,
@@ -193,7 +128,7 @@ async function main() {
         icon: "📦",
         title: "Praktis! Inspirasi Main Tanpa Ribet di Rumah",
         description:
-          "Edu-Kit bulanan menghadirkan aktivitas kreatif lengkap langsung ke rumah dengan panduan yang mudah diikuti.",
+          "Lewat layanan Edu-Kit & Langganan Bulanan, Bunda tak perlu pusing lagi memikirkan ide permainan kreatif—bahan dan panduan aktivitas langsung dikirim rapi ke rumah.",
         imageUrl: "/images/benefit-home-learning.png",
         tags: ["Edu Kit", "Langganan", "Aktivitas Rumah", "Panduan"],
         order: 4,
@@ -203,7 +138,7 @@ async function main() {
         icon: "🏠",
         title: "Dukungan Tumbuh Kembang Terpadu",
         description:
-          "Parenting class, ulang tahun edukatif, dan pelatihan guru untuk mendukung tumbuh kembang anak secara menyeluruh.",
+          "Menyediakan wadah sharing session / parenting class untuk orang tua, paket perayaan ulang tahun edukatif, hingga pelatihan media ajar untuk guru dan sekolah.",
         imageUrl: "/images/benefit-holistic-support.png",
         tags: ["Parenting Class", "Birthday Package", "Pelatihan Guru", "Sekolah"],
         order: 5,
@@ -216,235 +151,96 @@ async function main() {
     data: [
       {
         stepNumber: 1,
-        title: "Pilih Aktivitas",
+        title: "Pilih Aktivitas Favorit",
         description:
-          "Jelajahi berbagai modul pembelajaran dan pilih aktivitas yang paling sesuai dengan minat anak.",
+          "Jelajahi Pilihan Bermain & Belajar > Pilih pengalaman yang cocok untuk Si Kecil melalui situs web kami—mulai dari main di area Playpass, ikutan Workshop akhir pekan, atau berlangganan Edu-Kit bulanan untuk di rumah.",
         order: 1,
       },
       {
         stepNumber: 2,
-        title: "Datang atau Terima Kit",
+        title: "Datang Lansung atau Terima di Rumah",
         description:
-          "Kunjungi Experience Store kami atau tunggu Edu Kit premium kami tiba langsung di depan pintu rumah Anda.",
+          "Fleksibel Sesuai Kebutuhan Bunda > Datang langsung ke toko fisik Marica Experience Store untuk seru-seruan bersama, atau cukup duduk manis di rumah menunggu paket Edu-Kit dikirim langsung ke depan pintu.",
         order: 2,
       },
       {
         stepNumber: 3,
-        title: "Nikmati Momen Belajar",
+        title: "Nikmati Momen Belajar Ceria",
         description:
-          "Ciptakan momen berharga saat mendampingi anak bermain sambil belajar dengan materi berkualitas tinggi.",
+          "Lihat Si Kecil Tumbuh Makin Kreatif & Cerdas > Nikmati momen quality time yang hangat, bebas pusing, dan penuh tawa saat melihat anak aktif mengeksplorasi imajinasi serta logikanya lewat cara yang menyenangkan.",
         order: 3,
       },
     ],
   });
 
-  // 9a. Testimoni UMUM ("Apa Kata Bunda?") - standalone, activityId null, pakai field role
+  // 9. Testimoni
   await prisma.testimonial.createMany({
     data: [
       {
-        customerName: "Bunda Sarah",
-        role: "Ibu Rumah Tangga",
+        customerName: "Bunda Sarah Melati",
+        role: "Ibu Rumah Tangga & Ibu dari 2 Anak",
         message:
-          "Marica benar-benar jadi penyelamat di akhir pekan! Si Kecil betah banget main board game dan workshop-nya sangat edukatif.",
+          "Akhirnya ketemu tempat main yang bikin anak betah berjam-jam tanpa perlu main HP! Tempatnya bersih, pilihan board game-nya banyak banget, dan stafnya telaten ngajarin cara mainnya. Jadi punya tempat quality time favorit baru bareng anak di akhir pekan.",
         order: 1,
       },
       {
-        customerName: "Bunda Maya",
-        role: "Working Mom",
+        customerName: "Bunda Anita Rahma, S.T.",
+        role: "Ibu Bekerja & Penggemar Edukasi Anak",
         message:
-          "Edu-Kit bulanannya sangat membantu saya yang sibuk untuk tetap bisa memberikan aktivitas berkualitas di rumah.",
+          "Workshop sains dan kriya mingguan di Marica selalu bikin si kecil antusias! Materi belajar yang biasanya membosankan di sekolah, di sini malah disajikan seru banget lewat praktik langsung. Sepulang dari workshop, anaknya makin kritis dan kreatif.",
         order: 2,
       },
       {
-        customerName: "Bunda Rina",
-        role: "Guru PAUD",
+        customerName: "Bunda Citra Kirana",
+        role: "Ibu Bekerja & Pelanggan Edu-Kit Bulanan",
         message:
-          "Standar keamanannya luar biasa. Saya merasa tenang membiarkan anak bereksplorasi di Experience Store Marica.",
+          "Jujur sebagai working mom, saya sering kehabisan waktu dan ide buat ngerancang permainan edukatif di rumah. Berlangganan Edu-Kit Marica bener-bener menyelamatkan! Tiap bulan tinggal tunggu paket datang, semua bahan & panduannya sudah lengkap dan siap pakai.",
         order: 3,
       },
       {
-        customerName: "Bunda Ani",
-        role: "Entrepreneur",
+        customerName: "Bunda Maya Indah",
+        role: "Content Creator & Pegiat Parenting",
         message:
-          "Konsep phygital-nya keren banget. Anak belajar mandiri tapi tetap ada interaksi nyata.",
+          "Koleksi buku cerita dan edugame dari Marica desainnya bagus-bagus banget dan alur permainannya edukatif. Anak saya jadi lebih cepat paham konsep logika sederhana lewat cara yang menyenangkan. Recommended banget buat koleksi di rumah!",
         order: 4,
       },
-    ],
-  });
-
-  // 9b. Activities + nested Testimonials ("Aktivitas Seru di Marica")
-  await prisma.activity.create({
-    data: {
-      title: "Area Bermain",
-      description:
-        "Akhirnya ketemu tempat main yang bikin anak betah berjam-jam tanpa perlu main HP! Tempatnya bersih, pilihan board game-nya banyak banget, dan stafnya telaten ngajarin cara mainnya. Jadi punya tempat quality time favorit baru bareng anak di akhir pekan.",
-      order: 1,
-      testimonials: {
-        create: [{ customerName: "Bunda Sarah Melati", message: "Area Bermain", order: 1 }],
-      },
-    },
-  });
-
-  await prisma.activity.create({
-    data: {
-      title: "Weekend Workshop & Aktivitas Anak",
-      description:
-        "Workshop sains dan kriya mingguan di Marica selalu bikin si kecil antusias! Materi belajar yang biasanya membosankan di sekolah, di sini malah disajikan seru banget lewat praktik langsung. Sepulang dari workshop, anaknya makin kritis dan kreatif.",
-      order: 2,
-      testimonials: {
-        create: [
-          { customerName: "Bunda Anita Rahma, S.T.", message: "Weekend Workshop & Aktivitas Anak", order: 1 },
-        ],
-      },
-    },
-  });
-
-  await prisma.activity.create({
-    data: {
-      title: "Edu-Kit & Langganan Bulanan",
-      description:
-        "Jujur sebagai working mom, saya sering kehabisan waktu dan ide buat ngerancang permainan edukatif di rumah. Berlangganan Edu-Kit Marica bener-bener menyelamatkan! Tiap bulan tinggal tunggu paket datang, semua bahan & panduannya sudah lengkap dan siap pakai.",
-      order: 3,
-      testimonials: {
-        create: [{ customerName: "Bunda Citra Kirana", message: "Edu-Kit & Langganan Bulanan", order: 1 }],
-      },
-    },
-  });
-
-  await prisma.activity.create({
-    data: {
-      title: "Ritel Buku & Self-Published Edugames",
-      description:
-        "Jujur sebagai working mom, saya sering kehabisan waktu dan ide buat ngerancang permainan edukatif di rumah. Berlangganan Edu-Kit Marica bener-bener menyelamatkan! Tiap bulan tinggal tunggu paket datang, semua bahan & panduannya sudah lengkap dan siap pakai.",
-      order: 4,
-      testimonials: {
-        create: [{ customerName: "Bunda Maya Indah", message: "Ritel Buku & Self-Published Edugames", order: 1 }],
-      },
-    },
-  });
-
-  await prisma.activity.create({
-    data: {
-      title: "Kemitraan Sekolah & Pelatihan Guru",
-      description:
-        "Siswa-siswi kami sangat antusias saat ikutan acara kunjungan dan pelatihan media ajar edugame dari Marica. Konsep belajar sambil bermainnya sangat pas untuk membantu anak-anak memahami materi dengan lebih cepat dan ceria!",
-      order: 5,
-      testimonials: {
-        create: [{ customerName: "Ibu Ratna Dewi, S.Pd.", message: "Kemitraan Sekolah & Pelatihan Guru", order: 1 }],
-      },
-    },
-  });
-
-  // 10. Trust Stats ("Dipercaya oleh Mitra & Institusi Terkemuka")
-  // order 1-2 = kartu angka, order 3 = kartu foto (imageUrl diisi), order 4 = kartu angka lagi
-  await prisma.trustStat.createMany({
-    data: [
-      { value: "4 dari 5", label: "Tingkat kepuasan pelanggan", dotColor: "purple", order: 1 },
-      { value: "90%", label: "Tingkat kepuasan pelanggan", dotColor: "pink", order: 2 },
       {
-        label: "Tim Marica berkolaborasi dengan mitra",
-        imageUrl: "/images/trust-team-photo.png",
-        dotColor: "teal",
-        order: 3,
-      },
-      {
-        value: "100",
-        label: "Validasi ahli untuk Marica Kit, yang mencakup kontribusi dari psikolog, guru, dan dosen.",
-        dotColor: "teal",
-        order: 4,
+        customerName: "Ibu Ratna Dewi, S.Pd.",
+        role: "Kepala Sekolah & Pendidik PAUD/TK",
+        message:
+          "Siswa-siswi kami sangat antusias saat ikutan acara kunjungan dan pelatihan media ajar edugame dari Marica. Konsep belajar sambil bermainnya sangat pas untuk membantu anak-anak memahami materi dengan lebih cepat dan ceria!",
+        order: 5,
       },
     ],
   });
 
-  // 11. Partners - 15 logo asli dari public/images/partners/
-  await prisma.partner.createMany({
-    data: Array.from({ length: 15 }, (_, i) => ({
-      name: `Mitra Institusi ${i + 1}`,
-      logoUrl: `/images/partners/logo-${i + 1}.png`,
-      order: i + 1,
-    })),
-  });
-
-  // 12. Programs + Program Details ("Detail Program")
-  const program = await prisma.program.create({
-    data: {
-      name: "Program Marica",
-      description:
-        "Program Marica membantu anak menguasai Matematika & Bahasa dengan cara yang menyenangkan.",
-      order: 1,
-    },
-  });
-
-  await prisma.programDetail.createMany({
-    data: [
-      {
-        title: "Event",
-        description: "Free trial dengan kit belajar mingguan dan mentoring profesional",
-        features: ["1 Kit pembelajaran per minggu", "Mentoring", "Workshop & acara"],
-        ctaText: "Daftar Sekarang",
-        order: 1,
-        programId: program.id,
-      },
-      {
-        title: "Olimpiade",
-        description: "Program intensif persiapan lomba dengan bimbingan expert",
-        features: ["24 kali pertemuan intensif", "30 kit pembelajaran premium", "Expert mentoring"],
-        ctaText: "Daftar Sekarang",
-        order: 2,
-        programId: program.id,
-      },
-    ],
-  });
-
-  // 13. Events ("Event Kami")
-  await prisma.event.createMany({
-    data: [
-      {
-        title: "Serunya PlayDay: Marica X Oddish Family Hub Hadirkan Inovasi Dalam Bermain",
-        excerpt: "Marica Kembali Menghadirkan Inovasi Dalam Bermain",
-        category: "Event",
-        eventDate: new Date("2025-09-08"),
-        ctaText: "Lihat Selengkapnya",
-        order: 1,
-      },
-      {
-        title: "Serunya Trial Class Talking Dino Di TK Kikoku",
-        excerpt: "Marica Kembali Menghadirkan Inovasi Dalam Bermain",
-        category: "Event",
-        eventDate: new Date("2025-09-04"),
-        ctaText: "Lihat Selengkapnya",
-        order: 2,
-      },
-      {
-        title: "Marica Hadir Di KidsLand Galeria Mall: Meramaikan Akhir Pekan Ceria",
-        excerpt: "Marica Kembali Hadir Menebarkan Semangat Kreativitas",
-        category: "Event",
-        eventDate: new Date("2025-09-17"),
-        ctaText: "Lihat Selengkapnya",
-        order: 3,
-      },
-    ],
-  });
-
-  // 14. FAQ (belum ada di desain, isi generic dulu - bisa diedit nanti)
+  // 14. FAQ
   await prisma.faq.createMany({
     data: [
       {
-        question: "Apa itu Marica Experience Store?",
-        answer:
-          "Marica adalah platform edukasi calistung berbasis phygital yang menggabungkan aktivitas bermain fisik, workshop, dan Edu-Kit bulanan untuk anak usia TK.",
+        question: "Untuk anak usia berapa saja aktivitas dan produk di Marica?",
+        answer: "Aktivitas dan produk Marica dirancang khusus untuk anak usia 2 hingga 12 tahun, mulai dari balita (pendampingan orang tua) hingga anak usia sekolah dasar.",
         order: 1,
       },
       {
-        question: "Untuk usia berapa program Marica ini?",
-        answer: "Program calistung Marica dirancang khusus untuk anak usia TK.",
+        question: "Apakah harus reservasi terlebih dahulu jika ingin datang main ke Marica Experience Store?",
+        answer: "Bunda bisa langsung datang (walk-in) untuk area bermain (Playpass) dan sewa meja board game. Namun, untuk Weekend Workshop dan kelas khusus, kami menyarankan reservasi terlebih dahulu agar kepastian slot tempat terjamin.",
         order: 2,
       },
       {
-        question: "Bagaimana cara mendaftar program Marica?",
-        answer:
-          "Kamu bisa klik tombol 'Eksplor Serunya Marica' atau 'Daftar Sekarang' di halaman program untuk mulai mendaftar.",
+        question: "Apa isi dari paket berlangganan Edu-Kit bulanan Marica?",
+        answer: "Paket Edu-Kit berisi kotak aktivitas mandiri terstruktur (craft kit, permainan logika/sains, atau board game) yang dilengkapi panduan belajar interaktif dan dikirim rutin langsung ke rumah setiap bulan.",
         order: 3,
+      },
+      {
+        question: "Apakah tempatnya nyaman dan aman untuk balita dan keluarga?",
+        answer: "Sangat aman dan nyaman! Seluruh area bermain fisik, fasilitas meja, dan alat peraga kami selalu dibersihkan secara berkala, ramah anak, serta didampingi oleh staf/fasilitator yang telaten.",
+        order: 4,
+      },
+      {
+        question: "Bisakah Marica menyelenggarkan acara sekolah, privat, atau ulang tahun?",
+        answer: "Sangat bisa! Kami menyediakan paket perayaan ulang tahun edukatif, penyewaan seluruh area toko (space renting), hingga program pelatihan media ajar edugame untuk guru dan sekolah.",
+        order: 5,
       },
     ],
   });

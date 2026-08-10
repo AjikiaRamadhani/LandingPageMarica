@@ -11,6 +11,12 @@ datasource db {
   provider = "postgresql"
 }
 
+
+
+// ============================================
+// LANDING PAGE CONTENT
+// ============================================
+
 model CompanyProfile {
   id          String   @id @default(cuid())
   name        String
@@ -97,36 +103,6 @@ model Solution {
   @@map("solutions")
 }
 
-model LearningCategory {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  imageUrl    String?
-  colorTag    String?
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("learning_categories")
-}
-
-// "Apa yang Ingin Dipelajari Si Kecil?" - Matematika / Bahasa
-model Subject {
-  id                  String   @id @default(cuid())
-  title               String
-  mascotImageUrl      String?
-  colorTag            String?
-  cognitiveDomainTags String[]
-  contentDomainItems  String[]
-  order               Int      @default(0)
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  @@map("subjects")
-}
-
 // "Apa yang Didapatkan Bunda & Si Kecil?"
 model Benefit {
   id          String   @id @default(cuid())
@@ -159,123 +135,27 @@ model HowItWorksStep {
   @@map("how_it_works_steps")
 }
 
-model Activity {
-  id           String        @id @default(cuid())
-  title        String
-  description  String?
-  imageUrl     String?
-  order        Int           @default(0)
-  isActive     Boolean       @default(true)
-  testimonials Testimonial[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  @@map("activities")
-}
-
-// Testimoni umum ("Apa Kata Bunda?") kalau activityId null,
-// atau testimoni yang nempel ke Activity tertentu ("Aktivitas Seru di Marica") kalau activityId diisi
+// "Apa Kata Bunda?" - testimoni umum, standalone
 model Testimonial {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   customerName String
   role         String?
   avatarUrl    String?
   message      String
-  rating       Int?      @default(5)
-  order        Int       @default(0)
-  isActive     Boolean   @default(true)
-  activityId   String?
-  activity     Activity? @relation(fields: [activityId], references: [id])
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  rating       Int?     @default(5)
+  order        Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("testimonials")
-}
-
-model Partner {
-  id        String   @id @default(cuid())
-  name      String
-  logoUrl   String
-  website   String?
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("partners")
-}
-
-// "Dipercaya oleh Mitra & Institusi Terkemuka" - kartu stat kepercayaan
-model TrustStat {
-  id        String   @id @default(cuid())
-  value     String?
-  label     String
-  imageUrl  String?
-  dotColor  String?
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("trust_stats")
-}
-
-model Program {
-  id             String          @id @default(cuid())
-  name           String
-  description    String?
-  imageUrl       String?
-  order          Int             @default(0)
-  isActive       Boolean         @default(true)
-  programDetails ProgramDetail[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  @@map("programs")
-}
-
-model ProgramDetail {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  imageUrl    String?
-  price       String?
-  duration    String?
-  features    String[]
-  ctaText     String?
-  ctaLink     String?
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  programId   String?
-  program     Program? @relation(fields: [programId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("program_details")
-}
-
-model Event {
-  id        String    @id @default(cuid())
-  title     String
-  excerpt   String?
-  content   String?
-  imageUrl  String?
-  category  String?   @default("Event")
-  eventDate DateTime?
-  ctaText   String?
-  ctaLink   String?
-  order     Int       @default(0)
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@map("events")
 }
 
 model Faq {
   id        String   @id @default(cuid())
   question  String
   answer    String
+  icon      String?
   order     Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

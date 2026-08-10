@@ -51,23 +51,19 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  User: 'User',
+  Account: 'Account',
+  Session: 'Session',
+  VerificationToken: 'VerificationToken',
   CompanyProfile: 'CompanyProfile',
   HeroSection: 'HeroSection',
   HeroBadge: 'HeroBadge',
   Statistic: 'Statistic',
   PainPoint: 'PainPoint',
   Solution: 'Solution',
-  LearningCategory: 'LearningCategory',
-  Subject: 'Subject',
   Benefit: 'Benefit',
   HowItWorksStep: 'HowItWorksStep',
-  Activity: 'Activity',
   Testimonial: 'Testimonial',
-  Partner: 'Partner',
-  TrustStat: 'TrustStat',
-  Program: 'Program',
-  ProgramDetail: 'ProgramDetail',
-  Event: 'Event',
   Faq: 'Faq'
 } as const
 
@@ -85,6 +81,57 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
+export const UserScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  emailVerified: 'emailVerified',
+  image: 'image',
+  password: 'password',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const AccountScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  provider: 'provider',
+  providerAccountId: 'providerAccountId',
+  refresh_token: 'refresh_token',
+  access_token: 'access_token',
+  expires_at: 'expires_at',
+  token_type: 'token_type',
+  scope: 'scope',
+  id_token: 'id_token',
+  session_state: 'session_state'
+} as const
+
+export type AccountScalarFieldEnum = (typeof AccountScalarFieldEnum)[keyof typeof AccountScalarFieldEnum]
+
+
+export const SessionScalarFieldEnum = {
+  id: 'id',
+  sessionToken: 'sessionToken',
+  userId: 'userId',
+  expires: 'expires'
+} as const
+
+export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
+
+
+export const VerificationTokenScalarFieldEnum = {
+  identifier: 'identifier',
+  token: 'token',
+  expires: 'expires'
+} as const
+
+export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
 
 
 export const CompanyProfileScalarFieldEnum = {
@@ -177,37 +224,6 @@ export const SolutionScalarFieldEnum = {
 export type SolutionScalarFieldEnum = (typeof SolutionScalarFieldEnum)[keyof typeof SolutionScalarFieldEnum]
 
 
-export const LearningCategoryScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  imageUrl: 'imageUrl',
-  colorTag: 'colorTag',
-  order: 'order',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type LearningCategoryScalarFieldEnum = (typeof LearningCategoryScalarFieldEnum)[keyof typeof LearningCategoryScalarFieldEnum]
-
-
-export const SubjectScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  mascotImageUrl: 'mascotImageUrl',
-  colorTag: 'colorTag',
-  cognitiveDomainTags: 'cognitiveDomainTags',
-  contentDomainItems: 'contentDomainItems',
-  order: 'order',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type SubjectScalarFieldEnum = (typeof SubjectScalarFieldEnum)[keyof typeof SubjectScalarFieldEnum]
-
-
 export const BenefitScalarFieldEnum = {
   id: 'id',
   category: 'category',
@@ -241,20 +257,6 @@ export const HowItWorksStepScalarFieldEnum = {
 export type HowItWorksStepScalarFieldEnum = (typeof HowItWorksStepScalarFieldEnum)[keyof typeof HowItWorksStepScalarFieldEnum]
 
 
-export const ActivityScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description',
-  imageUrl: 'imageUrl',
-  order: 'order',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type ActivityScalarFieldEnum = (typeof ActivityScalarFieldEnum)[keyof typeof ActivityScalarFieldEnum]
-
-
 export const TestimonialScalarFieldEnum = {
   id: 'id',
   customerName: 'customerName',
@@ -264,7 +266,6 @@ export const TestimonialScalarFieldEnum = {
   rating: 'rating',
   order: 'order',
   isActive: 'isActive',
-  activityId: 'activityId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -272,92 +273,11 @@ export const TestimonialScalarFieldEnum = {
 export type TestimonialScalarFieldEnum = (typeof TestimonialScalarFieldEnum)[keyof typeof TestimonialScalarFieldEnum]
 
 
-export const PartnerScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  logoUrl: 'logoUrl',
-  website: 'website',
-  order: 'order',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type PartnerScalarFieldEnum = (typeof PartnerScalarFieldEnum)[keyof typeof PartnerScalarFieldEnum]
-
-
-export const TrustStatScalarFieldEnum = {
-  id: 'id',
-  value: 'value',
-  label: 'label',
-  imageUrl: 'imageUrl',
-  dotColor: 'dotColor',
-  order: 'order',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type TrustStatScalarFieldEnum = (typeof TrustStatScalarFieldEnum)[keyof typeof TrustStatScalarFieldEnum]
-
-
-export const ProgramScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  imageUrl: 'imageUrl',
-  order: 'order',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type ProgramScalarFieldEnum = (typeof ProgramScalarFieldEnum)[keyof typeof ProgramScalarFieldEnum]
-
-
-export const ProgramDetailScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description',
-  imageUrl: 'imageUrl',
-  price: 'price',
-  duration: 'duration',
-  features: 'features',
-  ctaText: 'ctaText',
-  ctaLink: 'ctaLink',
-  order: 'order',
-  isActive: 'isActive',
-  programId: 'programId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type ProgramDetailScalarFieldEnum = (typeof ProgramDetailScalarFieldEnum)[keyof typeof ProgramDetailScalarFieldEnum]
-
-
-export const EventScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  excerpt: 'excerpt',
-  content: 'content',
-  imageUrl: 'imageUrl',
-  category: 'category',
-  eventDate: 'eventDate',
-  ctaText: 'ctaText',
-  ctaLink: 'ctaLink',
-  order: 'order',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof EventScalarFieldEnum]
-
-
 export const FaqScalarFieldEnum = {
   id: 'id',
   question: 'question',
   answer: 'answer',
+  icon: 'icon',
   order: 'order',
   isActive: 'isActive',
   createdAt: 'createdAt',
