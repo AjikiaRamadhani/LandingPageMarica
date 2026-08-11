@@ -99,7 +99,7 @@ async function main() {
         title: "Bermain Sambil Melatih Logika & Kreativitas",
         description:
           "Anak-anak diajak berpikir kritis, memecahkan masalah, dan mengasah imajinasi lewat ratusan board game pilihan, buku interaktif, dan workshop sains serta kriya (craft kit).",
-        imageUrl: "/images/benefit-logika-kreativitas.png",
+        imageUrl: "/images/manfaat1.png",
         tags: ["Board Game", "Buku Interaktif", "Workshop", "Craft Kit"],
         order: 1,
       },
@@ -109,7 +109,7 @@ async function main() {
         title: "Menguatkan Bonding Ibu & Anak",
         description:
           "Menciptakan quality time yang hangat dan penuh tawa bersama keluarga melalui sesi bermain meja (Table-fee) dan kelas edukasi interaktif.",
-        imageUrl: "/images/benefit-family-bonding.png",
+        imageUrl: "/images/manfaat2.png",
         tags: ["Quality Time", "Table Fee", "Kelas Edukasi"],
         order: 2,
       },
@@ -119,7 +119,7 @@ async function main() {
         title: "Rekreasi Seru yang Berbobot Edukasi",
         description:
           "Alternatif tempat main fisik (Playpass) yang tidak hanya menyenangkan, tetapi juga aman, nyaman, dan mendukung perkembangan karakter serta sosialisasi anak.",
-        imageUrl: "/images/benefit-edu-recreation.png",
+        imageUrl: "/images/manfaat3.png",
         tags: ["Playpass", "Aman", "Sosialisasi", "Karakter Positif"],
         order: 3,
       },
@@ -129,7 +129,7 @@ async function main() {
         title: "Praktis! Inspirasi Main Tanpa Ribet di Rumah",
         description:
           "Lewat layanan Edu-Kit & Langganan Bulanan, Bunda tak perlu pusing lagi memikirkan ide permainan kreatif—bahan dan panduan aktivitas langsung dikirim rapi ke rumah.",
-        imageUrl: "/images/benefit-home-learning.png",
+        imageUrl: "/images/mkids-marica4.png",
         tags: ["Edu Kit", "Langganan", "Aktivitas Rumah", "Panduan"],
         order: 4,
       },
@@ -139,7 +139,7 @@ async function main() {
         title: "Dukungan Tumbuh Kembang Terpadu",
         description:
           "Menyediakan wadah sharing session / parenting class untuk orang tua, paket perayaan ulang tahun edukatif, hingga pelatihan media ajar untuk guru dan sekolah.",
-        imageUrl: "/images/benefit-holistic-support.png",
+        imageUrl: "/images/manfaat5.png",
         tags: ["Parenting Class", "Birthday Package", "Pelatihan Guru", "Sekolah"],
         order: 5,
       },
