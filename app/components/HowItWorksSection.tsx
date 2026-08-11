@@ -91,7 +91,7 @@ export default function HowItWorksSection() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
+    <section id="cara-kerja" className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
       {/* decorative glow blobs, consistent with the rest of the page */}
       <div
         aria-hidden

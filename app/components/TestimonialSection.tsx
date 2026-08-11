@@ -112,6 +112,7 @@ export default function TestimonialSection() {
 
   return (
     <section
+      id="testimoni"
       className="relative overflow-hidden bg-gradient-to-b from-marica-amber-dark via-marica-amber to-marica-amber px-6 py-20 lg:px-10 lg:py-28"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}

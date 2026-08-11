@@ -104,7 +104,7 @@ export default function FaqSection() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-marica-amber px-6 pb-24 pt-20 lg:px-10 lg:pb-32 lg:pt-28">
+    <section id="faq" className="relative overflow-hidden bg-marica-amber px-6 pb-24 pt-20 lg:px-10 lg:pb-32 lg:pt-28">
       {/* decorative floating clouds */}
       <motion.div
         aria-hidden
