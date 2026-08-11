@@ -1,15 +1,17 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { label: "Beranda", href: "#", active: true },
-  { label: "Program", href: "#program" },
-  { label: "Aktivitas", href: "#aktivitas" },
-  // { label: "Event", href: "#event" },
+  { label: "Beranda", href: "#beranda", active: true },
+  { label: "Masalah", href: "#masalah" },
+  { label: "Manfaat", href: "#manfaat" },
+  { label: "Testimoni", href: "#testimoni" },
+  { label: "Cara Kerja", href: "#cara-kerja" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -22,6 +24,8 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [company, setCompany] = useState<ApiCompany | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeHref, setActiveHref] = useState<string>("#beranda");
 
   useEffect(() => {
     fetch("/api/company")
@@ -34,37 +38,121 @@ export default function Navbar() {
       .catch((err) => console.error("Failed to load company profile", err));
   }, []);
 
+  // Header sticky: begitu halaman digeser turun, background gradient-transparan
+  // diganti jadi putih solid + blur + shadow supaya tetap terbaca rapi di atas
+  // section apa pun yang lewat di belakangnya.
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 8);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll-spy: setiap kali user scroll, cek ulang posisi tiap section
+  // (bukan cuma sekali di awal) supaya tetap akurat walau section tertentu
+  // baru muncul di DOM belakangan — misalnya karena datanya masih di-fetch
+  // saat Navbar pertama kali mount. Menu aktif = section terakhir yang sudah
+  // terlewati dari titik acuan di ~35% tinggi viewport.
+  useEffect(() => {
+    const hashLinks = navLinks
+      .map((link) => link.href)
+      .filter((href) => href.startsWith("#") && href !== "#");
+
+    const handleScroll = () => {
+      if (window.scrollY < 80) {
+        setActiveHref("#beranda");
+        return;
+      }
+
+      const referenceY = window.scrollY + window.innerHeight * 0.35;
+      let current = "#beranda";
+
+      for (const href of hashLinks) {
+        const el = document.querySelector(href);
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top + window.scrollY;
+        if (top <= referenceY) {
+          current = href;
+        }
+      }
+
+      setActiveHref(current);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
+  // Di mobile, menu ditutup dulu (animasi ~300ms) baru discroll ke section
+  // tujuan. Kalau scroll dan animasi penutupan dijalankan bersamaan, layout
+  // yang berubah saat menu menutup bisa mengacaukan posisi scroll sehingga
+  // terasa seperti "tidak menggeser" sama sekali.
+  const handleMobileNavClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
+    setActiveHref(href);
+    if (!href.startsWith("#") || href === "#") return;
+    e.preventDefault();
+    setIsOpen(false);
+
+    window.setTimeout(() => {
+      const target = document.querySelector(href);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 320);
+  };
+
   return (
-    <header className="relative z-30 bg-gradient-to-b from-marica-cream via-marica-cream/70 to-transparent">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10">
+    <header className="sticky top-0 z-30 isolate">
+      {/* layer 1: cream-to-transparent gradient, blends into Hero at the top of the page */}
+      <motion.div
+        aria-hidden
+        animate={{ opacity: scrolled ? 0 : 1 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-marica-cream via-marica-cream/70 to-transparent"
+      />
+
+      {/* layer 2: solid, blurred, with shadow — fades in once the page is scrolled so the header stays readable over any section */}
+      <motion.div
+        aria-hidden
+        animate={{ opacity: scrolled ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="pointer-events-none absolute inset-0 -z-10 bg-white/90 shadow-[0_8px_24px_rgba(120,60,10,0.1)] backdrop-blur-md"
+      />
+      <nav className="relative z-20 mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10">
         {/* Logo */}
         <a href="/" className="flex shrink-0 items-center gap-3">
           <Image
             src={company?.logoUrl || "/images/logo.png"}
             alt={company?.name || "Marica"}
-            width={500}
-            height={500}
+            width={434}
+            height={145}
             priority
-            className="h-15 w-20 object-contain"
+            className="h-8 w-auto object-contain sm:h-9"
           />
           {/* <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
             {company?.name || "Marica"}
           </span> */}
         </a>
 
-        {/* Nav links */}
+        {/* Nav links — absolutely centered relative to the whole navbar, not just the space left after the logo */}
         <div
-          className="relative hidden items-center gap-1 font-body text-[15px] font-medium text-marica-ink-soft lg:flex"
+          className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 font-body text-[15px] font-medium text-marica-ink-soft lg:flex"
           onMouseLeave={() => setHoveredIndex(null)}
         >
           {navLinks.map((link, i) => {
-            const isHighlighted = hoveredIndex === i || (hoveredIndex === null && link.active);
+            const isHighlighted = hoveredIndex === i || (hoveredIndex === null && link.href === activeHref);
             return (
               <a
                 key={link.label}
                 href={link.href}
                 onMouseEnter={() => setHoveredIndex(i)}
-                className={`relative rounded-full px-4 py-2 transition-colors ${
+                onClick={() => setActiveHref(link.href)}
+                className={`relative rounded-full px-3 py-1.5 transition-colors ${
                   isHighlighted ? "text-marica-amber-text" : "hover:text-marica-ink"
                 }`}
               >
@@ -79,16 +167,6 @@ export default function Navbar() {
               </a>
             );
           })}
-        </div>
-
-        {/* Auth button */}
-        <div className="hidden shrink-0 items-center gap-3 lg:flex">
-          <a
-            href="#"
-            className="rounded-full bg-gradient-to-b from-marica-amber to-marica-amber-dark px-7 py-2.5 font-display text-[15px] font-medium text-white shadow-sm shadow-marica-amber-dark/30 transition hover:brightness-105"
-          >
-            Masuk
-          </a>
         </div>
 
         {/* Mobile menu button */}
@@ -136,7 +214,7 @@ export default function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden lg:hidden"
+            className="relative z-20 overflow-hidden lg:hidden"
           >
             <motion.div
               initial={{ y: -8 }}
@@ -149,12 +227,12 @@ export default function Navbar() {
                 <motion.a
                   key={link.label}
                   href={link.href}
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => handleMobileNavClick(e, link.href)}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.25, delay: i * 0.05 }}
                   className={
-                    link.active
+                    link.href === activeHref
                       ? "rounded-xl bg-marica-amber/15 px-4 py-2.5 font-body text-[15px] font-medium text-marica-amber-text"
                       : "rounded-xl px-4 py-2.5 font-body text-[15px] font-medium text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-ink"
                   }
@@ -162,17 +240,6 @@ export default function Navbar() {
                   {link.label}
                 </motion.a>
               ))}
-
-              <motion.a
-                href="#"
-                onClick={() => setIsOpen(false)}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
-                className="mt-2 rounded-xl bg-gradient-to-b from-marica-amber to-marica-amber-dark px-4 py-2.5 text-center font-display text-[15px] font-medium text-white shadow-sm shadow-marica-amber-dark/30"
-              >
-                Masuk
-              </motion.a>
             </motion.div>
           </motion.div>
         )}

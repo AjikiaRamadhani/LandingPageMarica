@@ -44,7 +44,7 @@ export default function ProblemSection() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
+    <section id="masalah" className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
       <BackgroundDoodles />
 
       <div className="relative z-10 mx-auto max-w-3xl text-center">

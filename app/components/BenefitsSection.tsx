@@ -112,7 +112,7 @@ export default function BenefitsSection() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-marica-amber via-marica-amber to-marica-amber-dark px-6 py-20 lg:px-10 lg:py-28">
+    <section id="manfaat" className="relative overflow-hidden bg-gradient-to-b from-marica-amber via-marica-amber to-marica-amber-dark px-6 py-20 lg:px-10 lg:py-28">
       <BackgroundDoodles />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">

@@ -114,7 +114,7 @@ export default function Hero() {
 
   if (loading) {
     return (
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-marica-cream to-marica-amber">
+      <section id="beranda" className="relative overflow-hidden bg-gradient-to-b from-white via-marica-cream to-marica-amber">
         <div className="mx-auto max-w-7xl px-6 py-24 text-center font-body text-sm text-marica-ink-soft">
           Memuat data...
         </div>
@@ -127,7 +127,7 @@ export default function Hero() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white via-marica-cream to-marica-amber">
+    <section id="beranda" className="relative overflow-hidden bg-gradient-to-b from-white via-marica-cream to-marica-amber">
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 pb-20 pt-6 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:px-10 lg:pb-20 lg:pt-8">
         {/* Left: copy */}
         <motion.div
