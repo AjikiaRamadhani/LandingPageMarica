@@ -78,7 +78,7 @@ export default function ProblemSection() {
           {error}
         </div>
       ) : (
-        <div className="relative z-10 mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3">
+        <div className="relative z-10 mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-3 lg:mt-16 lg:grid-cols-3">
           {problems.map((item, i) => (
             <motion.div
               key={item.id}

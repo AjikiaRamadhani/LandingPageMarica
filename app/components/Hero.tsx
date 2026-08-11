@@ -128,20 +128,20 @@ export default function Hero() {
 
   return (
     <section id="beranda" className="relative overflow-hidden bg-gradient-to-b from-white via-marica-cream to-marica-amber">
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 pb-20 pt-6 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:px-10 lg:pb-20 lg:pt-8">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-6 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-6 md:px-8 md:pb-14 md:pt-8 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:px-10 lg:pb-20 lg:pt-8">
         {/* Left: copy */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative z-10 max-w-xl lg:max-w-none"
+          className="relative z-10 max-w-xl md:max-w-none"
         >
-          <h1 className="font-display text-[2rem] font-semibold leading-[1.2] text-marica-ink sm:text-[2.6rem] lg:text-[2.9rem]">
+          <h1 className="font-display text-[2rem] font-semibold leading-[1.2] text-marica-ink sm:text-[2.6rem] md:text-[1.85rem] lg:text-[2.9rem]">
             {hero.headline}
           </h1>
 
           {hero.subheadline && (
-            <p className="mt-5 max-w-md font-body text-[15px] leading-relaxed text-marica-ink-soft sm:text-base">
+            <p className="mt-5 max-w-md font-body text-[15px] leading-relaxed text-marica-ink-soft sm:text-base md:max-w-lg">
               {hero.subheadline}
             </p>
           )}
@@ -205,7 +205,7 @@ export default function Hero() {
         </motion.div>
 
         {/* Right: photo with floating badges */}
-        <div className="relative z-10 mx-auto w-full max-w-[460px] px-4 py-8 sm:px-8 lg:py-4">
+        <div className="relative z-10 mx-auto w-full max-w-[460px] px-4 py-8 sm:px-8 md:max-w-[300px] md:px-2 md:py-0 lg:max-w-[460px] lg:px-8 lg:py-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -273,7 +273,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="relative z-10 mx-auto grid w-full max-w-[380px] grid-cols-3 divide-x divide-black/10 rounded-2xl bg-white px-2 py-4 shadow-[0_10px_30px_rgba(80,50,10,0.08)] lg:hidden"
+            className="relative z-10 mx-auto grid w-full max-w-[380px] grid-cols-3 divide-x divide-black/10 rounded-2xl bg-white px-2 py-4 shadow-[0_10px_30px_rgba(80,50,10,0.08)] md:col-span-2 md:max-w-xl md:px-6 md:py-5 lg:hidden"
           >
             {stats.map((stat, i) => {
               const Icon = iconMap[stat.icon ?? ""] ?? Sparkles;

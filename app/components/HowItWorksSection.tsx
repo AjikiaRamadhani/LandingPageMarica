@@ -252,7 +252,7 @@ export default function HowItWorksSection() {
                 transition={{ duration: 0.6, delay: i * 0.15, ease: "easeOut" }}
                 whileHover={{ y: -6 }}
                 className={`relative flex flex-col items-center rounded-[28px] bg-white p-6 text-center shadow-[0_18px_40px_rgba(120,60,10,0.15)] transition-shadow hover:shadow-[0_24px_50px_rgba(120,60,10,0.22)] sm:p-7 ${
-                  i === 2 ? "sm:col-span-2 sm:mx-auto sm:max-w-sm lg:col-span-1 lg:mx-0 lg:max-w-none" : ""
+                  i === 2 ? "sm:col-span-2 sm:mx-auto sm:w-[calc(50%-1rem)] lg:col-span-1 lg:mx-0 lg:w-auto" : ""
                 }`}
               >
                 {/* icon badge */}
