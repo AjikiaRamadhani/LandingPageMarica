@@ -38,11 +38,8 @@ export default function TestimonialSection() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          // Section ini cuma nampilin testimoni umum (activityId null),
-          // bukan yang nempel ke Activity tertentu ("Aktivitas Seru di Marica")
-          const general = data.filter((t: any) => !t.activityId);
-          setTestimonials(general);
-          setMaxIndex(Math.max(0, general.length - 1));
+          setTestimonials(data);
+          setMaxIndex(Math.max(0, data.length - 1));
         }
       })
       .catch((err) => console.error("Failed to load testimonials", err))

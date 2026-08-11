@@ -31,6 +31,7 @@ async function main() {
       tiktok: "@kids.marica",
       youtube: "@kids.marica",
       website: "www.marica.id",
+      address: "Jl. Bakungan No.10A, Bakungan, Wedomartani, Kec. Ngemplak, Kabupaten Sleman, Daerah Istimewa Yogyakarta 55584"
     },
   });
 
