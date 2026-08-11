@@ -14,10 +14,12 @@ import {
 } from "react-icons/fa6";
 
 const navigasi = [
-  { label: "Beranda", href: "#" },
-  { label: "Tentang Kami", href: "#" },
-  { label: "Program & Aktivitas", href: "#" },
-  { label: "FAQ", href: "#" },
+  { label: "Beranda", href: "#beranda", active: true },
+  { label: "Masalah", href: "#masalah" },
+  { label: "Manfaat", href: "#manfaat" },
+  { label: "Testimoni", href: "#testimoni" },
+  { label: "Cara Kerja", href: "#cara-kerja" },
+  { label: "FAQ", href: "#faq" },
 ];
 
 const layanan = [
