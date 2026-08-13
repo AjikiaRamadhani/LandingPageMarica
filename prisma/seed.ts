@@ -71,21 +71,21 @@ async function main() {
         title: "Bingung Mau Ajak Anak Main ke Mana Lagi?",
         description:
           "Bosan dengan tempat rekreasi yang itu-itu saja dan cuma bikin anak muter-muter tanpa dapat manfaat atau stimulasi belajar yang berarti.",
-        imageUrl: "/images/problem1.png",
+        imageUrl: "/images/problemkids1.png",
         order: 1,
       },
       {
         title: "Habis Ide Bikin Aktivitas Seru di Rumah",
         description:
           "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri dari nol.",
-        imageUrl: "/images/problem2.png",
+        imageUrl: "/images/problemkids2.png",
         order: 2,
       },
       {
         title: "Mainan Anak Cuma Jadi Pajangan & Gampang Bikin Bosan",
         description:
           "Sudah beli banyak mainan, tapi cuma dimainkan sekali-dua kali lalu ditinggal begitu saja karena kurang interaktif dan nggak ada alur permainan yang seru untuk dimainkan bareng.",
-        imageUrl: "/images/problem3.png",
+        imageUrl: "/images/problemkids3.png",
         order: 3,
       },
     ],
