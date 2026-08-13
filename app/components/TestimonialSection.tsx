@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { motion, useAnimationControls, type PanInfo } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 
@@ -8,6 +9,7 @@ type Testimonial = {
   id: string;
   customerName: string;
   role: string | null;
+  avatarUrl: string | null;
   message: string;
   order: number;
 };
@@ -38,8 +40,11 @@ export default function TestimonialSection() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setTestimonials(data);
-          setMaxIndex(Math.max(0, data.length - 1));
+          // Section ini cuma nampilin testimoni umum (activityId null),
+          // bukan yang nempel ke Activity tertentu ("Aktivitas Seru di Marica")
+          const general = data.filter((t: any) => !t.activityId);
+          setTestimonials(general);
+          setMaxIndex(Math.max(0, general.length - 1));
         }
       })
       .catch((err) => console.error("Failed to load testimonials", err))
@@ -112,7 +117,6 @@ export default function TestimonialSection() {
 
   return (
     <section
-      id="testimoni"
       className="relative overflow-hidden bg-gradient-to-b from-marica-amber-dark via-marica-amber to-marica-amber px-6 py-20 lg:px-10 lg:py-28"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -181,11 +185,23 @@ export default function TestimonialSection() {
                     />
 
                     <div className="relative flex items-center gap-3">
-                      <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-base font-semibold text-white ring-4 ring-white ${avatarColors[i % avatarColors.length]}`}
-                      >
-                        {t.customerName.replace("Bunda ", "")[0]}
-                      </div>
+                      {t.avatarUrl ? (
+                        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-4 ring-white">
+                          <Image
+                            src={t.avatarUrl}
+                            alt={t.customerName}
+                            fill
+                            sizes="44px"
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-base font-semibold text-white ring-4 ring-white ${avatarColors[i % avatarColors.length]}`}
+                        >
+                          {t.customerName.replace("Bunda ", "")[0]}
+                        </div>
+                      )}
                       <div className="leading-tight">
                         <p className="font-display text-[15px] font-semibold text-marica-ink">
                           {t.customerName}
@@ -247,8 +263,9 @@ export default function TestimonialSection() {
                 type="button"
                 aria-label={`Ke slide ${i + 1}`}
                 onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${index === i ? "w-6 bg-marica-ink" : "w-2 bg-marica-ink/30"
-                  }`}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  index === i ? "w-6 bg-marica-ink" : "w-2 bg-marica-ink/30"
+                }`}
               />
             ))}
           </div>
