@@ -71,21 +71,21 @@ async function main() {
         title: "Bingung Mau Ajak Anak Main ke Mana Lagi?",
         description:
           "Bosan dengan tempat rekreasi yang itu-itu saja dan cuma bikin anak muter-muter tanpa dapat manfaat atau stimulasi belajar yang berarti.",
-        imageUrl: "/images/problem-playground.png",
+        imageUrl: "/images/problemkids1.png",
         order: 1,
       },
       {
         title: "Habis Ide Bikin Aktivitas Seru di Rumah",
         description:
           "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri dari nol.",
-        imageUrl: "/images/problem-athome.png",
+        imageUrl: "/images/problemkids2.png",
         order: 2,
       },
       {
         title: "Mainan Anak Cuma Jadi Pajangan & Gampang Bikin Bosan",
         description:
           "Sudah beli banyak mainan, tapi cuma dimainkan sekali-dua kali lalu ditinggal begitu saja karena kurang interaktif dan nggak ada alur permainan yang seru untuk dimainkan bareng.",
-        imageUrl: "/images/problem-bored.png",
+        imageUrl: "/images/problemkids3.png",
         order: 3,
       },
     ],
@@ -100,7 +100,7 @@ async function main() {
         title: "Bermain Sambil Melatih Logika & Kreativitas",
         description:
           "Anak-anak diajak berpikir kritis, memecahkan masalah, dan mengasah imajinasi lewat ratusan board game pilihan, buku interaktif, dan workshop sains serta kriya (craft kit).",
-        imageUrl: "/images/manfaat1.png",
+        imageUrl: "/images/benefit1.png",
         tags: ["Board Game", "Buku Interaktif", "Workshop", "Craft Kit"],
         order: 1,
       },
@@ -110,7 +110,7 @@ async function main() {
         title: "Menguatkan Bonding Ibu & Anak",
         description:
           "Menciptakan quality time yang hangat dan penuh tawa bersama keluarga melalui sesi bermain meja (Table-fee) dan kelas edukasi interaktif.",
-        imageUrl: "/images/manfaat2.png",
+        imageUrl: "/images/benefit2.png",
         tags: ["Quality Time", "Table Fee", "Kelas Edukasi"],
         order: 2,
       },
@@ -120,7 +120,7 @@ async function main() {
         title: "Rekreasi Seru yang Berbobot Edukasi",
         description:
           "Alternatif tempat main fisik (Playpass) yang tidak hanya menyenangkan, tetapi juga aman, nyaman, dan mendukung perkembangan karakter serta sosialisasi anak.",
-        imageUrl: "/images/manfaat3.png",
+        imageUrl: "/images/benefit3.png",
         tags: ["Playpass", "Aman", "Sosialisasi", "Karakter Positif"],
         order: 3,
       },
@@ -130,7 +130,7 @@ async function main() {
         title: "Praktis! Inspirasi Main Tanpa Ribet di Rumah",
         description:
           "Lewat layanan Edu-Kit & Langganan Bulanan, Bunda tak perlu pusing lagi memikirkan ide permainan kreatif—bahan dan panduan aktivitas langsung dikirim rapi ke rumah.",
-        imageUrl: "/images/mkids-marica4.png",
+        imageUrl: "/images/benefit4.png",
         tags: ["Edu Kit", "Langganan", "Aktivitas Rumah", "Panduan"],
         order: 4,
       },
@@ -140,7 +140,7 @@ async function main() {
         title: "Dukungan Tumbuh Kembang Terpadu",
         description:
           "Menyediakan wadah sharing session / parenting class untuk orang tua, paket perayaan ulang tahun edukatif, hingga pelatihan media ajar untuk guru dan sekolah.",
-        imageUrl: "/images/manfaat5.png",
+        imageUrl: "/images/benefit5.png",
         tags: ["Parenting Class", "Birthday Package", "Pelatihan Guru", "Sekolah"],
         order: 5,
       },
@@ -180,6 +180,7 @@ async function main() {
       {
         customerName: "Bunda Sarah Melati",
         role: "Ibu Rumah Tangga & Ibu dari 2 Anak",
+        avatarUrl: "/images/testimoni1.png",
         message:
           "Akhirnya ketemu tempat main yang bikin anak betah berjam-jam tanpa perlu main HP! Tempatnya bersih, pilihan board game-nya banyak banget, dan stafnya telaten ngajarin cara mainnya. Jadi punya tempat quality time favorit baru bareng anak di akhir pekan.",
         order: 1,
@@ -187,6 +188,7 @@ async function main() {
       {
         customerName: "Bunda Anita Rahma, S.T.",
         role: "Ibu Bekerja & Penggemar Edukasi Anak",
+        avatarUrl: "/images/testimoni2.png",
         message:
           "Workshop sains dan kriya mingguan di Marica selalu bikin si kecil antusias! Materi belajar yang biasanya membosankan di sekolah, di sini malah disajikan seru banget lewat praktik langsung. Sepulang dari workshop, anaknya makin kritis dan kreatif.",
         order: 2,
@@ -194,6 +196,7 @@ async function main() {
       {
         customerName: "Bunda Citra Kirana",
         role: "Ibu Bekerja & Pelanggan Edu-Kit Bulanan",
+        avatarUrl: "/images/testimoni3.png",
         message:
           "Jujur sebagai working mom, saya sering kehabisan waktu dan ide buat ngerancang permainan edukatif di rumah. Berlangganan Edu-Kit Marica bener-bener menyelamatkan! Tiap bulan tinggal tunggu paket datang, semua bahan & panduannya sudah lengkap dan siap pakai.",
         order: 3,
@@ -201,6 +204,7 @@ async function main() {
       {
         customerName: "Bunda Maya Indah",
         role: "Content Creator & Pegiat Parenting",
+        avatarUrl: "/images/testimoni4.png",
         message:
           "Koleksi buku cerita dan edugame dari Marica desainnya bagus-bagus banget dan alur permainannya edukatif. Anak saya jadi lebih cepat paham konsep logika sederhana lewat cara yang menyenangkan. Recommended banget buat koleksi di rumah!",
         order: 4,
@@ -208,6 +212,7 @@ async function main() {
       {
         customerName: "Ibu Ratna Dewi, S.Pd.",
         role: "Kepala Sekolah & Pendidik PAUD/TK",
+        avatarUrl: "/images/testimoni5.png",
         message:
           "Siswa-siswi kami sangat antusias saat ikutan acara kunjungan dan pelatihan media ajar edugame dari Marica. Konsep belajar sambil bermainnya sangat pas untuk membantu anak-anak memahami materi dengan lebih cepat dan ceria!",
         order: 5,

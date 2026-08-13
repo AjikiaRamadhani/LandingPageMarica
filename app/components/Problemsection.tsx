@@ -15,9 +15,9 @@ type PainPoint = {
 
 // Fallback image kalau field imageUrl belum diisi di database
 const fallbackImages = [
-  "/images/problem-playground.png",
-  "/images/problem-athome.png",
-  "/images/problem-bored.png",
+  "/images/problemkids1.png",
+  "/images/problemkids2.png",
+  "/images/problemkids3.png",
 ];
 
 export default function ProblemSection() {
