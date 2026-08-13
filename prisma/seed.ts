@@ -180,6 +180,7 @@ async function main() {
       {
         customerName: "Bunda Sarah Melati",
         role: "Ibu Rumah Tangga & Ibu dari 2 Anak",
+        avatarUrl: "/images/testimoni1.png",
         message:
           "Akhirnya ketemu tempat main yang bikin anak betah berjam-jam tanpa perlu main HP! Tempatnya bersih, pilihan board game-nya banyak banget, dan stafnya telaten ngajarin cara mainnya. Jadi punya tempat quality time favorit baru bareng anak di akhir pekan.",
         order: 1,
@@ -187,6 +188,7 @@ async function main() {
       {
         customerName: "Bunda Anita Rahma, S.T.",
         role: "Ibu Bekerja & Penggemar Edukasi Anak",
+        avatarUrl: "/images/testimoni2.png",
         message:
           "Workshop sains dan kriya mingguan di Marica selalu bikin si kecil antusias! Materi belajar yang biasanya membosankan di sekolah, di sini malah disajikan seru banget lewat praktik langsung. Sepulang dari workshop, anaknya makin kritis dan kreatif.",
         order: 2,
@@ -194,6 +196,7 @@ async function main() {
       {
         customerName: "Bunda Citra Kirana",
         role: "Ibu Bekerja & Pelanggan Edu-Kit Bulanan",
+        avatarUrl: "/images/testimoni3.png",
         message:
           "Jujur sebagai working mom, saya sering kehabisan waktu dan ide buat ngerancang permainan edukatif di rumah. Berlangganan Edu-Kit Marica bener-bener menyelamatkan! Tiap bulan tinggal tunggu paket datang, semua bahan & panduannya sudah lengkap dan siap pakai.",
         order: 3,
@@ -201,6 +204,7 @@ async function main() {
       {
         customerName: "Bunda Maya Indah",
         role: "Content Creator & Pegiat Parenting",
+        avatarUrl: "/images/testimoni4.png",
         message:
           "Koleksi buku cerita dan edugame dari Marica desainnya bagus-bagus banget dan alur permainannya edukatif. Anak saya jadi lebih cepat paham konsep logika sederhana lewat cara yang menyenangkan. Recommended banget buat koleksi di rumah!",
         order: 4,
@@ -208,6 +212,7 @@ async function main() {
       {
         customerName: "Ibu Ratna Dewi, S.Pd.",
         role: "Kepala Sekolah & Pendidik PAUD/TK",
+        avatarUrl: "/images/testimoni5.png",
         message:
           "Siswa-siswi kami sangat antusias saat ikutan acara kunjungan dan pelatihan media ajar edugame dari Marica. Konsep belajar sambil bermainnya sangat pas untuk membantu anak-anak memahami materi dengan lebih cepat dan ceria!",
         order: 5,
