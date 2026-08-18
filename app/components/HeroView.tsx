@@ -87,13 +87,6 @@ const Squiggle = () => (
   </svg>
 );
 
-/**
- * Headline mendukung satu kata/frasa yang di-highlight dengan cara
- * membungkusnya dalam tanda bintang di data CMS, mis.
- *   "Ciptakan Momen Belajar Ceria dan *Bermakna* Bersama Si Kecil Setiap Hari"
- * Frasa di antara *…* akan dirender berwarna amber dengan garis bawah coret tangan.
- * Kalau tidak ada tanda bintang, headline dirender polos seperti sebelumnya.
- */
 function renderHeadline(headline: string) {
   const parts = headline.split(/\*(.+?)\*/g);
   if (parts.length === 1) return headline;
@@ -113,21 +106,20 @@ function renderHeadline(headline: string) {
 export default function HeroView({ hero, stats }: Props) {
   return (
     <section id="beranda" className="hero-gradient-bg relative overflow-hidden">
-      {/* fade halus di dasar hero: meluruh dari transparan ke warna awal
-          .section-soft-bg (#fdf8f0) supaya sambungan ke section berikutnya
-          tidak terlihat sebagai garis tegas */}
+      {/* fade halus di dasar hero */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-[#fdf8f0] sm:h-36"
       />
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-6 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-6 md:px-8 md:pb-14 md:pt-8 lg:grid-cols-[1.15fr_1fr] lg:gap-10 lg:px-10 lg:pb-20 lg:pt-8">
+      {/* Grid diubah: items-end dan padding atas ditambah agar gambar tidak menabrak navbar */}
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-8 px-6 pb-16 pt-6 sm:pt-8 md:grid-cols-[1fr_1.1fr] md:items-center md:gap-8 md:px-8 md:pb-14 md:pt-8 lg:grid-cols-[1fr_1.2fr] lg:gap-10 lg:px-10 lg:pb-16 lg:pt-8">
         {/* Left: copy */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative z-10 max-w-xl md:max-w-none"
+          className="relative z-10 max-w-xl self-start pb-4 md:max-w-none md:self-center md:pb-4"
         >
           <h1 className="font-display text-[2rem] font-bold leading-[1.2] text-marica-ink sm:text-[2.6rem] md:text-[1.85rem] lg:text-[2.9rem]">
             {renderHeadline(hero.headline)}
@@ -154,7 +146,7 @@ export default function HeroView({ hero, stats }: Props) {
             </motion.a>
           )}
 
-          {/* Stats — tiga pil terpisah berjajar di bawah CTA */}
+          {/* Stats */}
           {stats.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -189,17 +181,17 @@ export default function HeroView({ hero, stats }: Props) {
         </motion.div>
 
         {/* Right: illustration with floating badges */}
-        <div className="relative z-10 mx-auto w-full max-w-[460px] px-4 py-8 sm:px-8 md:max-w-[320px] md:px-2 md:py-0 lg:max-w-[480px] lg:px-8 lg:py-4">
-          {/* soft blob backdrop behind the illustration */}
-          <div aria-hidden className="absolute inset-[6%] -z-10 rounded-full bg-marica-cream" />
+        <div className="relative z-10 mx-auto w-full max-w-[540px] px-2 pt-4 sm:px-4 md:max-w-[440px] md:px-0 md:pt-0 lg:max-w-[580px] xl:max-w-[620px]">
+          {/* soft blob backdrop */}
+          <div aria-hidden className="absolute inset-[4%] -z-10 rounded-full bg-marica-cream" />
 
-          {/* decorative target/ring icon, top-right of the blob */}
+          {/* decorative target/ring icon */}
           <motion.div
             aria-hidden
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="absolute right-[10%] top-[-2%] text-marica-amber-dark sm:right-[14%]"
+            className="absolute right-[6%] top-[2%] text-marica-amber-dark sm:right-[10%]"
           >
             <motion.div
               animate={{ y: [0, -8, 0] }}
@@ -213,13 +205,13 @@ export default function HeroView({ hero, stats }: Props) {
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="relative mx-auto aspect-square w-full max-w-[380px]"
+            className="relative mx-auto aspect-square w-full max-w-[500px] md:max-w-[420px] lg:max-w-[540px]"
           >
             <Image
               src={hero.imageUrl ?? "/images/hero-character.png"}
               alt="Ibu dan anak bermain balok edukatif bersama"
-              width={596}
-              height={596}
+              width={700}
+              height={700}
               priority
               className="h-full w-full object-contain"
             />
