@@ -158,7 +158,7 @@ export default function CtaSection() {
                 src="/images/trust-mascot.png"
                 alt="Maskot Marica"
                 width={280}
-                height={270}
+                height={0}
                 className="h-auto w-full object-contain"
               />
             </motion.div>
