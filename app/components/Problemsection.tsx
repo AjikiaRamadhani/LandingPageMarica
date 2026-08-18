@@ -44,7 +44,7 @@ export default function ProblemSection() {
   }, []);
 
   return (
-    <section id="masalah" className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
+    <section id="masalah" className="section-soft-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">
       <BackgroundDoodles />
 
       <div className="relative z-10 mx-auto max-w-3xl text-center">
@@ -53,7 +53,7 @@ export default function ProblemSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.5 }}
-          className="font-display text-[1.7rem] font-semibold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
+          className="font-display text-[1.7rem] font-bold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
         >
           Apakah Bunda Pernah Mengalami Hal Ini?
         </motion.h2>
@@ -86,7 +86,7 @@ export default function ProblemSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, delay: i * 0.12 }}
-              className="rounded-[28px] bg-white p-7 text-left shadow-[0_20px_50px_rgba(120,60,10,0.14)]"
+              className="rounded-[28px] bg-white p-7 text-left shadow-[0_20px_50px_rgba(120,60,10,0.1)]"
             >
               <div className="relative h-32 w-32 overflow-hidden rounded-full bg-marica-cream">
                 <Image

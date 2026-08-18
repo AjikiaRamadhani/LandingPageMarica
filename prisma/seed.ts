@@ -186,11 +186,11 @@ async function main() {
         order: 1,
       },
       {
-        customerName: "Bunda Anita Rahma, S.T.",
-        role: "Ibu Bekerja & Penggemar Edukasi Anak",
-        avatarUrl: "/images/testimoni2.png",
+        customerName: "Bapak Rusdi",
+        role: "IT Engineering",
+        avatarUrl: "/images/testimoni22.png",
         message:
-          "Workshop sains dan kriya mingguan di Marica selalu bikin si kecil antusias! Materi belajar yang biasanya membosankan di sekolah, di sini malah disajikan seru banget lewat praktik langsung. Sepulang dari workshop, anaknya makin kritis dan kreatif.",
+          "Edu-Kit bulanannya sangat membantu saya yang sibuk untuk tetap bisa memberikan aktivitas berkualitas di rumah.",
         order: 2,
       },
       {

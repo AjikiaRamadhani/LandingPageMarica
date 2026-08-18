@@ -6,22 +6,6 @@ import { motion } from "framer-motion";
 import { ArrowRight, MapPin, MessageCircle } from "lucide-react";
 import { FaInstagram as Instagram } from "react-icons/fa6";
 
-function CloudShape({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 40" className={className} fill="currentColor" aria-hidden>
-      <path d="M50 40H14C6.268 40 0 33.732 0 26C0 18.268 6.268 12 14 12C14.676 12 15.343 12.048 16 12.14C18.28 5.06 24.928 0 32.8 0C41.316 0 48.44 5.936 50.28 13.868C50.52 13.856 50.76 13.848 51 13.848C58.18 13.848 64 19.668 64 26.848C64 34.028 58.18 40 51 40H50Z" />
-    </svg>
-  );
-}
-
-function StarShape({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" className={className} fill="currentColor" aria-hidden>
-      <path d="M20 0L23.9 15.1L38.6 20L23.9 24.9L20 40L16.1 24.9L1.4 20L16.1 15.1L20 0Z" />
-    </svg>
-  );
-}
-
 type ApiCompany = {
   phone: string | null;
   instagram: string | null;
@@ -55,44 +39,43 @@ export default function CtaSection() {
   ];
 
   return (
-    <section className="relative bg-marica-cream px-6 pb-20 lg:px-10 lg:pb-28">
+    <section className="relative overflow-hidden bg-marica-amber px-6 pb-16 pt-16 lg:px-10 lg:pb-20 lg:pt-20">
+      {/* animated wave at the top edge, flowing in from the FAQ section above */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-10 overflow-hidden leading-[0] sm:h-14"
+      >
+        <motion.svg
+          viewBox="0 0 2400 60"
+          className="h-full w-[200%]"
+          preserveAspectRatio="none"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+        >
+          <path
+            d="M0 30C100 5 200 5 300 30C400 55 500 55 600 30C700 5 800 5 900 30C1000 55 1100 55 1200 30C1300 5 1400 5 1500 30C1600 55 1700 55 1800 30C1900 5 2000 5 2100 30C2200 55 2300 55 2400 30V0H0V30Z"
+            fill="#f1cfa6"
+          />
+        </motion.svg>
+      </div>
+
+      {/* soft decorative glow, same language as the footer below */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-16 -top-10 h-56 w-56 rounded-full bg-white/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-white/10 blur-3xl"
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 40, scale: 0.96 }}
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
-        className="relative mx-auto max-w-4xl overflow-hidden rounded-[32px] bg-gradient-to-br from-marica-amber to-marica-amber-dark px-6 py-12 shadow-[0_25px_60px_rgba(120,60,10,0.25)] sm:px-10 sm:py-14 lg:px-14"
+        className="relative mx-auto max-w-4xl overflow-hidden rounded-[32px] bg-marica-cream px-6 py-12 shadow-[0_25px_60px_rgba(120,60,10,0.2)] sm:px-10 sm:py-14 lg:px-14"
       >
-        {/* decorative floating shapes */}
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute -left-4 top-6 text-white/15"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <CloudShape className="h-16 w-28" />
-        </motion.div>
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute -right-4 bottom-4 text-white/15"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        >
-          <CloudShape className="h-16 w-28" />
-        </motion.div>
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute bottom-8 right-10 text-white/20"
-          animate={{ rotate: [0, 20, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <StarShape className="h-8 w-8" />
-        </motion.div>
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.15] [background-image:radial-gradient(rgba(255,255,255,0.6)_1.5px,transparent_1.5px)] [background-size:20px_20px]"
-        />
-
         <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-6">
           {/* Copy */}
           <div className="text-center lg:text-left">
@@ -111,7 +94,7 @@ export default function CtaSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.5 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink/70 sm:text-base lg:mx-0"
+              className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink-soft sm:text-base lg:mx-0"
             >
               Bergabunglah dengan ribuan keluarga lainnya dan temukan cara
               baru yang menyenangkan untuk mendukung tumbuh kembang anak.
@@ -128,7 +111,7 @@ export default function CtaSection() {
                 href="#"
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2 rounded-full bg-marica-cream px-6 py-3 font-display text-sm font-semibold text-marica-amber-dark shadow-md transition-shadow hover:shadow-lg"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-display text-sm font-semibold text-marica-ink shadow-[0_10px_24px_rgba(120,60,10,0.15)] transition-shadow hover:shadow-[0_14px_30px_rgba(120,60,10,0.22)]"
               >
                 Eksplor Serunya Marica
                 <ArrowRight className="h-4 w-4" />
@@ -140,7 +123,7 @@ export default function CtaSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.5 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-6 flex items-center justify-center gap-5 lg:justify-start"
+              className="mt-7 flex items-center justify-center gap-6 lg:justify-start"
             >
               {contacts.map((c) => (
                 <a
@@ -148,9 +131,11 @@ export default function CtaSection() {
                   href={c.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 font-body text-xs font-medium text-marica-ink/70 transition-colors hover:text-marica-ink"
+                  className="group flex flex-col items-center gap-1.5 font-body text-xs text-marica-ink-soft transition-colors hover:text-marica-ink"
                 >
-                  <c.icon className="h-3.5 w-3.5" />
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-marica-ink/15 text-marica-ink-soft transition-colors group-hover:border-marica-ink/30 group-hover:text-marica-ink">
+                    <c.icon className="h-4 w-4" />
+                  </span>
                   {c.label}
                 </a>
               ))}

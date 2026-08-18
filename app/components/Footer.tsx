@@ -23,10 +23,9 @@ const navigasi = [
 ];
 
 const layanan = [
-  { label: "Area Bermain (Playpass)", href: "#" },
-  { label: "Weekend Workshop", href: "#" },
-  { label: "Edu-Kit Bulanan", href: "#" },
-  { label: "Kemitraan & Event", href: "#" },
+  { label: "Books & Edugames", href: "/layanan" },
+  { label: "Subscription", href: "/layanan" },
+  { label: "Play & Interactive Zone", href: "/layanan" },
 ];
 
 function TikTokIcon({ className }: { className?: string }) {
@@ -65,7 +64,7 @@ export default function Footer() {
   const email = company?.email || "pt.sebangku@gmail.com";
   const website = company?.website || "www.marica.id";
   const instagramId = company?.instagram || "@kids.marica";
-  
+
   // Clean phone for tel: link
   const phoneClean = phone.replace(/[^0-9+]/g, "");
 
@@ -76,11 +75,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative overflow-hidden rounded-t-[2.5rem] bg-marica-amber">
-      {/* soft decorative blobs */}
-      <div className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-white/15 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-
+    <footer className="relative overflow-hidden bg-[#f7ead2]">
       <div className="relative px-6 py-14 sm:px-10 lg:px-16">
 
       <motion.div
@@ -235,7 +230,7 @@ export default function Footer() {
                 }}
                 whileHover={{ scale: 1.15, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-marica-amber-dark transition-colors hover:bg-marica-ink hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-marica-amber-dark shadow-sm transition-colors hover:bg-marica-ink hover:text-white"
               >
                 <s.icon className="h-4 w-4" />
               </motion.a>
@@ -250,14 +245,14 @@ export default function Footer() {
       </div>
 
       {/* bottom bar */}
-      <div className="relative bg-marica-amber-dark px-6 py-5 sm:px-10 lg:px-16">
+      <div className="relative bg-[#f2ddba] px-6 py-5 sm:px-10 lg:px-16">
         <motion.div
           initial={{ scaleX: 0 }}
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true, amount: 0.6 }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
           style={{ originX: 0.5 }}
-          className="mx-auto mb-4 h-px w-full max-w-7xl bg-white/15"
+          className="mx-auto mb-4 h-px w-full max-w-7xl bg-marica-ink/10"
         />
 
         <motion.p
@@ -265,7 +260,7 @@ export default function Footer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.6 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="text-center font-body text-xs text-white/80"
+          className="text-center font-body text-xs text-marica-ink-soft"
         >
           © 2025 {company?.name || "Marica Experience Store"} - PT Sebangku Jaya Abadi. All rights
           reserved.

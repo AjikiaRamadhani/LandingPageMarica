@@ -65,6 +65,40 @@ body {
   color: var(--foreground);
 }
 
+.section-soft-bg {
+  background-image: linear-gradient(180deg, #fdf8f0 0%, #f6f0e8 14%, #f3eadb 100%);
+}
+
+/* Lanjutan warna dari .section-soft-bg (berakhir di #f3eadb) supaya batas
+   antar-section tidak terlihat sebagai garis saat keduanya bersebelahan. */
+.section-warm-bg {
+  background-image: linear-gradient(180deg, #f3eadb 0%, #f7e9d2 45%, #f3decb 100%);
+}
+
+/* Lanjutan dari .section-warm-bg (berakhir di #f3decb) */
+.section-cream-bg {
+  background-image: linear-gradient(180deg, #f3decb 0%, #f7e6d4 50%, #fdf3e6 100%);
+}
+
+/* Lanjutan dari .section-cream-bg (berakhir di #fdf3e6) */
+.section-peach-bg {
+  background-image: linear-gradient(180deg, #fdf3e6 0%, #faecda 50%, #f6e2c8 100%);
+}
+
+/* Lanjutan dari .section-peach-bg (berakhir di #f6e2c8) */
+.section-sand-bg {
+  background-image: linear-gradient(180deg, #f6e2c8 0%, #f4d9b8 50%, #f1cfa6 100%);
+}
+
+
+
+.hero-gradient-bg-v2 {
+  background-image:
+    radial-gradient(1000px 640px at 2% -8%, rgba(102, 167, 199, 0.55) 0%, rgba(102, 167, 199, 0) 58%),
+    radial-gradient(760px 480px at 0% 24%, rgba(191, 228, 246, 0.55) 0%, rgba(191, 228, 246, 0) 62%),
+    linear-gradient(180deg, #ffffff 0%, #fdfbf6 55%, #fdf8f0 100%);
+}
+
 .hero-gradient-bg {
   background-image:
     radial-gradient(1100px 620px at 6% -10%, rgba(249, 179, 68, 0.65) 0%, rgba(249, 179, 68, 0) 60%),

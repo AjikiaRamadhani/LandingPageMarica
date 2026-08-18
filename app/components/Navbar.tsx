@@ -3,15 +3,15 @@
 import type { MouseEvent } from "react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { label: "Beranda", href: "#beranda", active: true },
-  { label: "Masalah", href: "#masalah" },
-  { label: "Manfaat", href: "#manfaat" },
-  { label: "Testimoni", href: "#testimoni" },
-  { label: "Cara Kerja", href: "#cara-kerja" },
+  { label: "Program", href: "#program" },
+  { label: "Aktivitas", href: "#aktivitas" },
+  { label: "Event", href: "#event" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -21,11 +21,24 @@ type ApiCompany = {
 };
 
 export default function Navbar() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [company, setCompany] = useState<ApiCompany | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [activeHref, setActiveHref] = useState<string>("#beranda");
+
+  // Kalau kita sedang di halaman lain (mis. /layanan), menu aktif mengikuti
+  // route saat ini, bukan hash section — supaya "Layanan" tidak ketiban
+  // status aktif "Beranda" hanya karena posisi scroll masih di atas.
+  useEffect(() => {
+    if (!isHome) {
+      const routeLink = navLinks.find((link) => !link.href.startsWith("#") && link.href === pathname);
+      setActiveHref(routeLink?.href ?? pathname);
+    }
+  }, [isHome, pathname]);
 
   useEffect(() => {
     fetch("/api/company")
@@ -54,6 +67,8 @@ export default function Navbar() {
   // saat Navbar pertama kali mount. Menu aktif = section terakhir yang sudah
   // terlewati dari titik acuan di ~35% tinggi viewport.
   useEffect(() => {
+    if (!isHome) return;
+
     const hashLinks = navLinks
       .map((link) => link.href)
       .filter((href) => href.startsWith("#") && href !== "#");
@@ -86,7 +101,7 @@ export default function Navbar() {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, []);
+  }, [isHome]);
 
   // Di mobile, menu ditutup dulu (animasi ~300ms) baru discroll ke section
   // tujuan. Kalau scroll dan animasi penutupan dijalankan bersamaan, layout
@@ -94,7 +109,7 @@ export default function Navbar() {
   // terasa seperti "tidak menggeser" sama sekali.
   const handleMobileNavClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
     setActiveHref(href);
-    if (!href.startsWith("#") || href === "#") return;
+    if (!isHome || !href.startsWith("#") || href === "#") return;
     e.preventDefault();
     setIsOpen(false);
 
@@ -146,10 +161,11 @@ export default function Navbar() {
         >
           {navLinks.map((link, i) => {
             const isHighlighted = hoveredIndex === i || (hoveredIndex === null && link.href === activeHref);
+            const resolvedHref = link.href.startsWith("#") && !isHome ? `/${link.href}` : link.href;
             return (
               <a
                 key={link.label}
-                href={link.href}
+                href={resolvedHref}
                 onMouseEnter={() => setHoveredIndex(i)}
                 onClick={() => setActiveHref(link.href)}
                 className={`relative rounded-full px-3 py-1.5 transition-colors ${
@@ -169,40 +185,49 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Mobile menu button */}
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          aria-label={isOpen ? "Tutup menu" : "Buka menu"}
-          aria-expanded={isOpen}
-          className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-marica-ink lg:hidden"
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {isOpen ? (
-              <motion.span
-                key="close"
-                initial={{ opacity: 0, rotate: -90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: 90 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 flex items-center justify-center"
-              >
-                <X className="h-6 w-6" />
-              </motion.span>
-            ) : (
-              <motion.span
-                key="menu"
-                initial={{ opacity: 0, rotate: 90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: -90 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 flex items-center justify-center"
-              >
-                <Menu className="h-6 w-6" />
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
+        {/* Right side: login pill (desktop) + mobile menu button */}
+        <div className="flex shrink-0 items-center gap-3">
+          <a
+            href="/login"
+            className="hidden items-center justify-center rounded-full bg-marica-amber-dark px-5 py-2 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 lg:inline-flex"
+          >
+            Masuk
+          </a>
+
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            aria-label={isOpen ? "Tutup menu" : "Buka menu"}
+            aria-expanded={isOpen}
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-marica-ink lg:hidden"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {isOpen ? (
+                <motion.span
+                  key="close"
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <X className="h-6 w-6" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="menu"
+                  initial={{ opacity: 0, rotate: 90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: -90 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <Menu className="h-6 w-6" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu panel */}
@@ -226,7 +251,7 @@ export default function Navbar() {
               {navLinks.map((link, i) => (
                 <motion.a
                   key={link.label}
-                  href={link.href}
+                  href={link.href.startsWith("#") && !isHome ? `/${link.href}` : link.href}
                   onClick={(e) => handleMobileNavClick(e, link.href)}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -240,6 +265,15 @@ export default function Navbar() {
                   {link.label}
                 </motion.a>
               ))}
+              <motion.a
+                href="/login"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
+                className="mt-1 rounded-xl bg-marica-amber-dark px-4 py-2.5 text-center font-body text-[15px] font-semibold text-white"
+              >
+                Masuk
+              </motion.a>
             </motion.div>
           </motion.div>
         )}

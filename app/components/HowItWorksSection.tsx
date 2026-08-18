@@ -91,15 +91,15 @@ export default function HowItWorksSection() {
   }, []);
 
   return (
-    <section id="cara-kerja" className="relative overflow-hidden bg-marica-amber px-6 py-20 lg:px-10 lg:py-28">
+    <section id="cara-kerja" className="section-peach-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">
       {/* decorative glow blobs, consistent with the rest of the page */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-14 top-10 h-56 w-56 rounded-full bg-white/10 blur-3xl"
+        className="pointer-events-none absolute -left-14 top-10 h-56 w-56 rounded-full bg-marica-amber/15 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute right-0 bottom-0 h-64 w-64 rounded-full bg-white/10 blur-3xl"
+        className="pointer-events-none absolute right-0 bottom-0 h-64 w-64 rounded-full bg-marica-blue/10 blur-3xl"
       />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
@@ -108,7 +108,7 @@ export default function HowItWorksSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5 }}
-          className="font-display text-[1.7rem] font-semibold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
+          className="font-display text-[1.7rem] font-bold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
         >
           Bagaimana Marica Membantu?
         </motion.h2>
@@ -117,7 +117,7 @@ export default function HowItWorksSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mx-auto mt-3 max-w-xl font-body text-sm leading-relaxed text-marica-ink/80 sm:text-base"
+          className="mx-auto mt-3 max-w-xl font-body text-sm leading-relaxed text-marica-ink-soft sm:text-base"
         >
           Tiga langkah sederhana untuk memulai pengalaman belajar yang
           menyenangkan dan interaktif bersama Marica. Kami hadir untuk
@@ -135,7 +135,7 @@ export default function HowItWorksSection() {
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 1.1, ease: "easeInOut", delay: 0.2 }}
           style={{ originY: 0 }}
-          className="absolute left-[27px] top-8 bottom-8 w-0 border-l-2 border-dashed border-white/60"
+          className="absolute left-[27px] top-8 bottom-8 w-0 border-l-2 border-dashed border-marica-ink/20"
         />
 
         <div className="flex flex-col gap-10">
@@ -161,7 +161,7 @@ export default function HowItWorksSection() {
                     damping: 16,
                     delay: i * 0.15 + 0.1,
                   }}
-                  className={`relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${item.iconBg} ring-4 ring-marica-amber`}
+                  className={`relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${item.iconBg} ring-4 ring-white`}
                 >
                   <motion.div
                     animate={{ scale: [1, 1.1, 1] }}
@@ -237,7 +237,7 @@ export default function HowItWorksSection() {
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 1, ease: "easeInOut", delay: 0.3 }}
           style={{ originX: 0 }}
-          className="absolute left-[16.5%] right-[16.5%] top-[68px] hidden h-0.5 bg-white/50 lg:block"
+          className="absolute left-[16.5%] right-[16.5%] top-[68px] hidden h-0.5 bg-marica-ink/15 lg:block"
         />
 
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">

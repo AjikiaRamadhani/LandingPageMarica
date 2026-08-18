@@ -112,7 +112,7 @@ export default function BenefitsSection() {
   }, []);
 
   return (
-    <section id="manfaat" className="relative overflow-hidden bg-gradient-to-b from-marica-amber via-marica-amber to-marica-amber-dark px-6 py-20 lg:px-10 lg:py-28">
+    <section id="manfaat" className="section-warm-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">
       <BackgroundDoodles />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
@@ -121,7 +121,7 @@ export default function BenefitsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5 }}
-          className="font-display text-[1.7rem] font-semibold leading-tight text-white sm:text-3xl lg:text-[2.2rem]"
+          className="font-display text-[1.7rem] font-bold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
         >
           Apa yang Didapatkan Bunda & Si Kecil?
         </motion.h2>
@@ -130,18 +130,18 @@ export default function BenefitsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-white/85 sm:text-base"
+          className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink-soft sm:text-base"
         >
           Semua manfaat yang akan dirasakan keluarga bersama Marica.
         </motion.p>
       </div>
 
       {loading ? (
-        <div className="relative z-10 mt-14 text-center font-body text-sm text-white/80">
+        <div className="relative z-10 mt-14 text-center font-body text-sm text-marica-ink/60">
           Memuat data...
         </div>
       ) : error ? (
-        <div className="relative z-10 mt-14 text-center font-body text-sm text-red-100">
+        <div className="relative z-10 mt-14 text-center font-body text-sm text-red-600">
           {error}
         </div>
       ) : (

@@ -117,13 +117,14 @@ export default function TestimonialSection() {
 
   return (
     <section
-      className="relative overflow-hidden bg-gradient-to-b from-marica-amber-dark via-marica-amber to-marica-amber px-6 py-20 lg:px-10 lg:py-28"
+      id="testimoni"
+      className="section-cream-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-16 bottom-0 h-56 w-56 rounded-full bg-white/10 blur-3xl"
+        className="pointer-events-none absolute -left-16 bottom-0 h-56 w-56 rounded-full bg-marica-amber/15 blur-3xl"
       />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
@@ -132,18 +133,18 @@ export default function TestimonialSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5 }}
-          className="font-display text-[1.7rem] font-semibold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
+          className="font-display text-[1.7rem] font-bold leading-tight text-marica-ink sm:text-3xl lg:text-[2.2rem]"
         >
-          Apa Kata Bunda?
+          Apa Kata Orang Tua?
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink/80 sm:text-base"
+          className="mx-auto mt-3 max-w-md font-body text-sm leading-relaxed text-marica-ink-soft sm:text-base"
         >
-          Cerita nyata dari para Bunda yang sudah tumbuh bersama Marica.
+          Cerita nyata dari para orang tua yang sudah tumbuh bersama Marica.
         </motion.p>
       </div>
 
@@ -177,7 +178,7 @@ export default function TestimonialSection() {
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
                     whileHover={{ y: -6, scale: 1.02 }}
-                    className="relative w-[78%] shrink-0 select-none overflow-hidden rounded-[24px] bg-marica-cream p-6 shadow-[0_14px_35px_rgba(120,60,10,0.14)] transition-shadow hover:shadow-[0_20px_45px_rgba(120,60,10,0.22)] sm:w-[46%] lg:w-[24%]"
+                    className="relative w-[78%] shrink-0 select-none overflow-hidden rounded-[24px] bg-white p-6 shadow-[0_14px_35px_rgba(120,60,10,0.14)] transition-shadow hover:shadow-[0_20px_45px_rgba(120,60,10,0.22)] sm:w-[46%] lg:w-[24%]"
                   >
                     <Quote
                       className="pointer-events-none absolute -right-2 -top-2 h-16 w-16 text-marica-amber/25"
