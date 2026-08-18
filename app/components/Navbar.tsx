@@ -9,9 +9,10 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { label: "Beranda", href: "#beranda", active: true },
-  { label: "Program", href: "#program" },
-  { label: "Aktivitas", href: "#aktivitas" },
-  { label: "Event", href: "#event" },
+  { label: "Masalah", href: "#masalah" },
+  { label: "Manfaat", href: "#manfaat" },
+  { label: "Testimoni", href: "#testimoni" },
+  { label: "Cara Kerja", href: "#cara-kerja" },
   { label: "FAQ", href: "#faq" },
 ];
 
