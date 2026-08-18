@@ -25,7 +25,7 @@ async function main() {
       tagline: "Platform edukasi calistung terbaik untuk anak-anak Indonesia",
       description:
         "Marica Experience Store menghadirkan pengalaman belajar keluarga berbasis phygital.",
-      phone: "+62 822 2149 1429",
+      phone: "+62 858 7045 9329",
       email: "pt.sebangku@gmail.com",
       instagram: "@kids.marica",
       tiktok: "@kids.marica",
@@ -186,11 +186,11 @@ async function main() {
         order: 1,
       },
       {
-        customerName: "Bapak Rusdi",
-        role: "IT Engineering",
-        avatarUrl: "/images/testimoni22.png",
+        customerName: "Bunda Anita Rahma, S.T.",
+        role: "Ibu Bekerja & Penggemar Edukasi Anak",
+        avatarUrl: "/images/testimoni2.png",
         message:
-          "Edu-Kit bulanannya sangat membantu saya yang sibuk untuk tetap bisa memberikan aktivitas berkualitas di rumah.",
+          "Workshop sains dan kriya mingguan di Marica selalu bikin si kecil antusias! Materi belajar yang biasanya membosankan di sekolah, di sini malah disajikan seru banget lewat praktik langsung. Sepulang dari workshop, anaknya makin kritis dan kreatif.",
         order: 2,
       },
       {

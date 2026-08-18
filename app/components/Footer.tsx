@@ -60,7 +60,7 @@ export default function Footer() {
 
   // Fallbacks
   const description = company?.description || "Pusat pengalaman edukasi keluarga berkonsep phygital yang memadukan ritel buku, board game edukatif, dan aktivitas interaktif.";
-  const phone = company?.phone || "+62 822 2149 1429";
+  const phone = company?.phone || "+62 858 7045 9329";
   const email = company?.email || "pt.sebangku@gmail.com";
   const website = company?.website || "www.marica.id";
   const instagramId = company?.instagram || "@kids.marica";
