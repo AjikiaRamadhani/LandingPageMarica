@@ -136,3 +136,33 @@ body {
 .animate-blob-drift {
   animation: blob-drift 9s ease-in-out infinite;
 }
+
+/* Gelembung naik di panel ilustrasi login/daftar, di belakang maskot ikan */
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(0) scale(0.85);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-220px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.animate-bubble {
+  animation-name: bubble-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob-drift,
+  .animate-bubble,
+  .animate-marquee-left,
+  .animate-marquee-right {
+    animation: none !important;
+  }
+}
