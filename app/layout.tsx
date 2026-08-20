@@ -1,13 +1,27 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "@fontsource/fredoka/400.css";
 import "@fontsource/fredoka/500.css";
 import "@fontsource/fredoka/600.css";
 import "@fontsource/fredoka/700.css";
-import "@fontsource/plus-jakarta-sans/400.css";
-import "@fontsource/plus-jakarta-sans/500.css";
-import "@fontsource/plus-jakarta-sans/600.css";
-import "@fontsource/plus-jakarta-sans/700.css";
 import "./globals.css";
+
+// Self-hosted Plus Jakarta Sans (variable font) via next/font/local.
+// Covers all weights 200-800 through the single variable file, plus italics.
+const plusJakartaSans = localFont({
+  src: [
+    {
+      path: "./fonts/PlusJakartaSans-VariableFont_wght.ttf",
+      style: "normal",
+    },
+    {
+      path: "./fonts/PlusJakartaSans-Italic-VariableFont_wght.ttf",
+      style: "italic",
+    },
+  ],
+  variable: "--font-jakarta",
+  display: "swap",
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.marica.id";
 
@@ -66,9 +80,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className="h-full antialiased ">
+    <html lang="id" className={`h-full antialiased ${plusJakartaSans.variable}`}>
       <body className="min-h-full flex flex-col font-body">{children}</body>
     </html>
   );
 }
-

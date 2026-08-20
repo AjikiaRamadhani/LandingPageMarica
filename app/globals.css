@@ -55,7 +55,8 @@
   --color-marica-sky: var(--marica-sky);
   --color-marica-sky-light: var(--marica-sky-light);
   --font-display: "Fredoka", "Segoe UI Rounded", sans-serif;
-  --font-body: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  /* --font-jakarta is injected by next/font/local in layout.tsx */
+  --font-body: var(--font-jakarta), "Segoe UI", sans-serif;
 }
 html {
   scroll-behavior: smooth;
@@ -89,8 +90,6 @@ body {
 .section-sand-bg {
   background-image: linear-gradient(180deg, #f6e2c8 0%, #f4d9b8 50%, #f1cfa6 100%);
 }
-
-
 
 .hero-gradient-bg-v2 {
   background-image:
