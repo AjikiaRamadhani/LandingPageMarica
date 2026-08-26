@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
+import { transporter } from "@/lib/mailer";
 
 export async function POST(request: Request) {
   try {
@@ -30,8 +30,8 @@ export async function POST(request: Request) {
         email
       )}`;
 
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL ?? "Marica <onboarding@resend.dev>",
+      await transporter.sendMail({
+        from: `"Marica" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: "Reset Password Marica",
         html: `

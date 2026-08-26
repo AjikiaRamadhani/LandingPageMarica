@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
+import { resend } from "@/lib/mailer";
 
 export async function POST(request: Request) {
   try {
