@@ -11,6 +11,7 @@ const navLinks = [
   { label: "Beranda", href: "#beranda", active: true },
   { label: "Masalah", href: "#masalah" },
   { label: "Manfaat", href: "#manfaat" },
+  { label: "Artikel", href: "/artikel" },
   { label: "Testimoni", href: "#testimoni" },
   { label: "Cara Kerja", href: "#cara-kerja" },
   { label: "FAQ", href: "#faq" },
@@ -31,13 +32,19 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [activeHref, setActiveHref] = useState<string>("#beranda");
 
-  // Kalau kita sedang di halaman lain (mis. /layanan), menu aktif mengikuti
-  // route saat ini, bukan hash section — supaya "Layanan" tidak ketiban
+  // Kalau kita sedang di halaman lain (mis. /artikel), menu aktif mengikuti
+  // route saat ini, bukan hash section — supaya "Artikel" tidak ketiban
   // status aktif "Beranda" hanya karena posisi scroll masih di atas.
+  // startsWith juga dipakai supaya halaman detail (mis. /artikel/slug-nya)
+  // tetap menyorot menu "Artikel" sebagai induknya.
   useEffect(() => {
     if (!isHome) {
-      const routeLink = navLinks.find((link) => !link.href.startsWith("#") && link.href === pathname);
-      setActiveHref(routeLink?.href ?? pathname);
+      const routeLink = navLinks.find(
+        (link) =>
+          !link.href.startsWith("#") &&
+          (pathname === link.href || pathname?.startsWith(`${link.href}/`))
+      );
+      setActiveHref(routeLink?.href ?? pathname ?? "");
     }
   }, [isHome, pathname]);
 
@@ -186,13 +193,20 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Right side: login pill (desktop) + mobile menu button */}
+        {/* Right side: auth pills (desktop) + mobile menu button */}
         <div className="flex shrink-0 items-center gap-3">
           <a
             href="/login"
-            className="hidden items-center justify-center rounded-full bg-marica-amber-dark px-5 py-2 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 lg:inline-flex"
+            className="hidden items-center justify-center rounded-full border border-marica-ink/10 bg-white px-5 py-2 font-body text-sm font-semibold text-marica-ink shadow-sm transition hover:bg-marica-cream lg:inline-flex"
           >
             Masuk
+          </a>
+
+          <a
+            href="/daftar"
+            className="hidden items-center justify-center rounded-full bg-marica-amber-dark px-5 py-2 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 lg:inline-flex"
+          >
+            Daftar Sekarang
           </a>
 
           <button
@@ -266,15 +280,27 @@ export default function Navbar() {
                   {link.label}
                 </motion.a>
               ))}
-              <motion.a
-                href="/login"
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
-                className="mt-1 rounded-xl bg-marica-amber-dark px-4 py-2.5 text-center font-body text-[15px] font-semibold text-white"
-              >
-                Masuk
-              </motion.a>
+
+              <div className="mt-2 flex flex-col gap-2">
+                <motion.a
+                  href="/login"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
+                  className="rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 text-center font-body text-[15px] font-semibold text-marica-ink"
+                >
+                  Masuk
+                </motion.a>
+                <motion.a
+                  href="/register"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.25, delay: (navLinks.length + 1) * 0.05 }}
+                  className="rounded-xl bg-marica-amber-dark px-4 py-2.5 text-center font-body text-[15px] font-semibold text-white"
+                >
+                  Daftar Sekarang
+                </motion.a>
+              </div>
             </motion.div>
           </motion.div>
         )}
