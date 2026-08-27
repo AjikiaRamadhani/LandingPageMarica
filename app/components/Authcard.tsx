@@ -50,7 +50,7 @@ export default function AuthCard({
           className="mx-auto -mt-2 mb-4 w-fit"
         >
           <Image
-            src="/images/mascots/program-matematika-mascot.png"
+            src="/images/program-matematika-mascot.png"
             alt=""
             width={88}
             height={120}

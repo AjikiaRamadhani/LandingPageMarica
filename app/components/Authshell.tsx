@@ -226,7 +226,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
               transition={{ duration: 4, repeat: prefersReducedMotion ? 0 : Infinity, ease: "easeInOut" }}
             >
               <Image
-                src="/images/mascots/program-bahasa-mascot.png"
+                src="/images/program-bahasa-mascot.png"
                 alt="Maskot Program Bahasa Marica"
                 width={126}
                 height={119}
