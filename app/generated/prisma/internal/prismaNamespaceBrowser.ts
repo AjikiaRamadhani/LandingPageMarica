@@ -64,7 +64,11 @@ export const ModelName = {
   Benefit: 'Benefit',
   HowItWorksStep: 'HowItWorksStep',
   Testimonial: 'Testimonial',
-  Faq: 'Faq'
+  Faq: 'Faq',
+  ArticleCategory: 'ArticleCategory',
+  Article: 'Article',
+  Comment: 'Comment',
+  NewsletterSubscriber: 'NewsletterSubscriber'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -90,6 +94,7 @@ export const UserScalarFieldEnum = {
   emailVerified: 'emailVerified',
   image: 'image',
   password: 'password',
+  role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -285,6 +290,60 @@ export const FaqScalarFieldEnum = {
 } as const
 
 export type FaqScalarFieldEnum = (typeof FaqScalarFieldEnum)[keyof typeof FaqScalarFieldEnum]
+
+
+export const ArticleCategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  colorTag: 'colorTag',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleCategoryScalarFieldEnum = (typeof ArticleCategoryScalarFieldEnum)[keyof typeof ArticleCategoryScalarFieldEnum]
+
+
+export const ArticleScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  slug: 'slug',
+  excerpt: 'excerpt',
+  content: 'content',
+  coverImageUrl: 'coverImageUrl',
+  status: 'status',
+  publishedAt: 'publishedAt',
+  views: 'views',
+  categoryId: 'categoryId',
+  authorId: 'authorId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ArticleScalarFieldEnum = (typeof ArticleScalarFieldEnum)[keyof typeof ArticleScalarFieldEnum]
+
+
+export const CommentScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  isActive: 'isActive',
+  articleId: 'articleId',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
+export const NewsletterSubscriberScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type NewsletterSubscriberScalarFieldEnum = (typeof NewsletterSubscriberScalarFieldEnum)[keyof typeof NewsletterSubscriberScalarFieldEnum]
 
 
 export const SortOrder = {

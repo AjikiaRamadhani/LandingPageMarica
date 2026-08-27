@@ -158,6 +158,14 @@ body {
   animation-iteration-count: infinite;
 }
 
+/* Placeholder untuk div contentEditable di editor artikel admin
+   (contentEditable tidak punya placeholder bawaan seperti <input>/<textarea>). */
+.prose-content:empty:before {
+  content: attr(data-placeholder);
+  color: rgba(85, 82, 77, 0.45); /* ~ marica-ink-soft/45 */
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-blob-drift,
   .animate-bubble,

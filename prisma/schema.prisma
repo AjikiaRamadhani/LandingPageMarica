@@ -22,6 +22,9 @@ model User {
   password      String? // hash bcrypt, buat login credentials (email/password)
   accounts      Account[]
   sessions      Session[]
+  role     Role      @default(USER)
+  articles Article[]
+  comments Comment[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
  
@@ -217,3 +220,95 @@ model Faq {
 
   @@map("faqs")
 }
+
+// ============================================
+// TAMBAHAN: Role di User (buat bedain admin)
+// ============================================
+// Di model User yang udah ada, tambahin field ini:
+//
+//   role Role @default(USER)
+//
+// Dan tambahin enum baru:
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ============================================
+// BLOG / ARTIKEL
+// ============================================
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model ArticleCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  colorTag  String? // buat badge warna: "blue", "purple", "orange", dst
+  articles  Article[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("article_categories")
+}
+
+model Article {
+  id          String          @id @default(cuid())
+  title       String
+  slug        String          @unique
+  excerpt     String?
+  content     String          @db.Text // rich text HTML dari editor
+  coverImageUrl String?
+  status      ArticleStatus   @default(DRAFT)
+  publishedAt DateTime?
+  views       Int             @default(0)
+  categoryId  String?
+  category    ArticleCategory? @relation(fields: [categoryId], references: [id])
+  authorId    String?
+  author      User?           @relation(fields: [authorId], references: [id])
+  comments    Comment[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("articles")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  isActive  Boolean  @default(true) // buat moderasi, sembunyiin tanpa hapus permanen
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("comments")
+}
+
+// ============================================
+// NEWSLETTER (dari section "Jangan Ketinggalan Info Seru!")
+// ============================================
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("newsletter_subscribers")
+}
+
+// ============================================
+// CATATAN: model User yang udah ada perlu ditambah 2 relasi ini:
+//
+//   articles Article[]
+//   comments Comment[]
+//
+// (selain field `role Role @default(USER)` yang disebut di atas)
+// ============================================

@@ -55,7 +55,11 @@ const iconMap: Record<string, LucideIcon> = {
   boxes: Boxes,
 };
 
-const statColors = ["text-marica-amber-dark", "text-marica-violet-deep", "text-marica-tan"];
+const statColors = [
+  "text-marica-amber-dark",
+  "text-marica-violet-deep",
+  "text-marica-tan",
+];
 
 const ArrowIcon = () => (
   <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
@@ -93,13 +97,16 @@ function renderHeadline(headline: string) {
 
   return parts.map((part, i) =>
     i % 2 === 1 ? (
-      <span key={i} className="relative inline-block whitespace-nowrap text-marica-amber-dark">
+      <span
+        key={i}
+        className="relative inline-block whitespace-nowrap text-marica-amber-dark"
+      >
         {part}
         <Squiggle />
       </span>
     ) : (
       <span key={i}>{part}</span>
-    )
+    ),
   );
 }
 
@@ -152,24 +159,24 @@ export default function HeroView({ hero, stats }: Props) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-6 flex flex-wrap items-center gap-3"
+              className="mt-6 flex flex-nowrap items-center justify-between gap-2 sm:justify-start sm:gap-3"
             >
               {stats.map((stat, i) => {
                 const Icon = iconMap[stat.icon ?? ""] ?? Sparkles;
                 return (
                   <div
                     key={stat.id}
-                    className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 shadow-[0_10px_24px_rgba(80,50,10,0.08)]"
+                    className="flex min-w-0 flex-1 items-center gap-1.5 rounded-2xl bg-white px-2.5 py-2 shadow-[0_10px_24px_rgba(80,50,10,0.08)] sm:flex-none sm:gap-3 sm:px-5 sm:py-3.5"
                   >
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${statColors[i % statColors.length]}`}
+                      className={`h-4 w-4 shrink-0 ${statColors[i % statColors.length]} sm:h-6 sm:w-6`}
                       fill="currentColor"
                     />
-                    <div className="leading-tight">
-                      <p className="font-display text-xs font-semibold text-marica-ink whitespace-nowrap sm:text-sm">
+                    <div className="min-w-0 leading-tight">
+                      <p className="truncate font-display text-[11px] font-semibold text-marica-ink sm:whitespace-nowrap sm:text-sm sm:text-base">
                         {stat.value}
                       </p>
-                      <p className="font-body text-[10px] text-marica-ink-soft whitespace-nowrap sm:text-[11px]">
+                      <p className="truncate font-body text-[9px] text-marica-ink-soft sm:whitespace-nowrap sm:text-xs sm:text-sm">
                         {stat.label}
                       </p>
                     </div>
@@ -183,7 +190,10 @@ export default function HeroView({ hero, stats }: Props) {
         {/* Right: illustration with floating badges */}
         <div className="relative z-10 mx-auto w-full max-w-[540px] px-2 pt-4 sm:px-4 md:max-w-[440px] md:px-0 md:pt-0 lg:max-w-[580px] xl:max-w-[620px]">
           {/* soft blob backdrop */}
-          <div aria-hidden className="absolute inset-[4%] -z-10 rounded-full bg-marica-cream" />
+          <div
+            aria-hidden
+            className="absolute inset-[4%] -z-10 rounded-full bg-marica-cream"
+          />
 
           {/* decorative target/ring icon */}
           <motion.div

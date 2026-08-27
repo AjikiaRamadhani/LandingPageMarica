@@ -1,51 +1,143 @@
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { CalendarDays, Share2 } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import ArticleComments from "../../components/Articlecomments";
 import Footer from "../../components/Footer";
-import { getArticleBySlug, getRelatedArticles, categories, categoryColorClasses } from "@/lib/artikel-data";
-// Sesuaikan path ini kalau file config next-auth kamu tidak persis di
-// project root sebagai `auth.ts` (mis. jadi `@/lib/auth` atau `@/auth/config`).
+import NewsletterForm from "../../components/Newsletterform";
 import { auth } from "@/lib/auth";
 
-// Next.js 15: `params` di halaman adalah Promise, bukan objek biasa —
-// ini yang bikin halaman kamu 404 sebelumnya (params.slug selalu undefined
-// karena belum di-`await`, jadi getArticleBySlug tidak pernah ketemu
-// artikelnya dan notFound() langsung kepanggil).
+// Sebelumnya halaman ini pakai data statis dari `lib/artikel-data.ts`
+// (getArticleBySlug/getRelatedArticles). Sekarang datanya diambil dari
+// /api/articles/[slug] (yang query ke Postgres Supabase via Prisma, dan
+// sekalian nambah view count di server), jadi artikel yang tampil beneran
+// artikel yang ada row-nya di database, bukan dummy data lagi.
+
+const FALLBACK_COVER = "/images/article-placeholder.png"; // TODO: pastikan file ini ada
+
+type ApiCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  colorTag: string; // asumsi: hex color, lihat catatan di artikel/page.tsx
+};
+
+type ApiArticleDetail = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  coverImageUrl: string | null;
+  publishedAt: string | null;
+  views: number;
+  category: ApiCategory | null;
+  author: { id: string; name: string | null } | null;
+};
+
+type ApiArticleListItem = {
+  id: string;
+  title: string;
+  slug: string;
+  coverImageUrl: string | null;
+  category: ApiCategory | null;
+};
+
+type ArticlesListResponse = { articles: ApiArticleListItem[] };
+
 type Params = Promise<{ slug: string }>;
+
+// Server Component butuh URL absolut untuk fetch ke API sendiri (fetch
+// relatif seperti "/api/..." tidak bisa dipakai di server). Base URL
+// dibangun dari header request yang sedang berjalan, jadi otomatis benar
+// baik di localhost, preview, maupun production — tidak perlu env var.
+async function getBaseUrl() {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const protocol = host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
+
+function formatDate(iso: string | null) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+async function getArticle(slug: string, baseUrl: string): Promise<ApiArticleDetail | null> {
+  const res = await fetch(`${baseUrl}/api/articles/${slug}`, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Gagal memuat artikel");
+  return res.json();
+}
+
+async function getRelatedArticles(categorySlug: string | undefined, excludeSlug: string, baseUrl: string) {
+  if (!categorySlug) return [];
+  const params = new URLSearchParams({ category: categorySlug, limit: "4" });
+  const res = await fetch(`${baseUrl}/api/articles?${params.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const body = (await res.json()) as ArticlesListResponse;
+  return body.articles.filter((a) => a.slug !== excludeSlug).slice(0, 3);
+}
 
 export default async function ArtikelDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const baseUrl = await getBaseUrl();
+
+  const article = await getArticle(slug, baseUrl);
   if (!article) notFound();
 
   const session = await auth();
   const commentUser = session?.user?.name ? { name: session.user.name } : null;
 
-  const related = getRelatedArticles(article.slug, 3);
-  const category = categories.find((c) => c.slug === article.categorySlug);
-  const colors = category ? categoryColorClasses[category.color] : null;
+  const related = await getRelatedArticles(article.category?.slug, article.slug, baseUrl);
 
   return (
     <div className="min-h-screen bg-marica-cream">
+      {/* Keyframe animasi dipakai lewat Tailwind arbitrary value
+          animate-[fadeInUp_...]. CSS animation jalan otomatis begitu
+          elemen ini di-paint, jadi tetap berfungsi walau halaman ini
+          Server Component (tidak butuh JS di client). */}
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       <Navbar />
 
       <div className="mx-auto max-w-5xl px-6 pb-6 pt-6 lg:px-10">
-        <nav className="font-body text-sm text-marica-ink-soft">
-          <Link href="/artikel" className="hover:text-marica-ink">Artikel</Link>
+        <nav className="animate-[fadeInUp_0.4s_ease-out_backwards] font-body text-sm text-marica-ink-soft">
+          <Link href="/artikel" className="transition hover:text-marica-ink">
+            Artikel
+          </Link>
           <span className="mx-2">/</span>
-          {category && <span>{category.label}</span>}
+          {article.category && <span>{article.category.name}</span>}
         </nav>
       </div>
 
       <div className="mx-auto grid max-w-5xl gap-10 px-6 pb-20 lg:grid-cols-[1fr_300px] lg:px-10">
         {/* Main article column */}
-        <article>
-          {colors && category && (
-            <span className={`inline-block rounded-full px-3 py-1 font-body text-xs font-semibold ${colors.bg} ${colors.text}`}>
-              {category.label}
+        <article
+          style={{ animationDelay: "80ms" }}
+          className="animate-[fadeInUp_0.5s_ease-out_backwards]"
+        >
+          {article.category && (
+            <span
+              className="inline-block rounded-full px-3 py-1 font-body text-xs font-semibold"
+              style={{ backgroundColor: `${article.category.colorTag}1A`, color: article.category.colorTag }}
+            >
+              {article.category.name}
             </span>
           )}
 
@@ -56,7 +148,7 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
           <div className="mt-4 flex items-center justify-between border-b border-marica-ink/10 pb-5">
             <span className="inline-flex items-center gap-2 font-body text-sm text-marica-ink-soft">
               <CalendarDays className="h-4 w-4" />
-              {article.date}
+              {formatDate(article.publishedAt)}
             </span>
             <button
               type="button"
@@ -66,64 +158,82 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
             </button>
           </div>
 
-          <div className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl">
-            <Image src={article.coverImage} alt={article.title} fill className="object-cover" priority />
+          <div
+            style={{ animationDelay: "160ms" }}
+            className="relative mt-6 aspect-[16/9] w-full animate-[fadeInUp_0.5s_ease-out_backwards] overflow-hidden rounded-2xl"
+          >
+            <Image
+              src={article.coverImageUrl || FALLBACK_COVER}
+              alt={article.title}
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
 
-          <div className="prose prose-neutral mt-8 max-w-none font-body text-marica-ink">
-            {article.content.map((section) => (
-              <div key={section.heading} className="mb-8">
-                <h2 className="font-display text-xl font-bold text-marica-ink">{section.heading}</h2>
-                {section.body.map((paragraph, i) => (
-                  <p key={i} className="mt-3 leading-relaxed text-marica-ink-soft">
-                    {paragraph}
-                  </p>
-                ))}
-                {section.list && (
-                  <ul className="mt-3 space-y-2">
-                    {section.list.map((item, i) => (
-                      <li key={i} className="flex gap-2 leading-relaxed text-marica-ink-soft">
-                        <span className="mt-1 text-marica-amber-text">✓</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
+          {/* `content` di database disimpan sebagai satu string (hasil rich
+              text editor di admin), beda dari data statis lama yang
+              berbentuk array section {heading, body, list}. Di bawah ini
+              di-render sebagai HTML. KALAU ternyata editor admin kamu
+              menyimpan Markdown (bukan HTML), ganti bagian ini pakai
+              react-markdown, jangan dangerouslySetInnerHTML mentah-mentah. */}
+          <div
+            className="prose prose-neutral mt-8 max-w-none font-body text-marica-ink"
+            dangerouslySetInnerHTML={{ __html: article.content }}
+          />
 
-          {/* Komentar hanya bisa ditulis oleh user yang sudah login —
-              ditangani di dalam komponen client ini. */}
-          <ArticleComments initialComments={article.comments} user={commentUser} />
+          {/* Komentar sudah fetch langsung ke /api/articles/[slug]/comments
+              (data DB asli) — komponen ini tidak diubah. */}
+          <ArticleComments slug={slug} user={commentUser} />
         </article>
 
         {/* Sidebar */}
-        <aside className="space-y-4">
+        <aside
+          style={{ animationDelay: "200ms" }}
+          className="animate-[fadeInUp_0.5s_ease-out_backwards] space-y-4"
+        >
           <h3 className="font-display text-base font-bold text-marica-ink">Artikel Lainnya</h3>
-          {related.map((item) => (
-            <Link
-              key={item.slug}
-              href={`/artikel/${item.slug}`}
-              className="flex gap-3 rounded-2xl bg-white p-3 shadow-sm transition hover:shadow-md"
-            >
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
-                <Image src={item.coverImage} alt={item.title} fill className="object-cover" />
-              </div>
-              <div>
-                <span className="font-body text-xs font-semibold text-rose-500">
-                  {categories.find((c) => c.slug === item.categorySlug)?.label}
-                </span>
-                <p className="line-clamp-2 font-body text-sm font-medium leading-snug text-marica-ink">
-                  {item.title}
-                </p>
-              </div>
-            </Link>
-          ))}
+          {related.length === 0 ? (
+            <p className="font-body text-sm text-marica-ink-soft">Belum ada artikel terkait.</p>
+          ) : (
+            related.map((item, i) => (
+              <Link
+                key={item.slug}
+                href={`/artikel/${item.slug}`}
+                style={{ animationDelay: `${240 + i * 80}ms` }}
+                className="flex animate-[fadeInUp_0.5s_ease-out_backwards] gap-3 rounded-2xl bg-white p-3 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
+                  <Image
+                    src={item.coverImageUrl || FALLBACK_COVER}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  {item.category && (
+                    <span
+                      className="font-body text-xs font-semibold"
+                      style={{ color: item.category.colorTag }}
+                    >
+                      {item.category.name}
+                    </span>
+                  )}
+                  <p className="line-clamp-2 font-body text-sm font-medium leading-snug text-marica-ink">
+                    {item.title}
+                  </p>
+                </div>
+              </Link>
+            ))
+          )}
         </aside>
       </div>
 
-      {/* Newsletter CTA */}
+      {/* Newsletter CTA — sebelumnya <form> ini statis (tidak ada
+          onSubmit), padahal /api/newsletter sudah ada dan tidak dipakai
+          sama sekali. Sekarang dipindah ke komponen client NewsletterForm
+          yang benar-benar POST ke endpoint itu. */}
       <section className="bg-marica-amber px-6 py-14 lg:px-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 text-center">
           <h2 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">
@@ -132,19 +242,7 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
           <p className="max-w-md font-body text-sm text-marica-ink/80">
             Dapatkan update artikel terbaru, tips parenting, dan info event langsung di inbox Anda.
           </p>
-          <form className="flex w-full max-w-md flex-col gap-2 sm:flex-row">
-            <input
-              type="email"
-              placeholder="Email kamu..."
-              className="w-full flex-1 rounded-full border-none px-5 py-3 font-body text-sm text-marica-ink placeholder:text-marica-ink-soft focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-marica-ink px-6 py-3 font-body text-sm font-semibold text-white transition hover:brightness-110"
-            >
-              Langganan
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </section>
 
