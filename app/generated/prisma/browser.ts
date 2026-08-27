@@ -87,3 +87,23 @@ export type Testimonial = Prisma.TestimonialModel
  * 
  */
 export type Faq = Prisma.FaqModel
+/**
+ * Model ArticleCategory
+ * 
+ */
+export type ArticleCategory = Prisma.ArticleCategoryModel
+/**
+ * Model Article
+ * 
+ */
+export type Article = Prisma.ArticleModel
+/**
+ * Model Comment
+ * 
+ */
+export type Comment = Prisma.CommentModel
+/**
+ * Model NewsletterSubscriber
+ * 
+ */
+export type NewsletterSubscriber = Prisma.NewsletterSubscriberModel
