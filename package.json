@@ -17,10 +17,7 @@
     "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
-<<<<<<< HEAD
-=======
     "@supabase/supabase-js": "^2.112.4",
->>>>>>> origin/backend-uploud
     "@vercel/blob": "^2.8.0",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^13.0.0",
