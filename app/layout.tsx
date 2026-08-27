@@ -5,6 +5,7 @@ import "@fontsource/fredoka/500.css";
 import "@fontsource/fredoka/600.css";
 import "@fontsource/fredoka/700.css";
 import "./globals.css";
+import Providers from "./components/Providers";
 
 // Self-hosted Plus Jakarta Sans (variable font) via next/font/local.
 // Covers all weights 200-800 through the single variable file, plus italics.
@@ -81,7 +82,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="id" className={`h-full antialiased ${plusJakartaSans.variable}`}>
-      <body className="min-h-full flex flex-col font-body">{children}</body>
+      <body className="min-h-full flex flex-col font-body">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
