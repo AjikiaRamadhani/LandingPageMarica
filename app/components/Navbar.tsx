@@ -1,11 +1,12 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 
 const navLinks = [
   { label: "Beranda", href: "#beranda", active: true },
@@ -25,12 +26,15 @@ type ApiCompany = {
 export default function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [company, setCompany] = useState<ApiCompany | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [activeHref, setActiveHref] = useState<string>("#beranda");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Kalau kita sedang di halaman lain (mis. /artikel), menu aktif mengikuti
   // route saat ini, bukan hash section — supaya "Artikel" tidak ketiban
@@ -58,6 +62,20 @@ export default function Navbar() {
       })
       .catch((err) => console.error("Failed to load company profile", err));
   }, []);
+
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Tutup dropdown profil kalau user klik di luar area dropdown-nya.
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handleClickOutside = (e: PointerEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
+  }, [profileOpen]);
 
   // Header sticky: begitu halaman digeser turun, background gradient-transparan
   // diganti jadi putih solid + blur + shadow supaya tetap terbaca rapi di atas
@@ -195,19 +213,82 @@ export default function Navbar() {
 
         {/* Right side: auth pills (desktop) + mobile menu button */}
         <div className="flex shrink-0 items-center gap-3">
-          <a
-            href="/login"
-            className="hidden items-center justify-center rounded-full border border-marica-ink/10 bg-white px-5 py-2 font-body text-sm font-semibold text-marica-ink shadow-sm transition hover:bg-marica-cream lg:inline-flex"
-          >
-            Masuk
-          </a>
+          {status === "loading" ? (
+            // Skeleton kecil biar tidak "flash" antara logged-out -> logged-in saat sesi masih dicek
+            <div className="hidden h-9 w-24 animate-pulse rounded-full bg-marica-ink/5 lg:block" />
+          ) : isLoggedIn ? (
+            <div className="relative hidden lg:block" ref={profileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setProfileOpen((prev) => !prev)}
+                aria-expanded={profileOpen}
+                className="flex items-center gap-2 rounded-full border border-marica-ink/10 bg-white py-1.5 pl-1.5 pr-3.5 shadow-sm transition hover:bg-marica-cream"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-marica-amber/20 text-marica-amber-dark">
+                  <User className="h-4 w-4" />
+                </span>
+                <span className="max-w-[120px] truncate font-body text-sm font-semibold text-marica-ink">
+                  {session?.user?.name?.split(" ")[0] || "Akun"}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-marica-ink-soft transition-transform ${profileOpen ? "rotate-180" : ""}`}
+                />
+              </button>
 
-          <a
-            href="/daftar"
-            className="hidden items-center justify-center rounded-full bg-marica-amber-dark px-5 py-2 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 lg:inline-flex"
-          >
-            Daftar Sekarang
-          </a>
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-2xl bg-white shadow-[0_14px_35px_rgba(120,60,10,0.15)]"
+                  >
+                    <div className="flex items-center gap-3 border-b border-black/5 px-4 py-3.5">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-marica-amber/20 text-marica-amber-dark">
+                        <User className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-body text-sm font-semibold text-marica-ink">
+                          {session?.user?.name || "Pengguna"}
+                        </p>
+                        <p className="truncate font-body text-xs text-marica-ink-soft">
+                          {session?.user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        signOut({ callbackUrl: "/" });
+                      }}
+                      className="flex w-full items-center gap-2.5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Keluar
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <>
+              <a
+                href="/login"
+                className="hidden items-center justify-center rounded-full border border-marica-ink/10 bg-white px-5 py-2 font-body text-sm font-semibold text-marica-ink shadow-sm transition hover:bg-marica-cream lg:inline-flex"
+              >
+                Masuk
+              </a>
+
+              <a
+                href="/daftar"
+                className="hidden items-center justify-center rounded-full bg-marica-amber-dark px-5 py-2 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 lg:inline-flex"
+              >
+                Daftar Sekarang
+              </a>
+            </>
+          )}
 
           <button
             type="button"
@@ -282,24 +363,60 @@ export default function Navbar() {
               ))}
 
               <div className="mt-2 flex flex-col gap-2">
-                <motion.a
-                  href="/login"
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
-                  className="rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 text-center font-body text-[15px] font-semibold text-marica-ink"
-                >
-                  Masuk
-                </motion.a>
-                <motion.a
-                  href="/register"
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.25, delay: (navLinks.length + 1) * 0.05 }}
-                  className="rounded-xl bg-marica-amber-dark px-4 py-2.5 text-center font-body text-[15px] font-semibold text-white"
-                >
-                  Daftar Sekarang
-                </motion.a>
+                {isLoggedIn ? (
+                  <motion.div
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
+                    className="rounded-xl bg-marica-cream/60 px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marica-amber/20 text-marica-amber-dark">
+                        <User className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-body text-sm font-semibold text-marica-ink">
+                          {session?.user?.name || "Pengguna"}
+                        </p>
+                        <p className="truncate font-body text-xs text-marica-ink-soft">
+                          {session?.user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOpen(false);
+                        signOut({ callbackUrl: "/" });
+                      }}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Keluar
+                    </button>
+                  </motion.div>
+                ) : (
+                  <>
+                    <motion.a
+                      href="/login"
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
+                      className="rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 text-center font-body text-[15px] font-semibold text-marica-ink"
+                    >
+                      Masuk
+                    </motion.a>
+                    <motion.a
+                      href="/register"
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.25, delay: (navLinks.length + 1) * 0.05 }}
+                      className="rounded-xl bg-marica-amber-dark px-4 py-2.5 text-center font-body text-[15px] font-semibold text-white"
+                    >
+                      Daftar Sekarang
+                    </motion.a>
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>
