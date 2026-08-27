@@ -8,6 +8,7 @@ import HowItWorksSection from "./components/HowItWorksSection";
 import FaqSection from "./components/FaqSection";
 import CtaSection from "./components/CtaSection";
 import Footer from "./components/Footer";
+import { Analytics } from "@vercel/analytics/next"
 export default function Home() {
   return (
     <main className="hero-gradient-bg flex min-h-screen flex-col">
@@ -21,6 +22,7 @@ export default function Home() {
       <CtaSection />
       <Footer />
       <WhatsAppButton />
+      <Analytics />
     </main>
   );
 }
