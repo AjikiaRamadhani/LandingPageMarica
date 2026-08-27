@@ -35,8 +35,7 @@ export default function AdminSidebar() {
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-black/5 bg-white">
       <div className="flex items-center gap-2 px-6 py-6">
-        <Image src="/images/logo-marica.png" alt="Marica" width={32} height={32} className="h-8 w-8" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-        <span className="font-display text-lg font-semibold text-marica-ink">Marica</span>
+        <Image src="/images/logo.png" alt="Marica" width={160} height={40} className="h-7 w-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
         <span className="rounded-full bg-marica-ink px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-white">
           Admin
         </span>
