@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
@@ -55,6 +55,31 @@ const strengthMeta = [
   { label: "Kuat", color: "bg-marica-green" },
 ];
 
+// Setelah login berhasil, tentukan mau diarahkan ke mana:
+// 1. Kalau ada ?callbackUrl=... di URL (di-set oleh proxy.ts saat user
+//    non-login mencoba akses /admin/*), balik ke sana.
+// 2. Kalau tidak ada, dan role user ADMIN, langsung ke dashboard admin.
+// 3. Selain itu, ke beranda seperti biasa.
+// getSession() dipanggil manual (bukan pakai hook useSession) karena kita
+// butuh data TERBARU segera setelah signIn, bukan nunggu context re-render.
+async function resolvePostLoginDestination(): Promise<string> {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const callbackUrl = params.get("callbackUrl");
+    // Hanya terima path relatif (mulai dengan "/") supaya tidak bisa
+    // dipakai untuk open-redirect ke domain lain.
+    if (callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")) {
+      return callbackUrl;
+    }
+
+    const session = await getSession();
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    return role === "ADMIN" ? "/admin/artikel" : "/";
+  } catch {
+    return "/";
+  }
+}
+
 export default function AuthShell({ mode }: { mode: AuthMode }) {
   const router = useRouter();
   const isLogin = mode === "login";
@@ -104,8 +129,9 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
         }
 
         setStatus("success");
+        const destination = await resolvePostLoginDestination();
         window.setTimeout(() => {
-          router.push("/");
+          router.push(destination);
           router.refresh();
         }, 700);
       } catch (err) {
@@ -140,8 +166,9 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
       }
 
       setStatus("success");
+      const destination = await resolvePostLoginDestination();
       window.setTimeout(() => {
-        router.push("/");
+        router.push(destination);
         router.refresh();
       }, 700);
     } catch (err) {

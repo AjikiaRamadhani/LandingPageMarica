@@ -1,66 +1,164 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, ArrowRight, BookOpen, Shapes, Clock3 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { articles, categories, tags, categoryColorClasses } from "@/lib/artikel-data";
 
-// Jumlah artikel minimal yang tampil di halaman pertama (1 featured + 4
-// grid, sesuai desain). Kalau total artikel (setelah difilter) lebih dari
-// ini, sisanya otomatis pindah ke halaman 2, 3, dst.
+// Sebelumnya halaman ini pakai data statis dari `lib/artikel-data.ts`.
+// Sekarang semua data (artikel + kategori) diambil dari API yang sudah
+// ada (/api/articles, /api/article-categories), yang di baliknya query ke
+// Postgres Supabase lewat Prisma.
 const ARTICLES_PER_PAGE = 5;
+const FALLBACK_COVER = "/images/article-placeholder.png"; // TODO: pastikan file ini ada, atau ganti ke gambar default yang tersedia
+
+type ApiCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  // Asumsi: colorTag adalah warna hex (mis. "#F59E0B") yang disimpan langsung
+  // di DB. Kalau ternyata di schema Prisma kamu colorTag itu nama class
+  // Tailwind (bukan hex), ganti pemakaian style={{...}} di bawah jadi className.
+  colorTag: string;
+};
+
+type ApiArticle = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  coverImageUrl: string | null;
+  publishedAt: string | null;
+  views: number;
+  category: ApiCategory | null;
+  author: { id: string; name: string | null } | null;
+  _count: { comments: number };
+};
+
+type ArticlesResponse = {
+  articles: ApiArticle[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+};
+
+function formatDate(iso: string | null) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function withAlpha(hex: string, alphaHex: string) {
+  if (!hex || !hex.startsWith("#") || hex.length !== 7) return hex;
+  return `${hex}${alphaHex}`;
+}
 
 export default function ArtikelPage() {
   const [query, setQuery] = useState("");
-  const [activeTag, setActiveTag] = useState<string>("Semua");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [page, setPage] = useState(1);
 
-  const filtered = useMemo(() => {
-    return articles.filter((article) => {
-      const matchesQuery = query.trim()
-        ? article.title.toLowerCase().includes(query.trim().toLowerCase())
-        : true;
-      const matchesTag = activeTag === "Semua" ? true : article.tags.includes(activeTag);
-      const matchesCategory =
-        activeCategory === "Semua" ? true : article.categorySlug === activeCategory;
-      return matchesQuery && matchesTag && matchesCategory;
-    });
-  }, [query, activeTag, activeCategory]);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [data, setData] = useState<ArticlesResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ARTICLES_PER_PAGE));
-  const currentPage = Math.min(page, totalPages);
-  const paged = filtered.slice((currentPage - 1) * ARTICLES_PER_PAGE, currentPage * ARTICLES_PER_PAGE);
-  // Card besar (hero, span 2 kolom) hanya untuk halaman pertama. Di halaman
-  // 2 dst, semua artikel yang tersisa ditampilkan rata dalam grid biasa —
-  // sebelumnya item pertama tiap halaman ikut dijadikan card besar, padahal
-  // itu bukan artikel "Featured" beneran.
-  const isFirstPage = currentPage === 1;
-  const featured = isFirstPage ? paged[0] : undefined;
-  const rest = isFirstPage ? paged.slice(1) : paged;
+  // Debounce input pencarian, biar nggak fetch tiap ketukan tombol.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  // Kategori cukup diambil sekali di awal.
+  useEffect(() => {
+    fetch("/api/article-categories")
+      .then((res) => res.json())
+      .then((body) => setCategories(Array.isArray(body) ? body : []))
+      .catch(() => setCategories([]));
+  }, []);
+
+  // Artikel diambil ulang tiap kali halaman/kategori/pencarian berubah.
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
+
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(ARTICLES_PER_PAGE));
+    if (activeCategory !== "Semua") params.set("category", activeCategory);
+    if (debouncedQuery) params.set("search", debouncedQuery);
+
+    fetch(`/api/articles?${params.toString()}`, { signal: controller.signal })
+      .then(async (res) => {
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.error ?? "Gagal memuat artikel");
+        setData(body as ArticlesResponse);
+      })
+      .catch((err) => {
+        if (err?.name !== "AbortError") {
+          setError(err instanceof Error ? err.message : "Gagal memuat artikel");
+        }
+      })
+      .finally(() => setIsLoading(false));
+
+    return () => controller.abort();
+  }, [page, activeCategory, debouncedQuery]);
 
   function resetToFirstPage() {
     setPage(1);
   }
 
+  const articles = data?.articles ?? [];
+  const pagination = data?.pagination;
+  const totalPages = pagination?.totalPages ?? 1;
+  const isFirstPage = page === 1;
+  const featured = isFirstPage ? articles[0] : undefined;
+  const rest = isFirstPage ? articles.slice(1) : articles;
+
   return (
     <div className="min-h-screen bg-marica-cream">
+      {/* Keyframe animasi dipakai di banyak elemen lewat Tailwind arbitrary
+          value animate-[fadeInUp_...] / animate-[fadeIn_...], jadi cukup
+          didefinisikan sekali di sini. */}
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+
       <Navbar />
 
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-6 pb-10 pt-6 lg:px-10">
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
+          <div className="animate-[fadeInUp_0.6s_ease-out_backwards]">
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 font-body text-sm font-medium text-marica-ink-soft shadow-sm">
               <BookOpen className="h-4 w-4 text-marica-amber-text" />
               Pusat Pengetahuan
             </span>
 
             <h1 className="mt-5 font-display text-4xl font-bold leading-tight text-marica-ink sm:text-5xl">
-              Jelajahi <span className="text-marica-amber-text underline decoration-marica-amber decoration-4 underline-offset-4">Dunia</span>
+              Jelajahi{" "}
+              <span className="text-marica-amber-text underline decoration-marica-amber decoration-4 underline-offset-4">
+                Dunia
+              </span>
               <br />
               Pengetahuan
             </h1>
@@ -71,13 +169,24 @@ export default function ArtikelPage() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
-              <StatPill icon={<BookOpen className="h-4 w-4 text-rose-500" />} value="73+" label="Artikel" />
-              <StatPill icon={<Shapes className="h-4 w-4 text-amber-500" />} value="6" label="Kategori" />
+              <StatPill
+                icon={<BookOpen className="h-4 w-4 text-rose-500" />}
+                value={pagination ? `${pagination.total}` : "-"}
+                label="Artikel"
+              />
+              <StatPill
+                icon={<Shapes className="h-4 w-4 text-amber-500" />}
+                value={`${categories.length}`}
+                label="Kategori"
+              />
               <StatPill icon={<Clock3 className="h-4 w-4 text-emerald-500" />} value="Update" label="Mingguan" />
             </div>
           </div>
 
-          <div className="relative mx-auto hidden aspect-square w-full max-w-sm rounded-full bg-white/40 sm:block">
+          <div
+            style={{ animationDelay: "150ms" }}
+            className="relative mx-auto hidden aspect-square w-full max-w-sm animate-[fadeInUp_0.6s_ease-out_backwards] rounded-full bg-white/40 sm:block"
+          >
             <Image
               src="/images/hero-character.png"
               alt="Maskot Marica"
@@ -88,84 +197,33 @@ export default function ArtikelPage() {
           </div>
         </div>
 
-        {/* Search + filter bar */}
+        {/* Search bar. Catatan: filter "tag" versi lama dihapus karena
+            model Artikel di database belum punya konsep tag — cuma
+            title/excerpt/content/category. Kalau nanti mau tag, perlu
+            tambah field/tabel dulu di Prisma schema + API-nya. */}
         <div className="mt-8 flex flex-col gap-4 rounded-3xl bg-white p-4 shadow-[0_10px_30px_rgba(120,60,10,0.08)] lg:flex-row lg:items-center">
           <div className="flex flex-1 items-center gap-2 rounded-2xl bg-marica-cream/70 px-4 py-2.5">
             <Search className="h-4 w-4 shrink-0 text-marica-ink-soft" />
             <input
               value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                resetToFirstPage();
-              }}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari artikel..."
               className="w-full bg-transparent font-body text-sm text-marica-ink placeholder:text-marica-ink-soft focus:outline-none"
             />
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {["Semua", ...tags].map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => {
-                  setActiveTag(tag);
-                  resetToFirstPage();
-                }}
-                className={`whitespace-nowrap rounded-full px-4 py-2 font-body text-sm font-medium transition ${
-                  activeTag === tag
-                    ? "bg-marica-amber-dark text-white shadow-sm"
-                    : "bg-marica-cream/70 text-marica-ink-soft hover:bg-marica-amber/15 hover:text-marica-ink"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* Decorative wave divider */}
       <div aria-hidden className="h-10 w-full bg-marica-amber/90 [clip-path:ellipse(70%_100%_at_50%_0%)]" />
 
-      {/* Categories */}
+      {/* Categories + article grid */}
       <section className="bg-marica-amber/10 pb-16 pt-14">
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <h2 className="text-center font-display text-3xl font-bold text-marica-ink">
             Eksplorasi <span className="text-marica-amber-text">Kategori</span>
           </h2>
 
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {categories.map((category) => {
-              const colors = categoryColorClasses[category.color];
-              const Icon = category.icon;
-              const isActive = activeCategory === category.slug;
-              return (
-                <button
-                  key={category.slug}
-                  type="button"
-                  onClick={() => {
-                    setActiveCategory(isActive ? "Semua" : category.slug);
-                    resetToFirstPage();
-                  }}
-                  className={`flex flex-col items-center gap-2 rounded-2xl bg-white p-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                    isActive ? "ring-2 ring-marica-amber-dark" : ""
-                  }`}
-                >
-                  <span className={`flex h-11 w-11 items-center justify-center rounded-full ${colors.iconBg}`}>
-                    <Icon className={`h-5 w-5 ${colors.text}`} />
-                  </span>
-                  <span className="font-body text-sm font-semibold text-marica-ink">{category.label}</span>
-                  <span className="rounded-full bg-marica-cream px-2.5 py-0.5 font-body text-xs text-marica-ink-soft">
-                    {category.count} Artikel
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Category pill filter (mirrors the grid above, handy once the list is long) */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <div className="mt-8 flex flex-wrap justify-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -180,28 +238,40 @@ export default function ArtikelPage() {
             >
               Semua
             </button>
-            {categories.map((category) => (
-              <button
-                key={category.slug}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(category.slug);
-                  resetToFirstPage();
-                }}
-                className={`rounded-full px-4 py-2 font-body text-sm font-medium transition ${
-                  activeCategory === category.slug
-                    ? "bg-rose-500 text-white shadow-sm"
-                    : "bg-white text-marica-ink-soft hover:text-marica-ink"
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
+            {categories.map((category, i) => {
+              const isActive = activeCategory === category.slug;
+              return (
+                <button
+                  key={category.slug}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(isActive ? "Semua" : category.slug);
+                    resetToFirstPage();
+                  }}
+                  style={{
+                    animationDelay: `${i * 40}ms`,
+                    ...(isActive
+                      ? { backgroundColor: category.colorTag, color: "#fff" }
+                      : { backgroundColor: "#fff", color: "#6b7280" }),
+                  }}
+                  className="animate-[fadeInUp_0.4s_ease-out_backwards] rounded-full px-4 py-2 font-body text-sm font-medium shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  {category.name}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Article grid */}
-          {paged.length === 0 ? (
-            <div className="mt-12 rounded-3xl bg-white p-10 text-center font-body text-marica-ink-soft shadow-sm">
+          {isLoading ? (
+            <div className="mt-12 animate-[fadeIn_0.3s_ease-out] rounded-3xl bg-white p-10 text-center font-body text-marica-ink-soft shadow-sm">
+              Memuat artikel...
+            </div>
+          ) : error ? (
+            <div className="mt-12 animate-[fadeIn_0.3s_ease-out] rounded-3xl bg-white p-10 text-center font-body text-rose-500 shadow-sm">
+              {error}
+            </div>
+          ) : articles.length === 0 ? (
+            <div className="mt-12 animate-[fadeIn_0.3s_ease-out] rounded-3xl bg-white p-10 text-center font-body text-marica-ink-soft shadow-sm">
               Belum ada artikel yang cocok dengan pencarianmu. Coba kata kunci atau kategori lain.
             </div>
           ) : (
@@ -209,27 +279,18 @@ export default function ArtikelPage() {
               {featured && (
                 <Link
                   href={`/artikel/${featured.slug}`}
-                  className="group relative flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm transition hover:shadow-lg lg:col-span-2 lg:flex-row"
+                  className="group relative flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg lg:col-span-2 lg:flex-row animate-[fadeInUp_0.5s_ease-out_backwards]"
                 >
                   <div className="relative h-56 w-full shrink-0 overflow-hidden lg:h-auto lg:w-1/2">
-                    {featured.badge && (
-                      <span
-                        className={`absolute left-4 top-4 z-10 rounded-full px-3 py-1 font-body text-xs font-semibold text-white ${
-                          featured.badge === "Featured" ? "bg-rose-500" : "bg-emerald-500"
-                        }`}
-                      >
-                        {featured.badge === "Featured" ? "★ Featured" : "Baru"}
-                      </span>
-                    )}
                     <Image
-                      src={featured.coverImage}
+                      src={featured.coverImageUrl || FALLBACK_COVER}
                       alt={featured.title}
                       fill
                       className="object-cover transition duration-300 group-hover:scale-105"
                     />
                   </div>
                   <div className="flex flex-1 flex-col justify-center gap-3 p-6">
-                    <CategoryTag slug={featured.categorySlug} date={featured.date} />
+                    <CategoryTag category={featured.category} date={formatDate(featured.publishedAt)} />
                     <h3 className="font-display text-2xl font-bold leading-snug text-marica-ink">
                       {featured.title}
                     </h3>
@@ -241,37 +302,31 @@ export default function ArtikelPage() {
                 </Link>
               )}
 
-              {rest.map((article) => (
+              {rest.map((article, i) => (
                 <Link
                   key={article.slug}
                   href={`/artikel/${article.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm transition hover:shadow-lg"
+                  style={{ animationDelay: `${(featured ? i + 1 : i) * 80}ms` }}
+                  className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg animate-[fadeInUp_0.5s_ease-out_backwards]"
                 >
                   <div className="relative h-40 w-full overflow-hidden">
-                    {article.badge && (
-                      <span
-                        className={`absolute left-4 top-4 z-10 rounded-full px-3 py-1 font-body text-xs font-semibold text-white ${
-                          article.badge === "Featured" ? "bg-rose-500" : "bg-emerald-500"
-                        }`}
-                      >
-                        {article.badge === "Featured" ? "★ Featured" : "Baru"}
-                      </span>
-                    )}
                     <Image
-                      src={article.coverImage}
+                      src={article.coverImageUrl || FALLBACK_COVER}
                       alt={article.title}
                       fill
                       className="object-cover transition duration-300 group-hover:scale-105"
                     />
                   </div>
                   <div className="flex flex-1 flex-col gap-2 p-5">
-                    <CategoryTag slug={article.categorySlug} />
+                    <CategoryTag category={article.category} />
                     <h3 className="font-display text-lg font-bold leading-snug text-marica-ink">
                       {article.title}
                     </h3>
                     <p className="line-clamp-2 font-body text-sm text-marica-ink-soft">{article.excerpt}</p>
                     <div className="mt-auto flex items-center justify-between pt-2">
-                      <span className="font-body text-xs text-marica-ink-soft">{article.date}</span>
+                      <span className="font-body text-xs text-marica-ink-soft">
+                        {formatDate(article.publishedAt)}
+                      </span>
                       <ArrowRight className="h-4 w-4 text-marica-ink-soft transition group-hover:translate-x-1 group-hover:text-marica-amber-text" />
                     </div>
                   </div>
@@ -280,12 +335,11 @@ export default function ArtikelPage() {
             </div>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="mt-10 flex items-center justify-center gap-2">
               <button
                 type="button"
-                disabled={currentPage === 1}
+                disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="rounded-full bg-white px-3 py-2 font-body text-sm text-marica-ink-soft shadow-sm disabled:opacity-40"
               >
@@ -297,7 +351,7 @@ export default function ArtikelPage() {
                   type="button"
                   onClick={() => setPage(i + 1)}
                   className={`h-9 w-9 rounded-full font-body text-sm font-semibold transition ${
-                    currentPage === i + 1
+                    page === i + 1
                       ? "bg-rose-500 text-white shadow-sm"
                       : "bg-white text-marica-ink-soft hover:bg-marica-amber/15"
                   }`}
@@ -307,7 +361,7 @@ export default function ArtikelPage() {
               ))}
               <button
                 type="button"
-                disabled={currentPage === totalPages}
+                disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className="rounded-full bg-white px-3 py-2 font-body text-sm text-marica-ink-soft shadow-sm disabled:opacity-40"
               >
@@ -334,14 +388,15 @@ function StatPill({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-function CategoryTag({ slug, date }: { slug: string; date?: string }) {
-  const category = categories.find((c) => c.slug === slug);
+function CategoryTag({ category, date }: { category: ApiCategory | null; date?: string }) {
   if (!category) return null;
-  const colors = categoryColorClasses[category.color];
   return (
     <div className="flex items-center gap-2">
-      <span className={`rounded-full px-2.5 py-1 font-body text-xs font-semibold ${colors.bg} ${colors.text}`}>
-        {category.label}
+      <span
+        className="rounded-full px-2.5 py-1 font-body text-xs font-semibold"
+        style={{ backgroundColor: withAlpha(category.colorTag, "1A"), color: category.colorTag }}
+      >
+        {category.name}
       </span>
       {date && <span className="font-body text-xs text-marica-ink-soft">{date}</span>}
     </div>
