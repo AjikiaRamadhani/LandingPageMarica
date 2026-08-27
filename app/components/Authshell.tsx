@@ -171,7 +171,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
         className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-[2.5rem] bg-white shadow-[0_30px_80px_rgba(120,60,10,0.18)] lg:grid-cols-2"
       >
         {/* Illustration panel */}
-        <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-marica-sky-light via-marica-sky to-marica-violet/40 p-10 lg:flex">
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-marica-sky-light via-marica-sky to-marica-violet/40 p-10 lg:flex">
           <div
             aria-hidden
             className="animate-blob-drift pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-marica-amber/30 blur-3xl"
@@ -508,7 +508,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
               <button
                 type="button"
                 onClick={() => signIn("google", { callbackUrl: "/" })}
-                className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-black/10 bg-white font-body text-[15px] font-medium text-marica-ink transition hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marica-amber-dark/50 focus-visible:ring-offset-2"
+                className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-black/10 bg-white font-body text-[15px] font-medium text-marica-ink transition hover:bg-black/3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marica-amber-dark/50 focus-visible:ring-offset-2"
               >
                 <svg viewBox="0 0 24 24" className="h-4.5 w-4.5">
                   <path

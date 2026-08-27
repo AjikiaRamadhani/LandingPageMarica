@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { isRateLimited } from "@/lib/rate-limit";
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) return "Password minimal 8 karakter";
@@ -13,13 +14,19 @@ function validatePassword(password: string): string | null {
 
 export async function POST(request: Request) {
   try {
+    if (isRateLimited(request, "reset-password", 5)) {
+      return NextResponse.json({ error: "Terlalu banyak percobaan, coba lagi nanti" }, { status: 429 });
+    }
+
     const { email, token, newPassword } = (await request.json()) as {
       email?: string;
       token?: string;
       newPassword?: string;
     };
 
-    if (!email || !token || !newPassword) {
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail || !token || !newPassword) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
     }
 
@@ -28,29 +35,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
-    const record = await prisma.verificationToken.findUnique({ where: { token } });
-
-    if (!record || record.identifier !== email) {
-      return NextResponse.json({ error: "Token tidak valid" }, { status: 400 });
-    }
-
-    if (record.expires < new Date()) {
-      await prisma.verificationToken.delete({ where: { token } });
-      return NextResponse.json(
-        { error: "Token sudah kadaluarsa, silakan minta link reset baru" },
-        { status: 400 }
-      );
-    }
-
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await prisma.user.update({
-      where: { email },
-      data: { password: hashedPassword },
+    const resetSucceeded = await prisma.$transaction(async (transaction) => {
+      const consumed = await transaction.verificationToken.deleteMany({
+        where: {
+          token,
+          identifier: normalizedEmail,
+          expires: { gt: new Date() },
+        },
+      });
+
+      if (consumed.count !== 1) return false;
+
+      await transaction.user.update({
+        where: { email: normalizedEmail },
+        data: { password: hashedPassword },
+      });
+
+      return true;
     });
 
-    // Token cuma sekali pakai
-    await prisma.verificationToken.delete({ where: { token } });
+    if (!resetSucceeded) {
+      return NextResponse.json({ error: "Token tidak valid atau sudah kadaluarsa" }, { status: 400 });
+    }
 
     return NextResponse.json({ message: "Password berhasil direset, silakan login." });
   } catch (error) {
