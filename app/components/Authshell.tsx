@@ -238,7 +238,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
               transition={{ duration: 3.4, repeat: prefersReducedMotion ? 0 : Infinity, ease: "easeInOut", delay: 0.4 }}
             >
               <Image
-                src="/images/mascots/program-matematika-mascot.png"
+                src="/images/program-matematika-mascot.png"
                 alt="Maskot Program Matematika Marica"
                 width={88}
                 height={120}
