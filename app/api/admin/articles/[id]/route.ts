@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { slugify } from "@/lib/slugify";
+import { validateArticlePayload } from "@/lib/article-validation";
+
+async function generateUniqueSlug(title: string, currentId: string) {
+  const base = slugify(title) || "artikel";
+  let slug = base;
+  let counter = 1;
+
+  while (await prisma.article.findFirst({ where: { slug, NOT: { id: currentId } } })) {
+    counter += 1;
+    slug = `${base}-${counter}`;
+  }
+
+  return slug;
+}
 
 export async function GET(
   request: Request,
@@ -42,40 +57,51 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { title, excerpt, content, coverImageUrl, categoryId, status, publishedAt } = body as {
-      title?: string;
-      excerpt?: string;
-      content?: string;
-      coverImageUrl?: string;
-      categoryId?: string;
-      status?: "DRAFT" | "PUBLISHED";
-      publishedAt?: string;
-    };
+    const validation = validateArticlePayload(await request.json(), {
+      requireTitleAndContent: false,
+    });
+    if (validation.error || !validation.data) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { title, excerpt, content, coverImageUrl, categoryId, status, publishedAt } = validation.data;
 
     const existing = await prisma.article.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Artikel tidak ditemukan" }, { status: 404 });
     }
 
-    // Kalau baru pertama kali dipublish dan belum ada publishedAt, isi sekarang
-    const shouldSetPublishedAt =
-      status === "PUBLISHED" && !existing.publishedAt;
+    if (
+      categoryId &&
+      !(await prisma.articleCategory.findUnique({ where: { id: categoryId } }))
+    ) {
+      return NextResponse.json({ error: "Kategori tidak ditemukan" }, { status: 400 });
+    }
+
+    const nextStatus = status ?? existing.status;
+    const nextPublishedAt =
+      nextStatus === "PUBLISHED"
+        ? publishedAt !== undefined
+          ? publishedAt
+            ? new Date(publishedAt)
+            : new Date()
+          : existing.publishedAt ?? new Date()
+        : null;
+    const nextSlug = title !== undefined && title !== existing.title
+      ? await generateUniqueSlug(title, id)
+      : undefined;
 
     const article = await prisma.article.update({
       where: { id },
       data: {
         ...(title !== undefined ? { title } : {}),
+        ...(nextSlug !== undefined ? { slug: nextSlug } : {}),
         ...(excerpt !== undefined ? { excerpt } : {}),
         ...(content !== undefined ? { content } : {}),
         ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
         ...(categoryId !== undefined ? { categoryId } : {}),
         ...(status !== undefined ? { status } : {}),
-        publishedAt: shouldSetPublishedAt
-          ? new Date(publishedAt ?? Date.now())
-          : publishedAt !== undefined
-            ? new Date(publishedAt)
-            : undefined,
+        publishedAt: nextPublishedAt,
       },
       include: {
         category: { select: { id: true, name: true, slug: true, colorTag: true } },
@@ -83,8 +109,11 @@ export async function PUT(
     });
 
     return NextResponse.json(article);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[PUT /api/admin/articles/[id]]", error);
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ error: "Slug artikel sudah digunakan, silakan coba lagi" }, { status: 409 });
+    }
     return NextResponse.json({ error: "Gagal memperbarui artikel" }, { status: 500 });
   }
 }

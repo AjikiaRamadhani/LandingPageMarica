@@ -178,7 +178,7 @@ export default function TestimonialSection() {
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
                     whileHover={{ y: -6, scale: 1.02 }}
-                    className="relative w-[78%] shrink-0 select-none overflow-hidden rounded-[24px] bg-white p-6 shadow-[0_14px_35px_rgba(120,60,10,0.14)] transition-shadow hover:shadow-[0_20px_45px_rgba(120,60,10,0.22)] sm:w-[46%] lg:w-[24%]"
+                    className="relative w-[78%] shrink-0 select-none overflow-hidden rounded-3xl bg-white p-6 shadow-[0_14px_35px_rgba(120,60,10,0.14)] transition-shadow hover:shadow-[0_20px_45px_rgba(120,60,10,0.22)] sm:w-[46%] lg:w-[24%]"
                   >
                     <Quote
                       className="pointer-events-none absolute -right-2 -top-2 h-16 w-16 text-marica-amber/25"

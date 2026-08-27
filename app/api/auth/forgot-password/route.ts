@@ -2,16 +2,22 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { transporter } from "@/lib/mailer";
+import { isRateLimited } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
-    const { email } = (await request.json()) as { email?: string };
+    if (isRateLimited(request, "forgot-password", 3)) {
+      return NextResponse.json({ error: "Terlalu banyak percobaan, coba lagi nanti" }, { status: 429 });
+    }
 
-    if (!email) {
+    const { email } = (await request.json()) as { email?: string };
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail) {
       return NextResponse.json({ error: "Email wajib diisi" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
     // Selalu balas sukses meskipun email gak ketemu di database,
     // biar orang luar gak bisa nebak-nebak email mana yang terdaftar
@@ -20,19 +26,19 @@ export async function POST(request: Request) {
       const expires = new Date(Date.now() + 1000 * 60 * 60); // berlaku 1 jam
 
       // Hapus token lama punya email ini biar gak numpuk
-      await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+      await prisma.verificationToken.deleteMany({ where: { identifier: normalizedEmail } });
 
       await prisma.verificationToken.create({
-        data: { identifier: email, token, expires },
+        data: { identifier: normalizedEmail, token, expires },
       });
 
       const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${token}&email=${encodeURIComponent(
-        email
+        normalizedEmail
       )}`;
 
       await transporter.sendMail({
         from: `"Marica" <${process.env.GMAIL_USER}>`,
-        to: email,
+          to: normalizedEmail,
         subject: "Reset Password Marica",
         html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">

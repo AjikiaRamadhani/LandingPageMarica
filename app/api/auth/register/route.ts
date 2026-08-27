@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { isRateLimited } from "@/lib/rate-limit";
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) return "Password minimal 8 karakter";
@@ -13,6 +14,10 @@ function validatePassword(password: string): string | null {
 
 export async function POST(request: Request) {
   try {
+    if (isRateLimited(request, "register", 5)) {
+      return NextResponse.json({ error: "Terlalu banyak percobaan, coba lagi nanti" }, { status: 429 });
+    }
+
     const body = await request.json();
     const { name, email, password, confirmPassword } = body as {
       name?: string;
@@ -21,7 +26,9 @@ export async function POST(request: Request) {
       confirmPassword?: string;
     };
 
-    if (!name || !email || !password) {
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!name?.trim() || !normalizedEmail || !password) {
       return NextResponse.json(
         { error: "Nama, email, dan password wajib diisi" },
         { status: 400 }
@@ -40,7 +47,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       return NextResponse.json(
         { error: "Email sudah terdaftar, silakan masuk" },
@@ -52,8 +59,8 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: normalizedEmail,
         password: hashedPassword,
       },
       select: {
