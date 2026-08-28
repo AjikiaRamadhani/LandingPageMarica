@@ -7,6 +7,7 @@ import "@fontsource/fredoka/700.css";
 import "./globals.css";
 import Providers from "./components/Providers";
 
+
 // Self-hosted Plus Jakarta Sans (variable font) via next/font/local.
 // Covers all weights 200-800 through the single variable file, plus italics.
 const plusJakartaSans = localFont({
