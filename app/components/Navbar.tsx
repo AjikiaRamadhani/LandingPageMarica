@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
 const navLinks = [
@@ -28,6 +28,7 @@ export default function Navbar() {
   const isHome = pathname === "/";
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -257,6 +258,16 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
+                    {isAdmin && (
+                      <a
+                        href="/admin"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard Admin
+                      </a>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -383,13 +394,23 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
+                    {isAdmin && (
+                      <a
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard Admin
+                      </a>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setIsOpen(false);
                         signOut({ callbackUrl: "/" });
                       }}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
                     >
                       <LogOut className="h-4 w-4" />
                       Keluar

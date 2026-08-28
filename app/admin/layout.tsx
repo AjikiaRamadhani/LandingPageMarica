@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import AdminSidebar from "../components/admin/AdminSidebar";
-import AdminTopbar from "../components/admin/AdminTopbar";
 
 // Guard kedua di server component, selain middleware.ts di root.
 // Middleware sudah menolak request sebelum sampai sini, tapi layout ini
@@ -20,12 +19,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-marica-sky-light/20">
-      <AdminSidebar />
-      <div className="flex min-h-screen flex-1 flex-col">
-        <AdminTopbar name={session.user.name} email={session.user.email} />
-        <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8">{children}</main>
-      </div>
+    // flex-col di mobile: strip menu (dari AdminSidebar) menumpuk di atas
+    // konten. flex-row di md ke atas: sidebar statis berdampingan dengan
+    // konten. Profil admin + tombol "Kembali ke situs"/"Keluar" ada di
+    // bagian bawah AdminSidebar itu sendiri (mobile & desktop sama),
+    // jadi tidak perlu topbar terpisah lagi.
+    <div className="flex min-h-screen flex-col bg-marica-sky-light/20 md:flex-row">
+      <AdminSidebar name={session.user.name} email={session.user.email} />
+      <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">{children}</main>
     </div>
   );
 }

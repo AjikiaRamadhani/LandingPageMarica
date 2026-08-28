@@ -326,7 +326,7 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
                     title={label}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={action}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-white hover:text-marica-ink"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-white hover:text-marica-ink active:scale-[0.95] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/20"
                   >
                     <Icon className="h-4 w-4" />
                   </button>
@@ -357,11 +357,11 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
 
           {submitError && <p className="font-body text-sm text-marica-rose-deep">{submitError}</p>}
 
-          <div className="flex flex-col gap-3 border-t border-black/5 pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-black/5 pt-5 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={() => router.push("/admin/artikel")}
-              className="rounded-full border border-black/10 px-5 py-2.5 font-body text-sm font-semibold text-marica-ink-soft transition hover:bg-black/3"
+              className="rounded-full border border-black/10 px-5 py-2.5 font-body text-sm font-semibold text-marica-ink-soft transition hover:bg-black/3 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-ink/10"
             >
               Batal
             </button>
@@ -369,7 +369,7 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
               type="button"
               disabled={submitting !== null}
               onClick={() => handleSubmit("DRAFT")}
-              className="flex items-center justify-center gap-2 rounded-full border border-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-marica-amber-text transition hover:bg-marica-amber/10 disabled:opacity-60"
+              className="flex items-center justify-center gap-2 rounded-full border border-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-marica-amber-text transition hover:bg-marica-amber/10 active:scale-[0.97] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/20"
             >
               {submitting === "draft" && <Loader2 className="h-4 w-4 animate-spin" />}
               Simpan sebagai Draft
@@ -378,7 +378,7 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
               type="button"
               disabled={submitting !== null}
               onClick={() => handleSubmit("PUBLISHED")}
-              className="flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:opacity-70"
+              className="flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.97] disabled:opacity-70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25"
             >
               {submitting === "publish" && <Loader2 className="h-4 w-4 animate-spin" />}
               Publish Sekarang

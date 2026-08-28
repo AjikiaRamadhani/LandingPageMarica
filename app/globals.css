@@ -93,8 +93,8 @@ body {
 
 .hero-gradient-bg-v2 {
   background-image:
-    radial-gradient(1000px 640px at 2% -8%, rgba(102, 167, 199, 0.55) 0%, rgba(102, 167, 199, 0) 58%),
-    radial-gradient(760px 480px at 0% 24%, rgba(191, 228, 246, 0.55) 0%, rgba(191, 228, 246, 0) 62%),
+    radial-gradient(1000px 640px at 2% -8%, rgba(248, 168, 28, 0.35) 0%, rgba(248, 168, 28, 0) 58%),
+    radial-gradient(760px 480px at 0% 24%, rgba(255, 185, 154, 0.45) 0%, rgba(255, 185, 154, 0) 62%),
     linear-gradient(180deg, #ffffff 0%, #fdfbf6 55%, #fdf8f0 100%);
 }
 
