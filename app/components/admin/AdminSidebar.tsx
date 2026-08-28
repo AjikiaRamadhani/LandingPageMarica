@@ -149,7 +149,7 @@ function SidebarContent({
 
   return (
     <>
-      <div className="flex items-center gap-2 px-6 py-6">
+      <div className="flex items-center gap-2 px-6 py-4 md:py-6">
         <Image
           src="/images/logo.png"
           alt="Marica"
@@ -165,7 +165,7 @@ function SidebarContent({
         </span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3">
+      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-1">
         {navItems.map((item) => {
           const isActive =
             item.enabled && pathname.startsWith(item.href) && item.href !== "/admin"
@@ -281,7 +281,7 @@ export default function AdminSidebar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] flex-col bg-white shadow-2xl md:hidden"
+              className="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col bg-white shadow-2xl md:hidden"
             >
               <div className="flex items-center justify-end px-3 pt-3">
                 <button
@@ -301,7 +301,7 @@ export default function AdminSidebar({
 
       {/* Sidebar statis untuk desktop (md ke atas) — profil akun & menu
           sama persis dengan versi mobile, sama-sama di kiri bawah. */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
         <SidebarContent name={name} email={email} />
       </aside>
     </>
