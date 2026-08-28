@@ -3,20 +3,20 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
-export default function DeleteArticleModal({
-  articleTitle,
+export default function DeleteCategoryModal({
+  categoryName,
   isDeleting,
   onCancel,
   onConfirm,
 }: {
-  articleTitle: string | null;
+  categoryName: string | null;
   isDeleting: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   return (
     <AnimatePresence>
-      {articleTitle !== null && (
+      {categoryName !== null && (
         <motion.div
           key="backdrop"
           initial={{ opacity: 0 }}
@@ -45,12 +45,12 @@ export default function DeleteArticleModal({
             </motion.div>
 
             <h3 className="mt-4 font-display text-lg font-semibold text-marica-ink">
-              Hapus Artikel?
+              Hapus Kategori?
             </h3>
             <p className="mt-2 font-body text-sm text-marica-ink-soft">
-              Apakah kamu yakin ingin menghapus artikel{" "}
-              <span className="font-semibold text-marica-ink">&ldquo;{articleTitle}&rdquo;</span>?
-              Tindakan ini tidak dapat dibatalkan.
+              Apakah kamu yakin ingin menghapus kategori{" "}
+              <span className="font-semibold text-marica-ink">&ldquo;{categoryName}&rdquo;</span>?
+              Kategori yang masih dipakai artikel tidak bisa dihapus.
             </p>
 
             <div className="mt-6 flex gap-3">

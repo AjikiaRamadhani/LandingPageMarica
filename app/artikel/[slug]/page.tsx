@@ -8,6 +8,7 @@ import ArticleComments from "../../components/Articlecomments";
 import Footer from "../../components/Footer";
 import NewsletterForm from "../../components/Newsletterform";
 import { auth } from "@/lib/auth";
+import { categoryBadgeStyle, resolveCategoryColor } from "@/lib/category-color";
 
 // Sebelumnya halaman ini pakai data statis dari `lib/artikel-data.ts`
 // (getArticleBySlug/getRelatedArticles). Sekarang datanya diambil dari
@@ -21,7 +22,7 @@ type ApiCategory = {
   id: string;
   name: string;
   slug: string;
-  colorTag: string; // asumsi: hex color, lihat catatan di artikel/page.tsx
+  colorTag: string | null; // hex color, diisi via /admin/kategori — lihat lib/category-color.ts
 };
 
 type ApiArticleDetail = {
@@ -135,7 +136,7 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
           {article.category && (
             <span
               className="inline-block rounded-full px-3 py-1 font-body text-xs font-semibold"
-              style={{ backgroundColor: `${article.category.colorTag}1A`, color: article.category.colorTag }}
+              style={categoryBadgeStyle(article.category.colorTag, article.category.slug)}
             >
               {article.category.name}
             </span>
@@ -166,6 +167,7 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
               src={article.coverImageUrl || FALLBACK_COVER}
               alt={article.title}
               fill
+              sizes="(min-width: 1024px) 720px, 100vw"
               className="object-cover"
               priority
             />
@@ -208,6 +210,7 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
                     src={item.coverImageUrl || FALLBACK_COVER}
                     alt={item.title}
                     fill
+                    sizes="64px"
                     className="object-cover"
                   />
                 </div>
@@ -215,7 +218,7 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
                   {item.category && (
                     <span
                       className="font-body text-xs font-semibold"
-                      style={{ color: item.category.colorTag }}
+                      style={{ color: resolveCategoryColor(item.category.colorTag, item.category.slug) }}
                     >
                       {item.category.name}
                     </span>

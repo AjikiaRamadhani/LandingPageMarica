@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -62,15 +62,18 @@ const strengthMeta = [
 // 3. Selain itu, ke beranda seperti biasa.
 // getSession() dipanggil manual (bukan pakai hook useSession) karena kita
 // butuh data TERBARU segera setelah signIn, bukan nunggu context re-render.
+function getSafeRelativePath(value: string | null): string | null {
+  // Hanya terima path relatif (mulai dengan "/") supaya tidak bisa dipakai
+  // untuk open-redirect ke domain lain.
+  if (value && value.startsWith("/") && !value.startsWith("//")) return value;
+  return null;
+}
+
 async function resolvePostLoginDestination(): Promise<string> {
   try {
     const params = new URLSearchParams(window.location.search);
-    const callbackUrl = params.get("callbackUrl");
-    // Hanya terima path relatif (mulai dengan "/") supaya tidak bisa
-    // dipakai untuk open-redirect ke domain lain.
-    if (callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")) {
-      return callbackUrl;
-    }
+    const callbackUrl = getSafeRelativePath(params.get("callbackUrl"));
+    if (callbackUrl) return callbackUrl;
 
     const session = await getSession();
     const role = (session?.user as { role?: string } | undefined)?.role;
@@ -93,8 +96,39 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
+  // true selama kita menunggu sesi Google OAuth kebentuk lalu resolve mau
+  // diarahkan ke mana (lihat useEffect "oauth=1" di bawah).
+  const [resolvingOAuth, setResolvingOAuth] = useState(false);
 
   const strength = getPasswordStrength(password);
+
+  // Setelah login Google, NextAuth redirect balik browser (full page load,
+  // bukan navigasi client-side) ke callbackUrl yang kita set saat memicu
+  // signIn("google", ...) di bawah — yaitu halaman ini sendiri dengan query
+  // "?oauth=1". Begitu itu terdeteksi, sesi sudah pasti terbentuk, jadi kita
+  // tinggal cek role user (sama seperti alur credentials) lalu redirect ke
+  // tujuan yang benar. Sebelumnya tombol Google selalu hardcode ke "/",
+  // jadi admin yang login lewat Google tidak pernah otomatis masuk ke
+  // dashboard admin walau role-nya sudah ADMIN.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("oauth") !== "1") return;
+
+    setResolvingOAuth(true);
+    let cancelled = false;
+
+    (async () => {
+      const destination = await resolvePostLoginDestination();
+      if (cancelled) return;
+      router.replace(destination);
+      router.refresh();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -198,7 +232,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
         className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-[2.5rem] bg-white shadow-[0_30px_80px_rgba(120,60,10,0.18)] lg:grid-cols-2"
       >
         {/* Illustration panel */}
-        <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-marica-sky-light via-marica-sky to-marica-violet/40 p-10 lg:flex">
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-marica-cream via-marica-amber/25 to-marica-rose/40 p-10 lg:flex">
           <div
             aria-hidden
             className="animate-blob-drift pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-marica-amber/30 blur-3xl"
@@ -278,6 +312,20 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
         {/* Form panel */}
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12 lg:py-14">
           <AnimatePresence mode="wait">
+            {resolvingOAuth ? (
+              <motion.div
+                key="oauth-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col items-center justify-center gap-3 py-16 text-center"
+              >
+                <Loader2 className="h-8 w-8 animate-spin text-marica-amber-dark" />
+                <p className="font-body text-[15px] font-medium text-marica-ink">Berhasil masuk!</p>
+                <p className="font-body text-sm text-marica-ink-soft">Mengarahkan kamu ke halaman yang tepat...</p>
+              </motion.div>
+            ) : (
             <motion.div
               key={mode}
               initial={{ opacity: 0, x: 12 }}
@@ -309,7 +357,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Nama Bunda / Ayah"
-                        className="w-full rounded-xl border border-black/10 bg-marica-sky-light/40 py-2.5 pl-10 pr-4 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
+                        className="w-full rounded-xl border border-black/10 bg-marica-cream/50 py-2.5 pl-10 pr-4 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
                       />
                     </div>
                   </div>
@@ -328,7 +376,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="nama@email.com"
-                      className="w-full rounded-xl border border-black/10 bg-marica-sky-light/40 py-2.5 pl-10 pr-4 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
+                      className="w-full rounded-xl border border-black/10 bg-marica-cream/50 py-2.5 pl-10 pr-4 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
                     />
                   </div>
                 </div>
@@ -357,7 +405,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Minimal 8 karakter"
-                      className="w-full rounded-xl border border-black/10 bg-marica-sky-light/40 py-2.5 pl-10 pr-11 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
+                      className="w-full rounded-xl border border-black/10 bg-marica-cream/50 py-2.5 pl-10 pr-11 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
                     />
                     <button
                       type="button"
@@ -427,7 +475,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Ulangi password"
-                        className="w-full rounded-xl border border-black/10 bg-marica-sky-light/40 py-2.5 pl-10 pr-11 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
+                        className="w-full rounded-xl border border-black/10 bg-marica-cream/50 py-2.5 pl-10 pr-11 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
                       />
                       <button
                         type="button"
@@ -534,7 +582,19 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
 
               <button
                 type="button"
-                onClick={() => signIn("google", { callbackUrl: "/" })}
+                onClick={() => {
+                  // Bawa callbackUrl asli (kalau ada, mis. redirect dari
+                  // /admin/artikel yang mengharuskan login dulu) ke halaman
+                  // ini sendiri lewat query "oauth=1" supaya useEffect di
+                  // atas bisa resolve tujuan akhir berdasarkan role SETELAH
+                  // sesi Google benar-benar terbentuk.
+                  const params = new URLSearchParams(window.location.search);
+                  const existingCallbackUrl = getSafeRelativePath(params.get("callbackUrl"));
+                  const target = `${isLogin ? "/login" : "/daftar"}?oauth=1${
+                    existingCallbackUrl ? `&callbackUrl=${encodeURIComponent(existingCallbackUrl)}` : ""
+                  }`;
+                  signIn("google", { callbackUrl: target });
+                }}
                 className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-black/10 bg-white font-body text-[15px] font-medium text-marica-ink transition hover:bg-black/3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marica-amber-dark/50 focus-visible:ring-offset-2"
               >
                 <svg viewBox="0 0 24 24" className="h-4.5 w-4.5">
@@ -568,6 +628,7 @@ export default function AuthShell({ mode }: { mode: AuthMode }) {
                 </Link>
               </p>
             </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </motion.div>

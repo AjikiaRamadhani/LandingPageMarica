@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Plus, Search, Pencil, Trash2, ImageOff } from "lucide-react";
 import DeleteArticleModal from "../../components/admin/DeleteArticleModal";
+import { categoryBadgeStyle } from "@/lib/category-color";
 
 type ApiCategory = { id: string; name: string; slug: string; colorTag: string | null };
 type ApiArticle = {
@@ -117,7 +118,7 @@ export default function AdminArtikelPage() {
         </div>
         <Link
           href="/admin/artikel/baru"
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25"
         >
           <Plus className="h-4 w-4" />
           Tambah Artikel
@@ -238,10 +239,7 @@ export default function AdminArtikelPage() {
                       {article.category ? (
                         <span
                           className="rounded-full px-2.5 py-1 font-body text-xs font-medium"
-                          style={{
-                            backgroundColor: `${article.category.colorTag ?? "#66a7c7"}1a`,
-                            color: article.category.colorTag ?? "#66a7c7",
-                          }}
+                          style={categoryBadgeStyle(article.category.colorTag, article.category.slug)}
                         >
                           {article.category.name}
                         </span>
@@ -268,7 +266,7 @@ export default function AdminArtikelPage() {
                         <Link
                           href={`/admin/artikel/${article.id}`}
                           title="Edit"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-marica-sky-light/60 hover:text-marica-ink active:scale-[0.95] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/20"
                         >
                           <Pencil className="h-4 w-4" />
                         </Link>
@@ -276,7 +274,7 @@ export default function AdminArtikelPage() {
                           type="button"
                           title="Hapus"
                           onClick={() => setToDelete(article)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-marica-rose-deep/10 hover:text-marica-rose-deep"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-marica-rose-deep/10 hover:text-marica-rose-deep active:scale-[0.95] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-rose-deep/20"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -293,18 +291,18 @@ export default function AdminArtikelPage() {
         )}
 
         {!isLoading && data && data.pagination.total > 0 && (
-          <div className="mt-5 flex items-center justify-between font-body text-sm text-marica-ink-soft">
+          <div className="mt-5 flex flex-col gap-3 font-body text-sm text-marica-ink-soft sm:flex-row sm:items-center sm:justify-between">
             <span>
               Menampilkan {(data.pagination.page - 1) * data.pagination.limit + 1}–
               {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)} dari{" "}
               {data.pagination.total} artikel
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between gap-1.5 sm:justify-start">
               <button
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-lg px-3 py-1.5 transition hover:bg-black/5 disabled:opacity-30"
+                className="rounded-lg px-3 py-1.5 transition hover:bg-black/5 active:scale-[0.97] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/20"
               >
                 Sebelumnya
               </button>
@@ -315,7 +313,7 @@ export default function AdminArtikelPage() {
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="rounded-lg px-3 py-1.5 transition hover:bg-black/5 disabled:opacity-30"
+                className="rounded-lg px-3 py-1.5 transition hover:bg-black/5 active:scale-[0.97] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/20"
               >
                 Berikutnya
               </button>

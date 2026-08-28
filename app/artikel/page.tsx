@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Search, ArrowRight, BookOpen, Shapes, Clock3 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { categoryBadgeStyle, resolveCategoryColor } from "@/lib/category-color";
 
 // Sebelumnya halaman ini pakai data statis dari `lib/artikel-data.ts`.
 // Sekarang semua data (artikel + kategori) diambil dari API yang sudah
@@ -18,10 +19,10 @@ type ApiCategory = {
   id: string;
   name: string;
   slug: string;
-  // Asumsi: colorTag adalah warna hex (mis. "#F59E0B") yang disimpan langsung
-  // di DB. Kalau ternyata di schema Prisma kamu colorTag itu nama class
-  // Tailwind (bukan hex), ganti pemakaian style={{...}} di bawah jadi className.
-  colorTag: string;
+  // colorTag adalah hex color (mis. "#F59E0B") yang diisi lewat form warna
+  // di halaman admin (/admin/kategori). Bisa null/invalid untuk kategori
+  // lama — lihat lib/category-color.ts buat fallback-nya.
+  colorTag: string | null;
 };
 
 type ApiArticle = {
@@ -53,11 +54,6 @@ function formatDate(iso: string | null) {
   } catch {
     return iso;
   }
-}
-
-function withAlpha(hex: string, alphaHex: string) {
-  if (!hex || !hex.startsWith("#") || hex.length !== 7) return hex;
-  return `${hex}${alphaHex}`;
 }
 
 export default function ArtikelPage() {
@@ -191,6 +187,7 @@ export default function ArtikelPage() {
               src="/images/hero-character.png"
               alt="Maskot Marica"
               fill
+              sizes="(min-width: 640px) 384px, 0px"
               className="object-contain"
               priority
             />
@@ -240,6 +237,7 @@ export default function ArtikelPage() {
             </button>
             {categories.map((category, i) => {
               const isActive = activeCategory === category.slug;
+              const solidColor = resolveCategoryColor(category.colorTag, category.slug);
               return (
                 <button
                   key={category.slug}
@@ -251,7 +249,7 @@ export default function ArtikelPage() {
                   style={{
                     animationDelay: `${i * 40}ms`,
                     ...(isActive
-                      ? { backgroundColor: category.colorTag, color: "#fff" }
+                      ? { backgroundColor: solidColor, color: "#fff" }
                       : { backgroundColor: "#fff", color: "#6b7280" }),
                   }}
                   className="animate-[fadeInUp_0.4s_ease-out_backwards] rounded-full px-4 py-2 font-body text-sm font-medium shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
@@ -286,6 +284,7 @@ export default function ArtikelPage() {
                       src={featured.coverImageUrl || FALLBACK_COVER}
                       alt={featured.title}
                       fill
+                      sizes="(min-width: 1024px) 50vw, 100vw"
                       className="object-cover transition duration-300 group-hover:scale-105"
                     />
                   </div>
@@ -314,6 +313,7 @@ export default function ArtikelPage() {
                       src={article.coverImageUrl || FALLBACK_COVER}
                       alt={article.title}
                       fill
+                      sizes="(min-width: 1024px) 33vw, 100vw"
                       className="object-cover transition duration-300 group-hover:scale-105"
                     />
                   </div>
@@ -394,7 +394,7 @@ function CategoryTag({ category, date }: { category: ApiCategory | null; date?: 
     <div className="flex items-center gap-2">
       <span
         className="rounded-full px-2.5 py-1 font-body text-xs font-semibold"
-        style={{ backgroundColor: withAlpha(category.colorTag, "1A"), color: category.colorTag }}
+        style={categoryBadgeStyle(category.colorTag, category.slug)}
       >
         {category.name}
       </span>
