@@ -111,7 +111,7 @@ async function main() {
         description:
           "Menciptakan quality time yang hangat dan penuh tawa bersama keluarga melalui sesi bermain meja (Table-fee) dan kelas edukasi interaktif.",
         imageUrl: "/images/benefit2.png",
-        tags: ["Quality Time", "Table Fee", "Kelas Edukasi"],
+        tags: ["Quality Time", "Kelas Edukasi"],
         order: 2,
       },
       {
