@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Newspaper,
   Tags,
+  ShoppingBag,
   CalendarDays,
   Palette,
   Briefcase,
@@ -23,26 +24,18 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-// Item yang benar-benar sudah punya halaman. Selain "Dashboard", "Artikel",
-// dan "Kategori", sisanya belum diminta/dibuat — daripada bikin link mati
-// yang pura-pura berfungsi, item itu ditandai "Segera" dan non-klikable.
-// Kalau menu lain sudah ada implementasinya, tinggal pindah ke daftar
-// `enabled` di bawah.
+// Struktur daftar navigasi utama
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, enabled: true },
   { label: "Program", href: "/admin/program", icon: GraduationCap, enabled: false },
-  { label: "Artikel", href: "/admin/artikel", icon: Newspaper, enabled: true },
-  { label: "Kategori", href: "/admin/kategori", icon: Tags, enabled: true },
+  // Group Artikel & Submenu Kategori ditangani secara khusus di komponen Nav
+  { label: "Belanja", href: "/admin/belanja", icon: ShoppingBag, enabled: true },
   { label: "Event", href: "/admin/event", icon: CalendarDays, enabled: false },
   { label: "Kreativitas", href: "/admin/kreativitas", icon: Palette, enabled: false },
   { label: "Business", href: "/admin/business", icon: Briefcase, enabled: false },
   { label: "Pengaturan", href: "/admin/pengaturan", icon: Settings, enabled: false },
 ];
 
-// Kartu profil + menu popup (Kembali ke situs / Keluar) yang nempel di
-// bagian bawah sidebar. Dipakai bareng oleh versi desktop (statis) dan
-// versi mobile (drawer), makanya ada `onNavigate` buat nutup drawer begitu
-// salah satu aksi dipilih di mobile.
 function AccountMenu({
   name,
   email,
@@ -133,9 +126,6 @@ function AccountMenu({
   );
 }
 
-// Isi sidebar dipakai bareng oleh versi desktop (statis) dan versi mobile
-// (drawer). `onNavigate` dipakai buat nutup drawer begitu link/aksi dipilih
-// di mobile; di desktop prop ini tidak dikirim jadi tidak ngefek.
 function SidebarContent({
   name,
   email,
@@ -146,6 +136,14 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+
+  // State untuk mengontrol tampil/sembunyinya submenu Kategori
+  // Default terbuka (true) jika halaman aktif ada di bawah /admin/artikel atau /admin/kategori
+  const isArticleRoute = pathname.startsWith("/admin/artikel") || pathname.startsWith("/admin/kategori");
+  const [isArticlesExpanded, setIsArticlesExpanded] = useState(true);
+
+  const isArtikelActive = pathname === "/admin/artikel" || pathname.startsWith("/admin/artikel/");
+  const isKategoriActive = pathname === "/admin/kategori" || pathname.startsWith("/admin/kategori/");
 
   return (
     <>
@@ -166,7 +164,120 @@ function SidebarContent({
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-1">
-        {navItems.map((item) => {
+        {/* Dashboard */}
+        <Link href="/admin" onClick={onNavigate} className="relative">
+          {pathname === "/admin" && (
+            <motion.span
+              layoutId="admin-nav-active"
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+            />
+          )}
+          <span
+            className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+              pathname === "/admin"
+                ? "text-white"
+                : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+            }`}
+          >
+            <LayoutDashboard className="h-4.5 w-4.5" />
+            Dashboard
+          </span>
+        </Link>
+
+        {/* Program (Disabled) */}
+        <div
+          aria-disabled
+          title="Segera hadir"
+          className="flex cursor-not-allowed items-center justify-between rounded-xl px-3.5 py-2.5 font-body text-sm text-marica-ink-soft/40"
+        >
+          <span className="flex items-center gap-3">
+            <GraduationCap className="h-4.5 w-4.5" />
+            Program
+          </span>
+          <Lock className="h-3 w-3" />
+        </div>
+
+        {/* --- GROUP MENU ARTIKEL + SUBMENU KATEGORI --- */}
+        <div className="flex flex-col gap-1">
+          <div className="relative flex items-center">
+            {/* Link ke Halaman Artikel */}
+            <Link href="/admin/artikel" onClick={onNavigate} className="relative flex-1">
+              {isArtikelActive && (
+                <motion.span
+                  layoutId="admin-nav-active"
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                  className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                />
+              )}
+              <span
+                className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                  isArtikelActive
+                    ? "text-white"
+                    : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                }`}
+              >
+                <Newspaper className="h-4.5 w-4.5" />
+                Artikel
+              </span>
+            </Link>
+
+            {/* Tombol Toggle Bergulir (Dropdown Arrow) */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsArticlesExpanded((prev) => !prev);
+              }}
+              aria-label="Toggle submenu Artikel"
+              className={`absolute right-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg transition-transform ${
+                isArtikelActive ? "text-white/80 hover:text-white" : "text-marica-ink-soft/60 hover:text-marica-ink"
+              }`}
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  isArticlesExpanded ? "rotate-180" : "rotate-0"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Submenu Kategori dengan Animasi Gulir */}
+          <AnimatePresence initial={false}>
+            {isArticlesExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <Link href="/admin/kategori" onClick={onNavigate} className="relative block">
+                  {isKategoriActive && (
+                    <motion.span
+                      layoutId="admin-nav-active"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                    />
+                  )}
+                  <span
+                    className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                      isKategoriActive
+                        ? "text-white"
+                        : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                    }`}
+                  >
+                    <Tags className="h-4.5 w-4.5" />
+                    Kategori
+                  </span>
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Sisa Menu Navigasi */}
+        {navItems.slice(2).map((item) => {
           const isActive =
             item.enabled && pathname.startsWith(item.href) && item.href !== "/admin"
               ? true
@@ -214,8 +325,6 @@ function SidebarContent({
         })}
       </nav>
 
-      {/* Profil admin + menu "Kembali ke situs" / "Keluar", menempel di
-          bagian bawah-kiri baik di drawer mobile maupun sidebar desktop. */}
       <AccountMenu name={name} email={email} onNavigate={onNavigate} />
     </>
   );
@@ -232,10 +341,6 @@ export default function AdminSidebar({
 
   return (
     <>
-      {/* Strip atas khusus mobile: logo + tombol buka menu. Sidebar penuh
-          (termasuk profil akun di bagian bawah) disembunyikan di mobile
-          supaya tidak makan lebar layar; diganti drawer yang muncul saat
-          tombol menu ditekan. */}
       <div className="flex items-center justify-between border-b border-black/5 bg-white px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
           <Image
@@ -262,7 +367,6 @@ export default function AdminSidebar({
         </button>
       </div>
 
-      {/* Drawer mobile + backdrop, hanya dirender saat dibuka */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -299,11 +403,9 @@ export default function AdminSidebar({
         )}
       </AnimatePresence>
 
-      {/* Sidebar statis untuk desktop (md ke atas) — profil akun & menu
-          sama persis dengan versi mobile, sama-sama di kiri bawah. */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
         <SidebarContent name={name} email={email} />
       </aside>
     </>
   );
-}
+}                                                                     
