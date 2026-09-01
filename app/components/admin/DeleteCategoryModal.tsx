@@ -5,15 +5,21 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 
 export default function DeleteCategoryModal({
   categoryName,
+  articleCount = 0,
   isDeleting,
+  error,
   onCancel,
   onConfirm,
 }: {
   categoryName: string | null;
+  articleCount?: number;
   isDeleting: boolean;
+  error?: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const hasArticles = articleCount > 0;
+
   return (
     <AnimatePresence>
       {categoryName !== null && (
@@ -47,11 +53,46 @@ export default function DeleteCategoryModal({
             <h3 className="mt-4 font-display text-lg font-semibold text-marica-ink">
               Hapus Kategori?
             </h3>
-            <p className="mt-2 font-body text-sm text-marica-ink-soft">
-              Apakah kamu yakin ingin menghapus kategori{" "}
-              <span className="font-semibold text-marica-ink">&ldquo;{categoryName}&rdquo;</span>?
-              Kategori yang masih dipakai artikel tidak bisa dihapus.
-            </p>
+
+            {hasArticles ? (
+              <p className="mt-2 font-body text-sm text-marica-ink-soft">
+                Kategori{" "}
+                <span className="font-semibold text-marica-ink">&ldquo;{categoryName}&rdquo;</span>{" "}
+                masih memiliki{" "}
+                <span className="font-semibold text-marica-ink">{articleCount} artikel aktif</span>.
+              </p>
+            ) : (
+              <p className="mt-2 font-body text-sm text-marica-ink-soft">
+                Apakah kamu yakin ingin menghapus kategori{" "}
+                <span className="font-semibold text-marica-ink">&ldquo;{categoryName}&rdquo;</span>?
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+            )}
+
+            {hasArticles && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 flex items-start gap-2 rounded-xl bg-marica-amber/10 px-3.5 py-2.5 text-left"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-marica-amber-dark" />
+                <p className="font-body text-sm text-marica-ink-soft">
+                  Kategori tidak dapat dihapus selama masih dipakai oleh artikel yang aktif.
+                  Pindahkan atau hapus artikel-artikel tersebut ke kategori lain terlebih dahulu.
+                </p>
+              </motion.div>
+            )}
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 flex items-start gap-2 rounded-xl bg-marica-rose-deep/10 px-3.5 py-2.5 text-left"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-marica-rose-deep" />
+                <p className="font-body text-sm text-marica-rose-deep">{error}</p>
+              </motion.div>
+            )}
 
             <div className="mt-6 flex gap-3">
               <button
@@ -60,23 +101,25 @@ export default function DeleteCategoryModal({
                 disabled={isDeleting}
                 className="flex-1 rounded-full border border-black/10 py-2.5 font-body text-sm font-semibold text-marica-ink-soft transition hover:bg-black/3 active:scale-[0.97] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-ink/10"
               >
-                Batal
+                {hasArticles ? "Tutup" : "Batal"}
               </button>
-              <button
-                type="button"
-                onClick={onConfirm}
-                disabled={isDeleting}
-                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-marica-rose-deep py-2.5 font-body text-sm font-semibold text-white transition hover:brightness-105 active:scale-[0.97] disabled:opacity-70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-rose-deep/25"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Menghapus...
-                  </>
-                ) : (
-                  "Ya, Hapus"
-                )}
-              </button>
+              {!hasArticles && (
+                <button
+                  type="button"
+                  onClick={onConfirm}
+                  disabled={isDeleting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full bg-marica-rose-deep py-2.5 font-body text-sm font-semibold text-white transition hover:brightness-105 active:scale-[0.97] disabled:opacity-70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-rose-deep/25"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Menghapus...
+                    </>
+                  ) : (
+                    "Ya, Hapus"
+                  )}
+                </button>
+              )}
             </div>
           </motion.div>
         </motion.div>

@@ -60,6 +60,11 @@ export default function AdminKategoriPage() {
     setFormOpen(true);
   };
 
+  const openDeleteModal = (category: ApiCategory) => {
+    setDeleteError(null);
+    setToDelete(category);
+  };
+
   const handleFormSubmit = async (values: { name: string; colorTag: string }) => {
     setIsSaving(true);
     setFormError(null);
@@ -132,12 +137,6 @@ export default function AdminKategoriPage() {
         transition={{ duration: 0.3, delay: 0.05 }}
         className="mt-6 rounded-2xl bg-white p-4 shadow-sm sm:p-5"
       >
-        {deleteError && (
-          <p className="mb-4 rounded-xl bg-marica-rose-deep/10 px-4 py-2.5 font-body text-sm text-marica-rose-deep">
-            {deleteError}
-          </p>
-        )}
-
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] border-collapse">
             <thead>
@@ -210,7 +209,7 @@ export default function AdminKategoriPage() {
                         <button
                           type="button"
                           title="Hapus"
-                          onClick={() => setToDelete(category)}
+                          onClick={() => openDeleteModal(category)}
                           className="flex h-9 w-9 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-marica-rose-deep/10 hover:text-marica-rose-deep active:scale-[0.95] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-rose-deep/20"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -235,8 +234,13 @@ export default function AdminKategoriPage() {
 
       <DeleteCategoryModal
         categoryName={toDelete?.name ?? null}
+        articleCount={toDelete?._count.articles ?? 0}
         isDeleting={isDeleting}
-        onCancel={() => setToDelete(null)}
+        error={deleteError}
+        onCancel={() => {
+          setToDelete(null);
+          setDeleteError(null);
+        }}
         onConfirm={handleDeleteConfirm}
       />
     </div>

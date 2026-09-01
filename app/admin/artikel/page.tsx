@@ -7,7 +7,12 @@ import { Plus, Search, Pencil, Trash2, ImageOff } from "lucide-react";
 import DeleteArticleModal from "../../components/admin/DeleteArticleModal";
 import { categoryBadgeStyle } from "@/lib/category-color";
 
-type ApiCategory = { id: string; name: string; slug: string; colorTag: string | null };
+type ApiCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  colorTag: string | null;
+};
 type ApiArticle = {
   id: string;
   title: string;
@@ -21,7 +26,12 @@ type ApiArticle = {
 };
 type ArticlesResponse = {
   articles: ApiArticle[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 };
 
 const TABS = [
@@ -34,11 +44,16 @@ const LIMIT = 10;
 
 function formatDate(iso: string | null) {
   if (!iso) return "-";
-  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export default function AdminArtikelPage() {
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["value"]>("");
+  const [activeTab, setActiveTab] =
+    useState<(typeof TABS)[number]["value"]>("");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -63,11 +78,16 @@ export default function AdminArtikelPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(LIMIT),
+      });
       if (activeTab) params.set("status", activeTab);
       if (debouncedQuery) params.set("search", debouncedQuery);
 
-      const res = await fetch(`/api/admin/articles?${params.toString()}`, { cache: "no-store" });
+      const res = await fetch(`/api/admin/articles?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error("Gagal memuat artikel");
       const json = (await res.json()) as ArticlesResponse;
       setData(json);
@@ -83,18 +103,27 @@ export default function AdminArtikelPage() {
     fetchArticles();
   }, [fetchArticles]);
 
+  const openDeleteModal = (article: ApiArticle) => {
+    setActionError(null);
+    setToDelete(article);
+  };
+
   const handleDeleteConfirm = async () => {
     if (!toDelete) return;
     setIsDeleting(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/admin/articles/${toDelete.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/articles/${toDelete.id}`, {
+        method: "DELETE",
+      });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Gagal menghapus artikel");
       setToDelete(null);
       await fetchArticles();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Gagal menghapus artikel");
+      setActionError(
+        err instanceof Error ? err.message : "Gagal menghapus artikel",
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -111,7 +140,9 @@ export default function AdminArtikelPage() {
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
-          <h1 className="font-display text-2xl font-semibold text-marica-ink">Manajemen Artikel</h1>
+          <h1 className="font-display text-2xl font-semibold text-marica-ink">
+            Manajemen Artikel
+          </h1>
           <p className="mt-1 font-body text-sm text-marica-ink-soft">
             Kelola semua artikel blog Marica di sini.
           </p>
@@ -142,7 +173,9 @@ export default function AdminArtikelPage() {
                   setPage(1);
                 }}
                 className={`relative rounded-full px-4 py-1.5 font-body text-sm font-medium transition-colors ${
-                  activeTab === tab.value ? "text-white" : "text-marica-ink-soft hover:text-marica-ink"
+                  activeTab === tab.value
+                    ? "text-white"
+                    : "text-marica-ink-soft hover:text-marica-ink"
                 }`}
               >
                 {activeTab === tab.value && (
@@ -192,7 +225,10 @@ export default function AdminArtikelPage() {
 
               {!isLoading && error && (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center font-body text-sm text-marica-rose-deep">
+                  <td
+                    colSpan={5}
+                    className="py-10 text-center font-body text-sm text-marica-rose-deep"
+                  >
                     {error}
                   </td>
                 </tr>
@@ -200,7 +236,10 @@ export default function AdminArtikelPage() {
 
               {!isLoading && !error && data?.articles.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center font-body text-sm text-marica-ink-soft">
+                  <td
+                    colSpan={5}
+                    className="py-10 text-center font-body text-sm text-marica-ink-soft"
+                  >
                     Belum ada artikel yang cocok dengan filter ini.
                   </td>
                 </tr>
@@ -239,12 +278,17 @@ export default function AdminArtikelPage() {
                       {article.category ? (
                         <span
                           className="rounded-full px-2.5 py-1 font-body text-xs font-medium"
-                          style={categoryBadgeStyle(article.category.colorTag, article.category.slug)}
+                          style={categoryBadgeStyle(
+                            article.category.colorTag,
+                            article.category.slug,
+                          )}
                         >
                           {article.category.name}
                         </span>
                       ) : (
-                        <span className="font-body text-xs text-marica-ink-soft/50">Tanpa kategori</span>
+                        <span className="font-body text-xs text-marica-ink-soft/50">
+                          Tanpa kategori
+                        </span>
                       )}
                     </td>
                     <td className="py-3 pr-4">
@@ -273,7 +317,7 @@ export default function AdminArtikelPage() {
                         <button
                           type="button"
                           title="Hapus"
-                          onClick={() => setToDelete(article)}
+                          onClick={() => openDeleteModal(article)}
                           className="flex h-9 w-9 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-marica-rose-deep/10 hover:text-marica-rose-deep active:scale-[0.95] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-rose-deep/20"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -287,15 +331,21 @@ export default function AdminArtikelPage() {
         </div>
 
         {actionError && (
-          <p className="mt-3 font-body text-sm text-marica-rose-deep">{actionError}</p>
+          <p className="mt-3 font-body text-sm text-marica-rose-deep">
+            {actionError}
+          </p>
         )}
 
         {!isLoading && data && data.pagination.total > 0 && (
           <div className="mt-5 flex flex-col gap-3 font-body text-sm text-marica-ink-soft sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Menampilkan {(data.pagination.page - 1) * data.pagination.limit + 1}–
-              {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)} dari{" "}
-              {data.pagination.total} artikel
+              Menampilkan{" "}
+              {(data.pagination.page - 1) * data.pagination.limit + 1}–
+              {Math.min(
+                data.pagination.page * data.pagination.limit,
+                data.pagination.total,
+              )}{" "}
+              dari {data.pagination.total} artikel
             </span>
             <div className="flex items-center justify-between gap-1.5 sm:justify-start">
               <button
@@ -325,7 +375,11 @@ export default function AdminArtikelPage() {
       <DeleteArticleModal
         articleTitle={toDelete?.title ?? null}
         isDeleting={isDeleting}
-        onCancel={() => setToDelete(null)}
+        error={actionError}
+        onCancel={() => {
+          setToDelete(null);
+          setActionError(null);
+        }}
         onConfirm={handleDeleteConfirm}
       />
     </div>

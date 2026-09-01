@@ -6,11 +6,13 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 export default function DeleteArticleModal({
   articleTitle,
   isDeleting,
+  error,
   onCancel,
   onConfirm,
 }: {
   articleTitle: string | null;
   isDeleting: boolean;
+  error?: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -52,6 +54,17 @@ export default function DeleteArticleModal({
               <span className="font-semibold text-marica-ink">&ldquo;{articleTitle}&rdquo;</span>?
               Tindakan ini tidak dapat dibatalkan.
             </p>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 flex items-start gap-2 rounded-xl bg-marica-rose-deep/10 px-3.5 py-2.5 text-left"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-marica-rose-deep" />
+                <p className="font-body text-sm text-marica-rose-deep">{error}</p>
+              </motion.div>
+            )}
 
             <div className="mt-6 flex gap-3">
               <button
