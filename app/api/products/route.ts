@@ -26,12 +26,15 @@ export async function GET(request: Request) {
       };
     }
 
+    const priceFilter: { gte?: number; lte?: number } = {};
+    if (minPrice) priceFilter.gte = Number(minPrice);
+    if (maxPrice) priceFilter.lte = Number(maxPrice);
+
     const where = {
       isActive: true,
       ...(categorySlug ? { category: { slug: categorySlug } } : {}),
       ...(skillFocus ? { skillFocus: { has: skillFocus } } : {}),
-      ...(minPrice ? { price: { gte: Number(minPrice) } } : {}),
-      ...(maxPrice ? { price: { lte: Number(maxPrice) } } : {}),
+      ...(Object.keys(priceFilter).length > 0 ? { price: priceFilter } : {}),
       ...(search
         ? {
             OR: [
