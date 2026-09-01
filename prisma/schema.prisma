@@ -312,3 +312,106 @@ model NewsletterSubscriber {
 //
 // (selain field `role Role @default(USER)` yang disebut di atas)
 // ============================================
+
+// ============================================
+// E-COMMERCE — KATALOG PRODUK (Tahap 1: Catalog + Smart Filter)
+// Belum termasuk: Cart, Order, Payment (menyusul di tahap 2)
+// ============================================
+
+model ProductCategory {
+  id        String            @id @default(cuid())
+  name      String
+  slug      String            @unique
+  imageUrl  String? // buat tile "Explore by Category" di homepage
+  colorTag  String?
+  order     Int               @default(0)
+  isActive  Boolean           @default(true)
+
+  // Kategori berjenjang: "Mainan Edukasi" > "Board Games"
+  parentId  String?
+  parent    ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  ProductCategory[] @relation("CategoryHierarchy")
+
+  products  Product[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@map("product_categories")
+}
+
+model Product {
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  description    String    @db.Text
+  highlights     String[] // bullet manfaat: "Melatih pengenalan pola dan warna", dst
+
+  price          Int // dalam Rupiah, tanpa desimal
+  compareAtPrice Int? // harga coret sebelum diskon, null kalau gak ada diskon
+
+  stock          Int       @default(0)
+  sku            String?   @unique
+
+  // Atribut buat Smart Filter
+  ageMin         Int?
+  ageMax         Int?
+  skillFocus     String[] // "Kognitif", "Motorik", "STEM", "Bahasa", "Sosial"
+  playerCount    String? // "2-4 Pemain", opsional (khusus board game dkk)
+
+  isBestSeller   Boolean   @default(false)
+  isFeatured     Boolean   @default(false) // buat "Trending Now"
+  isActive       Boolean   @default(true)
+
+  soldCount      Int       @default(0)
+
+  // Placeholder dulu, gampang di-upgrade ke sistem Review beneran nanti
+  // (tinggal tambah model Review terpisah, field ini tetap kepake sebagai cache/fallback)
+  ratingAvg      Float     @default(0)
+  reviewCount    Int       @default(0)
+
+  categoryId     String?
+  category       ProductCategory? @relation(fields: [categoryId], references: [id])
+
+  images         ProductImage[]
+  bundleItems    ProductBundleItem[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  url       String
+  isVideo   Boolean  @default(false)
+  order     Int      @default(0)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+// "Rekomendasi Paket Hemat" - bundle 2+ produk dengan harga spesial
+model ProductBundle {
+  id          String              @id @default(cuid())
+  name        String?
+  bundlePrice Int // harga total paket setelah diskon
+  isActive    Boolean             @default(true)
+  items       ProductBundleItem[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("product_bundles")
+}
+
+model ProductBundleItem {
+  id        String        @id @default(cuid())
+  bundleId  String
+  bundle    ProductBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product       @relation(fields: [productId], references: [id])
+  order     Int           @default(0)
+
+  @@map("product_bundle_items")
+}

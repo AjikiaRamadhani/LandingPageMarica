@@ -107,3 +107,28 @@ export type Comment = Prisma.CommentModel
  * 
  */
 export type NewsletterSubscriber = Prisma.NewsletterSubscriberModel
+/**
+ * Model ProductCategory
+ * 
+ */
+export type ProductCategory = Prisma.ProductCategoryModel
+/**
+ * Model Product
+ * 
+ */
+export type Product = Prisma.ProductModel
+/**
+ * Model ProductImage
+ * 
+ */
+export type ProductImage = Prisma.ProductImageModel
+/**
+ * Model ProductBundle
+ * 
+ */
+export type ProductBundle = Prisma.ProductBundleModel
+/**
+ * Model ProductBundleItem
+ * 
+ */
+export type ProductBundleItem = Prisma.ProductBundleItemModel

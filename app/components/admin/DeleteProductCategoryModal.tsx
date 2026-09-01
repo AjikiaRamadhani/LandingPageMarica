@@ -3,22 +3,22 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
-export default function DeleteCategoryModal({
+export default function DeleteProductCategoryModal({
   categoryName,
-  articleCount = 0,
+  productCount = 0,
   isDeleting,
   error,
   onCancel,
   onConfirm,
 }: {
   categoryName: string | null;
-  articleCount?: number;
+  productCount?: number;
   isDeleting: boolean;
   error?: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const hasArticles = articleCount > 0;
+  const hasProducts = productCount > 0;
 
   return (
     <AnimatePresence>
@@ -54,12 +54,12 @@ export default function DeleteCategoryModal({
               Hapus Kategori?
             </h3>
 
-            {hasArticles ? (
+            {hasProducts ? (
               <p className="mt-2 font-body text-sm text-marica-ink-soft">
                 Kategori{" "}
                 <span className="font-semibold text-marica-ink">&ldquo;{categoryName}&rdquo;</span>{" "}
                 masih memiliki{" "}
-                <span className="font-semibold text-marica-ink">{articleCount} artikel aktif</span>.
+                <span className="font-semibold text-marica-ink">{productCount} produk aktif</span>.
               </p>
             ) : (
               <p className="mt-2 font-body text-sm text-marica-ink-soft">
@@ -69,7 +69,7 @@ export default function DeleteCategoryModal({
               </p>
             )}
 
-            {hasArticles && (
+            {hasProducts && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -77,8 +77,8 @@ export default function DeleteCategoryModal({
               >
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-marica-amber-dark" />
                 <p className="font-body text-sm text-marica-ink-soft">
-                  Kategori tidak dapat dihapus selama masih dipakai oleh artikel yang aktif.
-                  Pindahkan atau hapus artikel-artikel tersebut ke kategori lain terlebih dahulu.
+                  Kategori tidak dapat dihapus selama masih dipakai oleh produk yang aktif.
+                  Pindahkan atau nonaktifkan produk-produk tersebut terlebih dahulu.
                 </p>
               </motion.div>
             )}
@@ -101,9 +101,9 @@ export default function DeleteCategoryModal({
                 disabled={isDeleting}
                 className="flex-1 rounded-full border border-black/10 py-2.5 font-body text-sm font-semibold text-marica-ink-soft transition hover:bg-black/3 active:scale-[0.97] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-ink/10"
               >
-                {hasArticles ? "Tutup" : "Batal"}
+                {hasProducts ? "Tutup" : "Batal"}
               </button>
-              {!hasArticles && (
+              {!hasProducts && (
                 <button
                   type="button"
                   onClick={onConfirm}

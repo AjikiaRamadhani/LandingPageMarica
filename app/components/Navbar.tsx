@@ -1,6 +1,5 @@
 "use client";
 
-import type { MouseEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -8,14 +7,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, User, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
+// Catatan: /belanja, /aktivitas, /edugames, /event belum ada halamannya —
+// hrefnya sudah disiapkan lebih dulu supaya begitu halaman dibuat, tinggal
+// dipasang di App Router tanpa perlu balik ke sini. /artikel sudah live.
 const navLinks = [
-  { label: "Beranda", href: "#beranda", active: true },
-  { label: "Masalah", href: "#masalah" },
-  { label: "Manfaat", href: "#manfaat" },
-  { label: "Artikel", href: "/artikel" },
-  { label: "Testimoni", href: "#testimoni" },
-  { label: "Cara Kerja", href: "#cara-kerja" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Beranda", href: "/" },
+  { label: "Belanja", href: "/belanja" },
+  { label: "Aktivitas", href: "/aktivitas" },
+  { label: "Edugames", href: "/edugames" },
+  { label: "Event", href: "/event" },
+  { label: "Blog", href: "/artikel" },
 ];
 
 type ApiCompany = {
@@ -25,7 +26,6 @@ type ApiCompany = {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isHome = pathname === "/";
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
@@ -34,24 +34,19 @@ export default function Navbar() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [company, setCompany] = useState<ApiCompany | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [activeHref, setActiveHref] = useState<string>("#beranda");
+  const [activeHref, setActiveHref] = useState<string>("/");
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Kalau kita sedang di halaman lain (mis. /artikel), menu aktif mengikuti
-  // route saat ini, bukan hash section — supaya "Artikel" tidak ketiban
-  // status aktif "Beranda" hanya karena posisi scroll masih di atas.
-  // startsWith juga dipakai supaya halaman detail (mis. /artikel/slug-nya)
-  // tetap menyorot menu "Artikel" sebagai induknya.
+  // Menu aktif mengikuti route saat ini. startsWith dipakai supaya halaman
+  // detail (mis. /artikel/slug-nya) tetap menyorot menu "Blog" sebagai induknya.
   useEffect(() => {
-    if (!isHome) {
-      const routeLink = navLinks.find(
-        (link) =>
-          !link.href.startsWith("#") &&
-          (pathname === link.href || pathname?.startsWith(`${link.href}/`))
-      );
-      setActiveHref(routeLink?.href ?? pathname ?? "");
-    }
-  }, [isHome, pathname]);
+    const routeLink = navLinks.find(
+      (link) =>
+        pathname === link.href ||
+        (link.href !== "/" && pathname?.startsWith(`${link.href}/`))
+    );
+    setActiveHref(routeLink?.href ?? pathname ?? "/");
+  }, [pathname]);
 
   useEffect(() => {
     fetch("/api/company")
@@ -88,64 +83,12 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Scroll-spy: setiap kali user scroll, cek ulang posisi tiap section
-  // (bukan cuma sekali di awal) supaya tetap akurat walau section tertentu
-  // baru muncul di DOM belakangan — misalnya karena datanya masih di-fetch
-  // saat Navbar pertama kali mount. Menu aktif = section terakhir yang sudah
-  // terlewati dari titik acuan di ~35% tinggi viewport.
-  useEffect(() => {
-    if (!isHome) return;
-
-    const hashLinks = navLinks
-      .map((link) => link.href)
-      .filter((href) => href.startsWith("#") && href !== "#");
-
-    const handleScroll = () => {
-      if (window.scrollY < 80) {
-        setActiveHref("#beranda");
-        return;
-      }
-
-      const referenceY = window.scrollY + window.innerHeight * 0.35;
-      let current = "#beranda";
-
-      for (const href of hashLinks) {
-        const el = document.querySelector(href);
-        if (!el) continue;
-        const top = el.getBoundingClientRect().top + window.scrollY;
-        if (top <= referenceY) {
-          current = href;
-        }
-      }
-
-      setActiveHref(current);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleScroll);
-    };
-  }, [isHome]);
-
-  // Di mobile, menu ditutup dulu (animasi ~300ms) baru discroll ke section
-  // tujuan. Kalau scroll dan animasi penutupan dijalankan bersamaan, layout
-  // yang berubah saat menu menutup bisa mengacaukan posisi scroll sehingga
-  // terasa seperti "tidak menggeser" sama sekali.
-  const handleMobileNavClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
+  // Semua item nav sekarang route halaman asli (bukan hash section di
+  // satu halaman panjang), jadi klik di mobile tinggal set active lalu
+  // tutup menu — navigasinya sendiri ditangani default <a href>.
+  const handleMobileNavClick = (href: string) => {
     setActiveHref(href);
-    if (!isHome || !href.startsWith("#") || href === "#") return;
-    e.preventDefault();
     setIsOpen(false);
-
-    window.setTimeout(() => {
-      const target = document.querySelector(href);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 320);
   };
 
   return (
@@ -188,11 +131,10 @@ export default function Navbar() {
         >
           {navLinks.map((link, i) => {
             const isHighlighted = hoveredIndex === i || (hoveredIndex === null && link.href === activeHref);
-            const resolvedHref = link.href.startsWith("#") && !isHome ? `/${link.href}` : link.href;
             return (
               <a
                 key={link.label}
-                href={resolvedHref}
+                href={link.href}
                 onMouseEnter={() => setHoveredIndex(i)}
                 onClick={() => setActiveHref(link.href)}
                 className={`relative rounded-full px-3 py-1.5 transition-colors ${
@@ -358,8 +300,8 @@ export default function Navbar() {
               {navLinks.map((link, i) => (
                 <motion.a
                   key={link.label}
-                  href={link.href.startsWith("#") && !isHome ? `/${link.href}` : link.href}
-                  onClick={(e) => handleMobileNavClick(e, link.href)}
+                  href={link.href}
+                  onClick={() => handleMobileNavClick(link.href)}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.25, delay: i * 0.05 }}
