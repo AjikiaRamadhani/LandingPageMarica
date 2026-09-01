@@ -68,7 +68,12 @@ export const ModelName = {
   ArticleCategory: 'ArticleCategory',
   Article: 'Article',
   Comment: 'Comment',
-  NewsletterSubscriber: 'NewsletterSubscriber'
+  NewsletterSubscriber: 'NewsletterSubscriber',
+  ProductCategory: 'ProductCategory',
+  Product: 'Product',
+  ProductImage: 'ProductImage',
+  ProductBundle: 'ProductBundle',
+  ProductBundleItem: 'ProductBundleItem'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -344,6 +349,83 @@ export const NewsletterSubscriberScalarFieldEnum = {
 } as const
 
 export type NewsletterSubscriberScalarFieldEnum = (typeof NewsletterSubscriberScalarFieldEnum)[keyof typeof NewsletterSubscriberScalarFieldEnum]
+
+
+export const ProductCategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  imageUrl: 'imageUrl',
+  colorTag: 'colorTag',
+  order: 'order',
+  isActive: 'isActive',
+  parentId: 'parentId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductCategoryScalarFieldEnum = (typeof ProductCategoryScalarFieldEnum)[keyof typeof ProductCategoryScalarFieldEnum]
+
+
+export const ProductScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  description: 'description',
+  highlights: 'highlights',
+  price: 'price',
+  compareAtPrice: 'compareAtPrice',
+  stock: 'stock',
+  sku: 'sku',
+  ageMin: 'ageMin',
+  ageMax: 'ageMax',
+  skillFocus: 'skillFocus',
+  playerCount: 'playerCount',
+  isBestSeller: 'isBestSeller',
+  isFeatured: 'isFeatured',
+  isActive: 'isActive',
+  soldCount: 'soldCount',
+  ratingAvg: 'ratingAvg',
+  reviewCount: 'reviewCount',
+  categoryId: 'categoryId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const ProductImageScalarFieldEnum = {
+  id: 'id',
+  url: 'url',
+  isVideo: 'isVideo',
+  order: 'order',
+  productId: 'productId'
+} as const
+
+export type ProductImageScalarFieldEnum = (typeof ProductImageScalarFieldEnum)[keyof typeof ProductImageScalarFieldEnum]
+
+
+export const ProductBundleScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  bundlePrice: 'bundlePrice',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductBundleScalarFieldEnum = (typeof ProductBundleScalarFieldEnum)[keyof typeof ProductBundleScalarFieldEnum]
+
+
+export const ProductBundleItemScalarFieldEnum = {
+  id: 'id',
+  bundleId: 'bundleId',
+  productId: 'productId',
+  order: 'order'
+} as const
+
+export type ProductBundleItemScalarFieldEnum = (typeof ProductBundleItemScalarFieldEnum)[keyof typeof ProductBundleItemScalarFieldEnum]
 
 
 export const SortOrder = {
