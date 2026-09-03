@@ -1,14 +1,37 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ShoppingCart, Bell, Smile, Sparkles, Users } from "lucide-react";
 import type { ApiProduct } from "./types";
+import AddressModal, { type ShippingAddress } from "./AddressModal";
 
 function formatRupiah(value: number): string {
   return `Rp ${value.toLocaleString("id-ID")}`;
 }
 
+// Mock saved addresses — replace with a fetch to /api/addresses once that
+// endpoint exists. If you show this modal from multiple places (product
+// card, product detail, cart), consider lifting this state up to a shared
+// context/provider instead of duplicating it per component.
+const MOCK_ADDRESSES: ShippingAddress[] = [
+  {
+    id: "addr-1",
+    label: "Rumah",
+    isPrimary: true,
+    recipientName: "Budi Santoso",
+    phone: "081234567890",
+    province: "Jawa Tengah",
+    city: "Kota Magelang",
+    district: "Magelang Tengah",
+    postalCode: "56117",
+    fullAddress: "Jl. Pahlawan No. 12, RT 03/RW 05",
+  },
+];
+
 export default function ProductCard({ product }: { product: ApiProduct }) {
+  const router = useRouter();
   const image = product.images[0]?.url;
   const inStock = product.stock > 0;
   const hasDiscount = !!product.compareAtPrice && product.compareAtPrice > product.price;
@@ -20,6 +43,31 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
     product.ageMin != null || product.ageMax != null
       ? `${product.ageMin ?? 0}${product.ageMax ? `-${product.ageMax}` : "+"} Thn`
       : null;
+
+  // --- Shipping address modal state -----------------------------------
+  const [addresses, setAddresses] = useState<ShippingAddress[]>(MOCK_ADDRESSES);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    MOCK_ADDRESSES[0]?.id ?? null
+  );
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+
+  const handleBeli = () => {
+    setAddressModalOpen(true);
+  };
+
+  const handleConfirmAddress = (address: ShippingAddress) => {
+    setAddressModalOpen(false);
+
+    // TODO: replace with your real checkout call, e.g.:
+    // const res = await fetch("/api/checkout", {
+    //   method: "POST",
+    //   body: JSON.stringify({ productId: product.id, qty: 1, shippingAddressId: address.id }),
+    // });
+    // const { orderId } = await res.json();
+    // router.push(`/belanja/pesanan-saya/${orderId}/bayar`);
+    console.log("Lanjut ke pembayaran:", { product: product.slug, address });
+    router.push("/belanja/pesanan-saya");
+  };
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-marica-ink/5 bg-white shadow-[0_10px_28px_rgba(120,60,10,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(120,60,10,0.14)]">
@@ -105,6 +153,7 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
           {inStock ? (
             <button
               type="button"
+              onClick={handleBeli}
               className="inline-flex items-center gap-1.5 rounded-full bg-marica-amber-dark px-3.5 py-2 font-body text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:text-sm"
             >
               <ShoppingCart className="h-3.5 w-3.5" />
@@ -121,6 +170,20 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
           )}
         </div>
       </div>
+
+      <AddressModal
+        open={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        addresses={addresses}
+        selectedId={selectedAddressId}
+        onSelect={setSelectedAddressId}
+        onAddAddress={(addr) => {
+          setAddresses((prev) => [...prev, addr]);
+          setSelectedAddressId(addr.id);
+          // TODO: persist to your backend, e.g. POST /api/addresses
+        }}
+        onConfirm={handleConfirmAddress}
+      />
     </div>
   );
 }

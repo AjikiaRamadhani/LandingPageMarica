@@ -22,6 +22,7 @@ import {
 
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import AddressModal, { type ShippingAddress } from "../../components/belanja/AddressModal";
 import type { ApiProduct, ApiProductImage } from "../../components/belanja/types";
 
 type ApiProductDetail = ApiProduct & {
@@ -39,6 +40,23 @@ function formatRupiah(value: number): string {
   return `Rp ${value.toLocaleString("id-ID")}`;
 }
 
+// Mock saved addresses — replace with a fetch to /api/addresses (or your
+// user-profile endpoint) once that's available on the backend.
+const MOCK_ADDRESSES: ShippingAddress[] = [
+  {
+    id: "addr-1",
+    label: "Rumah",
+    isPrimary: true,
+    recipientName: "Budi Santoso",
+    phone: "081234567890",
+    province: "Jawa Tengah",
+    city: "Kota Magelang",
+    district: "Magelang Tengah",
+    postalCode: "56117",
+    fullAddress: "Jl. Pahlawan No. 12, RT 03/RW 05",
+  },
+];
+
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
@@ -50,6 +68,13 @@ export default function ProductDetailPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const [descExpanded, setDescExpanded] = useState(false);
+
+  // --- Shipping address modal state -----------------------------------
+  const [addresses, setAddresses] = useState<ShippingAddress[]>(MOCK_ADDRESSES);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    MOCK_ADDRESSES[0]?.id ?? null
+  );
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
 
   useEffect(() => {
     if (!params?.slug) return;
@@ -111,6 +136,27 @@ export default function ProductDetailPage() {
   }, [product]);
 
   const maxQty = Math.min(product?.stock ?? 1, 99);
+
+  // Opens the address picker. Called from "Beli Sekarang".
+  const handleBeliSekarang = () => {
+    setAddressModalOpen(true);
+  };
+
+  // Address confirmed — proceed to actual checkout/payment.
+  const handleConfirmAddress = (address: ShippingAddress) => {
+    setAddressModalOpen(false);
+    if (!product) return;
+
+    // TODO: replace with your real checkout call, e.g.:
+    // const res = await fetch("/api/checkout", {
+    //   method: "POST",
+    //   body: JSON.stringify({ productId: product.id, qty, shippingAddressId: address.id }),
+    // });
+    // const { orderId } = await res.json();
+    // router.push(`/belanja/pesanan-saya/${orderId}/bayar`);
+    console.log("Lanjut ke pembayaran:", { product: product.slug, qty, address });
+    router.push("/belanja/pesanan-saya");
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -369,6 +415,7 @@ export default function ProductDetailPage() {
                         </button>
                         <button
                           type="button"
+                          onClick={handleBeliSekarang}
                           className="flex-1 rounded-full bg-marica-amber-dark px-4 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
                         >
                           Beli Sekarang
@@ -441,6 +488,20 @@ export default function ProductDetailPage() {
       <div className="hidden lg:block">
         <Footer />
       </div>
+
+      <AddressModal
+        open={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        addresses={addresses}
+        selectedId={selectedAddressId}
+        onSelect={setSelectedAddressId}
+        onAddAddress={(addr) => {
+          setAddresses((prev) => [...prev, addr]);
+          setSelectedAddressId(addr.id);
+          // TODO: persist to your backend, e.g. POST /api/addresses
+        }}
+        onConfirm={handleConfirmAddress}
+      />
     </div>
   );
 }
