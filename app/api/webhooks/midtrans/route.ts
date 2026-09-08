@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
 
 // Handler GET ini bukan buat fungsi bisnis apa-apa, cuma jaga-jaga kalau Midtrans
 // (atau kamu ngetes manual lewat browser) ngirim GET request buat verifikasi URL ini hidup.
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
             })),
           });
         });
+        await sendEventTicketEmailIfNeeded(booking.id);
       } else if (transaction_status === "pending") {
         await prisma.eventBooking.updateMany({
           where: { id: booking.id, status: "PENDING_PAYMENT" },

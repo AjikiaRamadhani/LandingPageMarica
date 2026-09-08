@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { snap } from "@/lib/midtrans";
+import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
 
 const MAX_PARTICIPANTS_PER_BOOKING = 10;
 const PENDING_BOOKING_MINUTES = 30;
@@ -109,6 +110,7 @@ export async function POST(request: Request) {
     });
 
     if (event.price === 0) {
+      await sendEventTicketEmailIfNeeded(booking.id);
       return NextResponse.json({ booking }, { status: 201 });
     }
 
@@ -151,5 +153,28 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[POST /api/event-bookings]", error);
     return NextResponse.json({ error: "Gagal membuat booking event" }, { status: 500 });
+  }
+}
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 });
+  }
+
+  try {
+    const bookings = await prisma.eventBooking.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        event: true,
+        tickets: true,
+      },
+    });
+
+    return NextResponse.json(bookings);
+  } catch (error) {
+    console.error("[GET /api/event-bookings]", error);
+    return NextResponse.json({ error: "Gagal mengambil riwayat booking" }, { status: 500 });
   }
 }
