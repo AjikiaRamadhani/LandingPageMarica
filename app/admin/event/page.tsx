@@ -32,7 +32,12 @@ type Booking = {
   customerEmail: string;
   status: string;
   event: { title: string };
-  tickets: { ticketCode: string; participantName: string; status: string }[];
+  tickets: {
+    ticketCode: string;
+    participantName: string;
+    status: string;
+    checkedInAt?: string | null;
+  }[];
 };
 type FormState = {
   title: string;
@@ -65,6 +70,13 @@ const emptyForm: FormState = {
 };
 const inputClass =
   "mt-1 w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm text-marica-ink outline-none transition placeholder:text-marica-ink-soft/60 focus:border-marica-amber-dark focus:ring-4 focus:ring-marica-amber/15";
+
+function formatCheckInDate(value: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
 export default function AdminEventPage() {
   const [tab, setTab] = useState<"events" | "participants" | "scanner">(
@@ -521,6 +533,11 @@ export default function AdminEventPage() {
                   <span
                     key={ticket.ticketCode}
                     className={`rounded-full px-3 py-1 font-semibold ${ticket.status === "CHECKED_IN" ? "bg-marica-green/15 text-marica-green" : "bg-marica-rose-deep/10 text-marica-rose-deep"}`}
+                    title={
+                      ticket.status === "CHECKED_IN" && ticket.checkedInAt
+                        ? `Check-in: ${formatCheckInDate(ticket.checkedInAt)}`
+                        : undefined
+                    }
                   >
                     {ticket.participantName} ·{" "}
                     {ticket.status === "CHECKED_IN"
