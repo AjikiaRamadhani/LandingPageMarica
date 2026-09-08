@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -19,7 +19,6 @@ import {
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import {
-  EVENTS,
   CATEGORY_LABEL,
   CATEGORY_STYLE,
   DAY_LABELS_ID,
@@ -73,6 +72,7 @@ function isSameDay(a: Date, b: Date) {
 
 export default function EventCalendarPage() {
   const today = useMemo(() => new Date(), []);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [cursor, setCursor] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
@@ -80,28 +80,35 @@ export default function EventCalendarPage() {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("kalender");
 
+  useEffect(() => {
+    fetch("/api/events")
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Gagal memuat event"))))
+      .then((data: EventItem[]) => setEvents(data))
+      .catch((error) => console.error("[EventCalendarPage]", error));
+  }, []);
+
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventItem[]>();
-    for (const ev of EVENTS) {
+    for (const ev of events) {
       const list = map.get(ev.date) ?? [];
       list.push(ev);
       map.set(ev.date, list);
     }
     return map;
-  }, []);
+  }, [events]);
 
   const filteredEvents = useMemo(() => {
-    return EVENTS.filter((ev) => {
+    return events.filter((ev) => {
       const matchesCategory = category === "semua" || ev.category === category;
       const matchesQuery = ev.title
         .toLowerCase()
         .includes(query.trim().toLowerCase());
       return matchesCategory && matchesQuery;
     });
-  }, [category, query]);
+  }, [category, query, events]);
 
   const eventsThisMonth = useMemo(
     () =>
@@ -113,7 +120,7 @@ export default function EventCalendarPage() {
   );
 
   const stats = useMemo(() => {
-    const monthAll = EVENTS.filter((ev) => {
+    const monthAll = events.filter((ev) => {
       const d = new Date(`${ev.date}T00:00:00`);
       return d.getFullYear() === year && d.getMonth() === month;
     });
@@ -122,7 +129,7 @@ export default function EventCalendarPage() {
       workshop: monthAll.filter((e) => e.category === "workshop").length,
       parenting: monthAll.filter((e) => e.category === "parenting").length,
     };
-  }, [year, month]);
+  }, [year, month, events]);
 
   const grid = useMemo(() => buildMonthGrid(year, month), [year, month]);
 

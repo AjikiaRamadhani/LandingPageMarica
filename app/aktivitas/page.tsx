@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 import { ArrowLeft, Star, Play, Download } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { CATEGORY_STYLES, EDUGAMES, PRINTABLES, type Activity } from "./activities-data";
+import { CATEGORY_STYLES, EDUGAMES, PRINTABLES, type Activity, type CategoryKey, type Printable } from "./activities-data";
 
 const TABS = [
   { key: "edugames", label: "Edugames" },
@@ -27,8 +27,32 @@ const cardVariants: Variants = {
 
 export default function AktivitasPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("edugames");
+  const [printables, setPrintables] = useState<Printable[]>(PRINTABLES);
   const reduceMotion = useReducedMotion();
-  const items = activeTab === "edugames" ? EDUGAMES : PRINTABLES;
+  const items = activeTab === "edugames" ? EDUGAMES : printables;
+
+  useEffect(() => {
+    fetch("/api/printables")
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Gagal memuat printable"))))
+      .then((data: Array<{ slug: string; title: string; description: string; subject: string; ageMin: number | null; ageMax: number | null }>) => {
+        setPrintables(data.map((item) => {
+          const category = toCategoryKey(item.subject);
+          const age = item.ageMin !== null && item.ageMax !== null ? `${item.ageMin}-${item.ageMax} Thn` : "Semua usia";
+          return {
+            ...PRINTABLES[0],
+            id: item.slug,
+            title: item.title,
+            description: item.description,
+            longDescription: item.description,
+            category,
+            categoryLabel: item.subject,
+            age,
+            href: `/aktivitas/printables-download?item=${encodeURIComponent(item.slug)}`,
+          };
+        }));
+      })
+      .catch((error) => console.error("[AktivitasPage]", error));
+  }, []);
 
   return (
     <>
@@ -192,4 +216,14 @@ function ActivityCard({
       </div>
     </motion.div>
   );
+}
+
+function toCategoryKey(subject: string): CategoryKey {
+  const normalized = subject.toLowerCase();
+  if (normalized.includes("sains")) return "sains";
+  if (normalized.includes("bahasa")) return "bahasa";
+  if (normalized.includes("logika")) return "logika";
+  if (normalized.includes("kognitif")) return "kognitif";
+  if (normalized.includes("kreativ")) return "kreativitas";
+  return "motorik";
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowLeft, Star, Download, CheckCircle2, Loader2 } from "lucide-react";
 import Navbar from "../../components/Navbar";
@@ -21,7 +22,26 @@ export default function PrintablesDownloadPage() {
 
 function PrintablesDownloadContent() {
   const searchParams = useSearchParams();
-  const printable = getPrintableById(searchParams.get("item"));
+  const [printable, setPrintable] = useState(() => getPrintableById(searchParams.get("item")));
+  const printableKey = searchParams.get("item");
+
+  useEffect(() => {
+    if (!printableKey) return;
+
+    fetch(`/api/printables/${encodeURIComponent(printableKey)}`)
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Printable tidak ditemukan"))))
+      .then((data: { id: string; slug: string; title: string; description: string; subject: string }) => {
+        setPrintable((current) => ({
+          ...current,
+          id: data.slug,
+          title: data.title,
+          description: data.description,
+          longDescription: data.description,
+          categoryLabel: data.subject,
+        }));
+      })
+      .catch((error) => console.error("[PrintablesDownloadPage]", error));
+  }, [printableKey]);
   const style = CATEGORY_STYLES[printable.category];
   const Icon = style.icon;
   const reduceMotion = useReducedMotion();
@@ -84,7 +104,11 @@ function PrintablesDownloadContent() {
             <p className="mt-3 font-body text-marica-ink-soft">{printable.longDescription}</p>
 
             <div className="mt-6 rounded-2xl bg-white p-6 shadow-[0_14px_35px_rgba(120,60,10,0.08)] sm:p-7">
-              <DownloadForm printableTitle={printable.title} reduceMotion={!!reduceMotion} />
+              <DownloadForm
+                printableId={printable.id}
+                printableTitle={printable.title}
+                reduceMotion={!!reduceMotion}
+              />
             </div>
 
             <p className="mt-4 font-body text-xs text-marica-ink-soft">
@@ -106,9 +130,23 @@ function PrintablesDownloadContent() {
   );
 }
 
-function DownloadForm({ printableTitle, reduceMotion }: { printableTitle: string; reduceMotion: boolean }) {
+function DownloadForm({
+  printableId,
+  printableTitle,
+  reduceMotion,
+}: {
+  printableId: string;
+  printableTitle: string;
+  reduceMotion: boolean;
+}) {
+  const { data: session } = useSession();
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "", age: "" });
+
+  const nameValue = form.name || session?.user?.name || "";
+  const emailValue = form.email || session?.user?.email || "";
 
   const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -116,9 +154,31 @@ function DownloadForm({ printableTitle, reduceMotion }: { printableTitle: string
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
-    // TODO: wire this up to the real lead-capture endpoint.
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    setStatus("success");
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/printables/${encodeURIComponent(printableId)}/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: nameValue,
+          email: emailValue,
+          whatsapp: form.whatsapp,
+          childAge: Number.parseInt(form.age, 10),
+        }),
+      });
+      const result = (await response.json()) as { downloadUrl?: string; error?: string };
+
+      if (!response.ok || !result.downloadUrl) {
+        throw new Error(result.error ?? "Download belum bisa disiapkan");
+      }
+
+      setDownloadUrl(result.downloadUrl);
+      setStatus("success");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Terjadi kesalahan");
+      setStatus("idle");
+    }
   };
 
   return (
@@ -134,8 +194,18 @@ function DownloadForm({ printableTitle, reduceMotion }: { printableTitle: string
           <CheckCircle2 className="h-12 w-12 text-marica-green" />
           <h3 className="mt-4 font-display text-lg font-semibold text-marica-ink">Berhasil dikirim!</h3>
           <p className="mt-1 font-body text-sm text-marica-ink-soft">
-            Cek email kamu untuk tautan download &ldquo;{printableTitle}&rdquo;.
+            Download &ldquo;{printableTitle}&rdquo; sudah siap.
           </p>
+          {downloadUrl && (
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white"
+            >
+              <Download className="h-4 w-4" /> Buka PDF
+            </a>
+          )}
         </motion.div>
       ) : (
         <motion.form
@@ -149,11 +219,13 @@ function DownloadForm({ printableTitle, reduceMotion }: { printableTitle: string
         >
           <h2 className="font-display text-lg font-semibold text-marica-ink">Informasi Pengiriman</h2>
 
+          {error && <p className="rounded-xl bg-red-50 px-4 py-3 font-body text-sm text-red-700">{error}</p>}
+
           <Field label="Nama Lengkap Orang Tua">
             <input
               required
               type="text"
-              value={form.name}
+              value={nameValue}
               onChange={update("name")}
               placeholder="Masukkan nama lengkap"
               className="w-full rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 font-body text-sm text-marica-ink placeholder:text-marica-ink-soft/60 outline-none transition focus:border-marica-amber-dark focus:ring-2 focus:ring-marica-amber-dark/20"
@@ -164,7 +236,7 @@ function DownloadForm({ printableTitle, reduceMotion }: { printableTitle: string
             <input
               required
               type="email"
-              value={form.email}
+              value={emailValue}
               onChange={update("email")}
               placeholder="Alamat pengiriman file PDF"
               className="w-full rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 font-body text-sm text-marica-ink placeholder:text-marica-ink-soft/60 outline-none transition focus:border-marica-amber-dark focus:ring-2 focus:ring-marica-amber-dark/20"

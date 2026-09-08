@@ -579,9 +579,14 @@ model EventBooking {
   event                 Event              @relation(fields: [eventId], references: [id])
   userId                String
   user                  User               @relation(fields: [userId], references: [id])
+  customerName          String
+  customerEmail         String
+  customerPhone         String?
+  participantNames      String[]
   quantity              Int
   totalPrice            Int
   status                EventBookingStatus @default(PENDING_PAYMENT)
+  expiresAt             DateTime?
 
   // Midtrans - pola sama kayak Order produk
   midtransOrderId       String?            @unique
