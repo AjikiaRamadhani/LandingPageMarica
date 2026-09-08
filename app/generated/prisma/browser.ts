@@ -132,3 +132,48 @@ export type ProductBundle = Prisma.ProductBundleModel
  * 
  */
 export type ProductBundleItem = Prisma.ProductBundleItemModel
+/**
+ * Model Cart
+ * 
+ */
+export type Cart = Prisma.CartModel
+/**
+ * Model CartItem
+ * 
+ */
+export type CartItem = Prisma.CartItemModel
+/**
+ * Model Order
+ * 
+ */
+export type Order = Prisma.OrderModel
+/**
+ * Model OrderItem
+ * 
+ */
+export type OrderItem = Prisma.OrderItemModel
+/**
+ * Model Event
+ * 
+ */
+export type Event = Prisma.EventModel
+/**
+ * Model EventBooking
+ * 
+ */
+export type EventBooking = Prisma.EventBookingModel
+/**
+ * Model EventTicket
+ * 
+ */
+export type EventTicket = Prisma.EventTicketModel
+/**
+ * Model Printable
+ * 
+ */
+export type Printable = Prisma.PrintableModel
+/**
+ * Model PrintableLead
+ * 
+ */
+export type PrintableLead = Prisma.PrintableLeadModel

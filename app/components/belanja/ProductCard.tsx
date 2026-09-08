@@ -1,8 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ShoppingCart, Bell, Smile, Sparkles, Users } from "lucide-react";
+import {
+  ShoppingCart,
+  Bell,
+  Smile,
+  Sparkles,
+  Users,
+  Loader2,
+} from "lucide-react";
 import type { ApiProduct } from "./types";
+import AddressModal, {
+  loadSavedAddresses,
+  saveAddresses,
+  type ShippingAddress,
+} from "./AddressModal";
+import { useBuyNow } from "./useBuyNow";
 
 function formatRupiah(value: number): string {
   return `Rp ${value.toLocaleString("id-ID")}`;
@@ -11,7 +25,8 @@ function formatRupiah(value: number): string {
 export default function ProductCard({ product }: { product: ApiProduct }) {
   const image = product.images[0]?.url;
   const inStock = product.stock > 0;
-  const hasDiscount = !!product.compareAtPrice && product.compareAtPrice > product.price;
+  const hasDiscount =
+    !!product.compareAtPrice && product.compareAtPrice > product.price;
   const discountPercent = hasDiscount
     ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100)
     : 0;
@@ -21,9 +36,40 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
       ? `${product.ageMin ?? 0}${product.ageMax ? `-${product.ageMax}` : "+"} Thn`
       : null;
 
+  const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
+
+  const {
+    isAdding,
+    isCheckingOut,
+    error,
+    addressModalOpen,
+    setAddressModalOpen,
+    totalWeightGrams,
+    startBuyNow,
+    confirmCheckout,
+  } = useBuyNow();
+
+  useEffect(() => {
+    const saved = loadSavedAddresses();
+    setAddresses(saved);
+    setSelectedAddressId(
+      saved.find((address) => address.isPrimary)?.id ?? saved[0]?.id ?? null,
+    );
+  }, []);
+
+  const handleBeli = () => {
+    startBuyNow(product.id, 1);
+  };
+
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-marica-ink/5 bg-white shadow-[0_10px_28px_rgba(120,60,10,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(120,60,10,0.14)]">
-      <Link href={`/belanja/${product.slug}`} className="relative block aspect-square overflow-hidden bg-marica-cream">
+      <Link
+        href={`/belanja/${product.slug}`}
+        className="relative block aspect-square overflow-hidden bg-marica-cream"
+      >
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -105,9 +151,15 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
           {inStock ? (
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-full bg-marica-amber-dark px-3.5 py-2 font-body text-xs font-semibold text-white shadow-sm transition hover:brightness-105 sm:text-sm"
+              onClick={handleBeli}
+              disabled={isAdding}
+              className="inline-flex items-center gap-1.5 rounded-full bg-marica-amber-dark px-3.5 py-2 font-body text-xs font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
             >
-              <ShoppingCart className="h-3.5 w-3.5" />
+              {isAdding ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-3.5 w-3.5" />
+              )}
               Beli
             </button>
           ) : (
@@ -120,7 +172,36 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
             </button>
           )}
         </div>
+
+        {error && (
+          <p className="font-body text-xs text-marica-rose-deep">{error}</p>
+        )}
       </div>
+
+      <AddressModal
+        open={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        addresses={addresses}
+        selectedId={selectedAddressId}
+        onSelect={setSelectedAddressId}
+        onAddAddress={(addr) => {
+          setAddresses((prev) => {
+            const next = addr.isPrimary
+              ? [
+                  ...prev.map((address) => ({ ...address, isPrimary: false })),
+                  addr,
+                ]
+              : [...prev, addr];
+            saveAddresses(next);
+            return next;
+          });
+          setSelectedAddressId(addr.id);
+        }}
+        totalWeightGrams={totalWeightGrams}
+        onConfirm={confirmCheckout}
+        isSubmitting={isCheckingOut}
+        submitError={error}
+      />
     </div>
   );
 }

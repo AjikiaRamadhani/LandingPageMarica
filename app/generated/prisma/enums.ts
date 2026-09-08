@@ -23,3 +23,35 @@ export const ArticleStatus = {
 } as const
 
 export type ArticleStatus = (typeof ArticleStatus)[keyof typeof ArticleStatus]
+
+
+export const OrderStatus = {
+  PENDING_PAYMENT: 'PENDING_PAYMENT',
+  PAID: 'PAID',
+  PROCESSING: 'PROCESSING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
+
+
+export const EventBookingStatus = {
+  PENDING_PAYMENT: 'PENDING_PAYMENT',
+  PAID: 'PAID',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type EventBookingStatus = (typeof EventBookingStatus)[keyof typeof EventBookingStatus]
+
+
+export const TicketStatus = {
+  ACTIVE: 'ACTIVE',
+  CHECKED_IN: 'CHECKED_IN',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus]
