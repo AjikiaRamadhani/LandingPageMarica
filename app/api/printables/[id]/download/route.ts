@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isRateLimited } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { sendPrintableDownloadEmail } from "@/lib/printable-mailer";
 
 const DOWNLOAD_URL_TTL_SECONDS = 10 * 60;
 const PRINTABLE_BUCKET = "printables";
@@ -80,6 +81,18 @@ export async function POST(
       where: { id: printable.id },
       data: { downloadCount: { increment: 1 } },
     });
+
+    try {
+      await sendPrintableDownloadEmail({
+        email,
+        name,
+        printableTitle: printable.title,
+        downloadUrl: data.signedUrl,
+        expiresInSeconds: DOWNLOAD_URL_TTL_SECONDS,
+      });
+    } catch (emailError) {
+      console.error("[Printable email delivery]", emailError);
+    }
 
     return NextResponse.json({
       message: "Download siap",
