@@ -21,6 +21,8 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String? // hash bcrypt, buat login credentials (email/password)
+  cart   Cart?
+  orders Order[]
   accounts      Account[]
   sessions      Session[]
   role     Role      @default(USER)
@@ -352,6 +354,8 @@ model Product {
 
   stock          Int       @default(0)
   sku            String?   @unique
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   // Atribut buat Smart Filter
   ageMin         Int?
@@ -416,3 +420,110 @@ model ProductBundleItem {
 
   @@map("product_bundle_items")
 }
+
+// ============================================
+// E-COMMERCE — KERANJANG & CHECKOUT (Tahap 2)
+// Payment: Midtrans | Shipping: RajaOngkir (real-time)
+// Alamat: input manual tiap checkout (gak ada address book)
+// ============================================
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique // 1 user = 1 keranjang aktif
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  bundleId  String? // diisi kalau item ini bagian dari "Paket Hemat" tertentu
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId]) // 1 produk cuma 1 baris per keranjang, quantity yang berubah
+  @@map("cart_items")
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  EXPIRED
+}
+
+model Order {
+  id                     String      @id @default(cuid())
+  orderNumber            String      @unique // format: ORD-20260828-0001
+  userId                 String
+  user                   User        @relation(fields: [userId], references: [id])
+  status                 OrderStatus @default(PENDING_PAYMENT)
+
+  // Alamat pengiriman - input manual tiap checkout, snapshot di sini
+  shippingName           String
+  shippingPhone          String
+  shippingAddress        String      @db.Text
+  shippingCity           String
+  shippingProvince       String
+  shippingPostalCode     String
+
+  // Ongkir dari RajaOngkir
+  shippingCourier        String? // "jne", "jnt", dst
+  shippingService        String? // "REG", "YES", dst
+  shippingCost           Int         @default(0)
+
+  subtotal               Int // total harga produk sebelum ongkir
+  total                  Int // subtotal + shippingCost
+
+  // Midtrans
+  paymentMethod          String? // "midtrans"
+  midtransOrderId        String?     @unique
+  midtransTransactionId  String?
+  midtransSnapToken      String?
+  paidAt                 DateTime?
+
+  items                  OrderItem[]
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+
+  // Snapshot data produk saat transaksi (biar gak berubah kalau produk aslinya diedit/dihapus admin nanti)
+  productName     String
+  productImageUrl String?
+  price           Int
+  quantity        Int
+  subtotal        Int
+  bundleId        String?
+
+  @@map("order_items")
+}
+
+// ============================================
+// CATATAN: model User perlu ditambah 2 relasi ini:
+//   cart   Cart?
+//   orders Order[]
+//
+// Model Product perlu ditambah 2 relasi ini:
+//   cartItems  CartItem[]
+//   orderItems OrderItem[]
+// ============================================
