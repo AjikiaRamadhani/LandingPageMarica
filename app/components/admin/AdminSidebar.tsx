@@ -12,6 +12,7 @@ import {
   Newspaper,
   Tags,
   ShoppingBag,
+  FileDown,
   ClipboardList,
   CalendarDays,
   Palette,
@@ -39,6 +40,12 @@ const navItems = [
     label: "Belanja",
     href: "/admin/belanja",
     icon: ShoppingBag,
+    enabled: true,
+  },
+  {
+    label: "Printable",
+    href: "/admin/printables",
+    icon: FileDown,
     enabled: true,
   },
   {
@@ -406,7 +413,7 @@ export default function AdminSidebar({
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-black/5 bg-white px-4 py-3 md:hidden">
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-black/5 bg-white px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
           <Image
             src="/images/logo.png"
@@ -472,7 +479,7 @@ export default function AdminSidebar({
         )}
       </AnimatePresence>
 
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
+      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
         <SidebarContent name={name} email={email} />
       </aside>
     </>

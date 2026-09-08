@@ -44,6 +44,7 @@ export type Activity = {
   categoryLabel: string;
   age: string;
   href: string;
+  thumbnailUrl?: string | null;
   rating?: number;
 };
 
