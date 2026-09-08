@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { notFound, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar as CalendarIcon,
@@ -16,23 +17,37 @@ import {
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import {
-  getEventBySlug,
-  getRelatedEvents,
   CATEGORY_LABEL,
   CATEGORY_STYLE,
   formatLongDateID,
+  type EventItem,
 } from "../events-data";
 
 export default function EventDetailPage() {
   const params = useParams<{ slug: string }>();
-  const event = getEventBySlug(params.slug);
+  const router = useRouter();
+  const [event, setEvent] = useState<EventItem | null>(null);
+  const [related, setRelated] = useState<EventItem[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/events/${encodeURIComponent(params.slug)}`).then((response) =>
+        response.ok ? response.json() : Promise.reject(new Error("Event tidak ditemukan"))
+      ),
+      fetch("/api/events").then((response) => (response.ok ? response.json() : [])),
+    ])
+      .then(([eventData, events]: [EventItem, EventItem[]]) => {
+        setEvent(eventData);
+        setRelated(events.filter((item) => item.slug !== eventData.slug).slice(0, 3));
+      })
+      .catch((error) => console.error("[EventDetailPage]", error));
+  }, [params.slug]);
 
   if (!event) {
-    notFound();
+    return <div className="flex min-h-screen items-center justify-center font-body text-marica-ink-soft">Memuat event...</div>;
   }
 
   const style = CATEGORY_STYLE[event.category];
-  const related = getRelatedEvents(event.slug);
   const quotaFilled = event.quota - event.quotaLeft;
   const quotaPct = Math.round((quotaFilled / event.quota) * 100);
 
@@ -225,6 +240,9 @@ export default function EventDetailPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={event.quotaLeft === 0}
+                onClick={() => {
+                  router.push(`/event/${event.slug}/daftar`);
+                }}
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Ticket className="h-4 w-4" />
