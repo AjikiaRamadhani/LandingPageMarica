@@ -77,7 +77,12 @@ export const ModelName = {
   Cart: 'Cart',
   CartItem: 'CartItem',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  Event: 'Event',
+  EventBooking: 'EventBooking',
+  EventTicket: 'EventTicket',
+  Printable: 'Printable',
+  PrintableLead: 'PrintableLead'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -496,6 +501,100 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const EventScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  slug: 'slug',
+  category: 'category',
+  description: 'description',
+  benefits: 'benefits',
+  imageUrl: 'imageUrl',
+  price: 'price',
+  eventDate: 'eventDate',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  locationName: 'locationName',
+  locationAddress: 'locationAddress',
+  quota: 'quota',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof EventScalarFieldEnum]
+
+
+export const EventBookingScalarFieldEnum = {
+  id: 'id',
+  bookingNumber: 'bookingNumber',
+  eventId: 'eventId',
+  userId: 'userId',
+  quantity: 'quantity',
+  totalPrice: 'totalPrice',
+  status: 'status',
+  midtransOrderId: 'midtransOrderId',
+  midtransTransactionId: 'midtransTransactionId',
+  midtransSnapToken: 'midtransSnapToken',
+  paidAt: 'paidAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EventBookingScalarFieldEnum = (typeof EventBookingScalarFieldEnum)[keyof typeof EventBookingScalarFieldEnum]
+
+
+export const EventTicketScalarFieldEnum = {
+  id: 'id',
+  ticketCode: 'ticketCode',
+  qrToken: 'qrToken',
+  bookingId: 'bookingId',
+  participantName: 'participantName',
+  status: 'status',
+  checkedInAt: 'checkedInAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EventTicketScalarFieldEnum = (typeof EventTicketScalarFieldEnum)[keyof typeof EventTicketScalarFieldEnum]
+
+
+export const PrintableScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  slug: 'slug',
+  description: 'description',
+  subject: 'subject',
+  ageMin: 'ageMin',
+  ageMax: 'ageMax',
+  thumbnailUrl: 'thumbnailUrl',
+  fileUrl: 'fileUrl',
+  price: 'price',
+  isFeatured: 'isFeatured',
+  downloadCount: 'downloadCount',
+  ratingAvg: 'ratingAvg',
+  reviewCount: 'reviewCount',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PrintableScalarFieldEnum = (typeof PrintableScalarFieldEnum)[keyof typeof PrintableScalarFieldEnum]
+
+
+export const PrintableLeadScalarFieldEnum = {
+  id: 'id',
+  printableId: 'printableId',
+  userId: 'userId',
+  name: 'name',
+  email: 'email',
+  whatsapp: 'whatsapp',
+  childAge: 'childAge',
+  createdAt: 'createdAt'
+} as const
+
+export type PrintableLeadScalarFieldEnum = (typeof PrintableLeadScalarFieldEnum)[keyof typeof PrintableLeadScalarFieldEnum]
 
 
 export const SortOrder = {

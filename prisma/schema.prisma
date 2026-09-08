@@ -28,8 +28,11 @@ model User {
   role     Role      @default(USER)
   articles Article[]
   comments Comment[]
+  eventBookings  EventBooking[]
+  printableLeads PrintableLead[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+ 
  
   @@map("users")
 }
@@ -526,4 +529,136 @@ model OrderItem {
 // Model Product perlu ditambah 2 relasi ini:
 //   cartItems  CartItem[]
 //   orderItems OrderItem[]
+// ============================================
+
+// ============================================
+// EVENT & WORKSHOP + E-TIKET QR
+// Booking berbayar pakai Midtrans (sama pola kayak Order produk)
+// ============================================
+
+enum EventBookingStatus {
+  PENDING_PAYMENT
+  PAID
+  CANCELLED
+  EXPIRED
+}
+
+enum TicketStatus {
+  ACTIVE
+  CHECKED_IN
+  CANCELLED
+}
+
+model Event {
+  id              String         @id @default(cuid())
+  title           String
+  slug            String         @unique
+  category        String // "Workshop", "Parenting", "Playdate"
+  description     String         @db.Text
+  benefits        String[] // "Materi Presentasi (PDF)", "Sertifikat Digital", dst
+  imageUrl        String?
+  price           Int            @default(0) // 0 = gratis
+  eventDate       DateTime
+  startTime       String // "09:00"
+  endTime         String // "12:00"
+  locationName    String
+  locationAddress String?
+  quota           Int
+  isActive        Boolean        @default(true)
+  bookings        EventBooking[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("events")
+}
+
+model EventBooking {
+  id                    String             @id @default(cuid())
+  bookingNumber         String             @unique // "EVT-20260828-0001"
+  eventId               String
+  event                 Event              @relation(fields: [eventId], references: [id])
+  userId                String
+  user                  User               @relation(fields: [userId], references: [id])
+  quantity              Int
+  totalPrice            Int
+  status                EventBookingStatus @default(PENDING_PAYMENT)
+
+  // Midtrans - pola sama kayak Order produk
+  midtransOrderId       String?            @unique
+  midtransTransactionId String?
+  midtransSnapToken     String?
+  paidAt                DateTime?
+
+  tickets               EventTicket[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@map("event_bookings")
+}
+
+model EventTicket {
+  id              String       @id @default(cuid())
+  ticketCode      String       @unique // human-readable: "#TRX-MC-9921"
+  qrToken         String       @unique // token rahasia di dalam QR, beda dari ticketCode
+  bookingId       String
+  booking         EventBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  participantName String
+  status          TicketStatus @default(ACTIVE)
+  checkedInAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("event_tickets")
+}
+
+// ============================================
+// PRINTABLE ACTIVITY (LEAD MAGNET)
+// Gratis = perlu capture lead (kalau belum login)
+// Berbayar = TODO nanti, belum termasuk scope sekarang
+// ============================================
+
+model Printable {
+  id             String          @id @default(cuid())
+  title          String
+  slug           String          @unique
+  description    String          @db.Text
+  subject        String // "Matematika", "Bahasa", "Sains"
+  ageMin         Int?
+  ageMax         Int?
+  thumbnailUrl   String?
+  fileUrl        String // link PDF di Supabase Storage
+  price          Int             @default(0) // 0 = gratis (lead magnet)
+  isFeatured     Boolean         @default(false)
+  downloadCount  Int             @default(0)
+  ratingAvg      Float           @default(0)
+  reviewCount    Int             @default(0)
+  isActive       Boolean         @default(true)
+  leads          PrintableLead[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("printables")
+}
+
+// Nyimpen data lead tiap kali ada yang download - baik dari form manual (anonim)
+// maupun otomatis dari data akun (kalau lagi login)
+model PrintableLead {
+  id          String    @id @default(cuid())
+  printableId String
+  printable   Printable @relation(fields: [printableId], references: [id])
+  userId      String? // keisi kalau lagi login, null kalau anonim
+  user        User?     @relation(fields: [userId], references: [id])
+  name        String
+  email       String
+  whatsapp    String?
+  childAge    Int?
+  createdAt   DateTime  @default(now())
+
+  @@map("printable_leads")
+}
+
+// ============================================
+// CATATAN: tambahin relasi ini ke model User yang udah ada:
+//   eventBookings  EventBooking[]
+//   printableLeads PrintableLead[]
 // ============================================

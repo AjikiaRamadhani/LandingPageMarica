@@ -176,3 +176,28 @@ export type Order = Prisma.OrderModel
  * 
  */
 export type OrderItem = Prisma.OrderItemModel
+/**
+ * Model Event
+ * 
+ */
+export type Event = Prisma.EventModel
+/**
+ * Model EventBooking
+ * 
+ */
+export type EventBooking = Prisma.EventBookingModel
+/**
+ * Model EventTicket
+ * 
+ */
+export type EventTicket = Prisma.EventTicketModel
+/**
+ * Model Printable
+ * 
+ */
+export type Printable = Prisma.PrintableModel
+/**
+ * Model PrintableLead
+ * 
+ */
+export type PrintableLead = Prisma.PrintableLeadModel
