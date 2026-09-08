@@ -18,15 +18,28 @@ import {
   ChevronDown,
   BadgePercent,
   PackageX,
+  Loader2,
 } from "lucide-react";
 
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import AddressModal, { type ShippingAddress } from "../../components/belanja/AddressModal";
-import type { ApiProduct, ApiProductImage } from "../../components/belanja/types";
+import AddressModal, {
+  loadSavedAddresses,
+  saveAddresses,
+  type ShippingAddress,
+} from "../../components/belanja/AddressModal";
+import { useBuyNow } from "../../components/belanja/useBuyNow";
+import type {
+  ApiProduct,
+  ApiProductImage,
+} from "../../components/belanja/types";
 
 type ApiProductDetail = ApiProduct & {
-  category: (ApiProduct["category"] & { parent: { id: string; name: string; slug: string } | null }) | null;
+  category:
+    | (ApiProduct["category"] & {
+        parent: { id: string; name: string; slug: string } | null;
+      })
+    | null;
   bundles: {
     id: string;
     name: string;
@@ -40,23 +53,6 @@ function formatRupiah(value: number): string {
   return `Rp ${value.toLocaleString("id-ID")}`;
 }
 
-// Mock saved addresses — replace with a fetch to /api/addresses (or your
-// user-profile endpoint) once that's available on the backend.
-const MOCK_ADDRESSES: ShippingAddress[] = [
-  {
-    id: "addr-1",
-    label: "Rumah",
-    isPrimary: true,
-    recipientName: "Budi Santoso",
-    phone: "081234567890",
-    province: "Jawa Tengah",
-    city: "Kota Magelang",
-    district: "Magelang Tengah",
-    postalCode: "56117",
-    fullAddress: "Jl. Pahlawan No. 12, RT 03/RW 05",
-  },
-];
-
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
@@ -68,13 +64,32 @@ export default function ProductDetailPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
-  // --- Shipping address modal state -----------------------------------
-  const [addresses, setAddresses] = useState<ShippingAddress[]>(MOCK_ADDRESSES);
+  // --- Shipping/checkout flow ------------------------------------------
+  const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    MOCK_ADDRESSES[0]?.id ?? null
+    null,
   );
-  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const {
+    isAdding,
+    isCheckingOut,
+    error: buyError,
+    addressModalOpen,
+    setAddressModalOpen,
+    totalWeightGrams,
+    addToCart,
+    startBuyNow,
+    confirmCheckout,
+  } = useBuyNow();
+
+  useEffect(() => {
+    const saved = loadSavedAddresses();
+    setAddresses(saved);
+    setSelectedAddressId(
+      saved.find((address) => address.isPrimary)?.id ?? saved[0]?.id ?? null,
+    );
+  }, []);
 
   useEffect(() => {
     if (!params?.slug) return;
@@ -95,7 +110,10 @@ export default function ProductDetailPage() {
         setQty(1);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Produk tidak ditemukan");
+        if (!cancelled)
+          setError(
+            err instanceof Error ? err.message : "Produk tidak ditemukan",
+          );
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -107,9 +125,14 @@ export default function ProductDetailPage() {
   }, [params?.slug]);
 
   const inStock = (product?.stock ?? 0) > 0;
-  const hasDiscount = !!product?.compareAtPrice && product.compareAtPrice > product.price;
+  const hasDiscount =
+    !!product?.compareAtPrice && product.compareAtPrice > product.price;
   const discountPercent =
-    hasDiscount && product ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100) : 0;
+    hasDiscount && product
+      ? Math.round(
+          (1 - product.price / (product.compareAtPrice as number)) * 100,
+        )
+      : 0;
 
   const ageLabel =
     product && (product.ageMin != null || product.ageMax != null)
@@ -118,18 +141,26 @@ export default function ProductDetailPage() {
 
   const images: ApiProductImage[] = useMemo(
     () => (product?.images?.length ? product.images : []),
-    [product]
+    [product],
   );
   const activeImage = images[activeImageIdx];
 
   const breadcrumb = useMemo(() => {
     if (!product) return [];
-    const crumbs: { label: string; href?: string }[] = [{ label: "Belanja", href: "/belanja" }];
+    const crumbs: { label: string; href?: string }[] = [
+      { label: "Belanja", href: "/belanja" },
+    ];
     if (product.category?.parent) {
-      crumbs.push({ label: product.category.parent.name, href: `/belanja?category=${product.category.parent.slug}` });
+      crumbs.push({
+        label: product.category.parent.name,
+        href: `/belanja?category=${product.category.parent.slug}`,
+      });
     }
     if (product.category) {
-      crumbs.push({ label: product.category.name, href: `/belanja?category=${product.category.slug}` });
+      crumbs.push({
+        label: product.category.name,
+        href: `/belanja?category=${product.category.slug}`,
+      });
     }
     crumbs.push({ label: product.name });
     return crumbs;
@@ -137,25 +168,17 @@ export default function ProductDetailPage() {
 
   const maxQty = Math.min(product?.stock ?? 1, 99);
 
-  // Opens the address picker. Called from "Beli Sekarang".
-  const handleBeliSekarang = () => {
-    setAddressModalOpen(true);
+  const handleTambahKeranjang = async () => {
+    if (!product) return;
+    setAddedMessage(null);
+    const ok = await addToCart(product.id, qty);
+    if (ok) setAddedMessage("Berhasil ditambahkan ke keranjang.");
   };
 
-  // Address confirmed — proceed to actual checkout/payment.
-  const handleConfirmAddress = (address: ShippingAddress) => {
-    setAddressModalOpen(false);
+  const handleBeliSekarang = () => {
     if (!product) return;
-
-    // TODO: replace with your real checkout call, e.g.:
-    // const res = await fetch("/api/checkout", {
-    //   method: "POST",
-    //   body: JSON.stringify({ productId: product.id, qty, shippingAddressId: address.id }),
-    // });
-    // const { orderId } = await res.json();
-    // router.push(`/belanja/pesanan-saya/${orderId}/bayar`);
-    console.log("Lanjut ke pembayaran:", { product: product.slug, qty, address });
-    router.push("/belanja/pesanan-saya");
+    setAddedMessage(null);
+    startBuyNow(product.id, qty);
   };
 
   return (
@@ -171,7 +194,7 @@ export default function ProductDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <Link
-          href="/keranjang"
+          href="/belanja/keranjang"
           aria-label="Keranjang"
           className="flex h-9 w-9 items-center justify-center rounded-full text-marica-amber-dark transition hover:bg-marica-cream"
         >
@@ -191,13 +214,20 @@ export default function ProductDetailPage() {
             <nav className="mb-6 hidden flex-wrap items-center gap-1.5 font-body text-sm text-marica-ink-soft lg:flex">
               {breadcrumb.map((crumb, i) => (
                 <span key={i} className="flex items-center gap-1.5">
-                  {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-marica-ink-soft/40" />}
+                  {i > 0 && (
+                    <ChevronRight className="h-3.5 w-3.5 text-marica-ink-soft/40" />
+                  )}
                   {crumb.href ? (
-                    <Link href={crumb.href} className="transition hover:text-marica-amber-text">
+                    <Link
+                      href={crumb.href}
+                      className="transition hover:text-marica-amber-text"
+                    >
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span className="font-medium text-marica-ink">{crumb.label}</span>
+                    <span className="font-medium text-marica-ink">
+                      {crumb.label}
+                    </span>
                   )}
                 </span>
               ))}
@@ -209,7 +239,9 @@ export default function ProductDetailPage() {
           {!isLoading && error && (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-marica-ink/5 bg-white py-20 text-center shadow-sm">
               <PackageX className="h-10 w-10 text-marica-ink-soft/40" />
-              <p className="font-display text-base font-semibold text-marica-ink">{error}</p>
+              <p className="font-display text-base font-semibold text-marica-ink">
+                {error}
+              </p>
               <Link
                 href="/belanja"
                 className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-marica-amber-dark px-4 py-2 font-body text-sm font-semibold text-white transition hover:brightness-105"
@@ -253,7 +285,11 @@ export default function ProductDetailPage() {
                           : "bg-marica-ink/70 text-white"
                     }`}
                   >
-                    {product.isBestSeller ? "Best Seller" : inStock ? "Tersedia" : "Stok Habis"}
+                    {product.isBestSeller
+                      ? "Best Seller"
+                      : inStock
+                        ? "Tersedia"
+                        : "Stok Habis"}
                   </span>
                 </div>
 
@@ -265,7 +301,9 @@ export default function ProductDetailPage() {
                         type="button"
                         onClick={() => setActiveImageIdx(i)}
                         className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition sm:h-20 sm:w-20 ${
-                          i === activeImageIdx ? "border-marica-amber-dark" : "border-transparent"
+                          i === activeImageIdx
+                            ? "border-marica-amber-dark"
+                            : "border-transparent"
                         }`}
                       >
                         {img.isVideo ? (
@@ -274,7 +312,11 @@ export default function ProductDetailPage() {
                           </span>
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={img.url} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={img.url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
                         )}
                       </button>
                     ))}
@@ -291,7 +333,9 @@ export default function ProductDetailPage() {
                 <div className="mt-2 flex flex-wrap items-center gap-2 font-body text-sm text-marica-ink-soft">
                   <span className="flex items-center gap-1">
                     <Stars rating={product.ratingAvg} />
-                    <span className="ml-0.5">({product.reviewCount} Ulasan)</span>
+                    <span className="ml-0.5">
+                      ({product.reviewCount} Ulasan)
+                    </span>
                   </span>
                   {product.soldCount > 0 && (
                     <>
@@ -311,8 +355,8 @@ export default function ProductDetailPage() {
                         {formatRupiah(product.compareAtPrice as number)}
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-marica-rose-deep/10 px-2 py-0.5 font-body text-xs font-semibold text-marica-rose-deep">
-                        <BadgePercent className="h-3.5 w-3.5" />
-                        -{discountPercent}%
+                        <BadgePercent className="h-3.5 w-3.5" />-
+                        {discountPercent}%
                       </span>
                     </>
                   )}
@@ -343,7 +387,9 @@ export default function ProductDetailPage() {
                 </div>
 
                 <div className="mt-6 border-t border-marica-ink/5 pt-6">
-                  <h2 className="font-display text-base font-semibold text-marica-ink">Deskripsi Produk</h2>
+                  <h2 className="font-display text-base font-semibold text-marica-ink">
+                    Deskripsi Produk
+                  </h2>
                   <p
                     className={`mt-2 font-body text-sm leading-relaxed text-marica-ink-soft ${
                       descExpanded ? "" : "line-clamp-4"
@@ -358,7 +404,9 @@ export default function ProductDetailPage() {
                       className="mt-1.5 inline-flex items-center gap-1 font-body text-sm font-semibold text-marica-amber-text hover:underline"
                     >
                       {descExpanded ? "Sembunyikan" : "Baca Selengkapnya"}
-                      <ChevronDown className={`h-4 w-4 transition ${descExpanded ? "rotate-180" : ""}`} />
+                      <ChevronDown
+                        className={`h-4 w-4 transition ${descExpanded ? "rotate-180" : ""}`}
+                      />
                     </button>
                   )}
                 </div>
@@ -366,7 +414,9 @@ export default function ProductDetailPage() {
                 {/* Qty + CTA */}
                 <div className="mt-6 rounded-2xl border border-marica-ink/5 bg-white p-4 shadow-[0_10px_28px_rgba(120,60,10,0.06)] sm:p-5">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="font-body text-sm font-medium text-marica-ink">Jumlah</span>
+                    <span className="font-body text-sm font-medium text-marica-ink">
+                      Jumlah
+                    </span>
                     {inStock && (
                       <span className="font-body text-xs font-medium text-marica-green">
                         Stok: {product.stock}
@@ -408,15 +458,22 @@ export default function ProductDetailPage() {
                       <>
                         <button
                           type="button"
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-marica-amber-dark px-4 py-3 font-body text-sm font-semibold text-marica-amber-text transition hover:bg-marica-amber/10"
+                          onClick={handleTambahKeranjang}
+                          disabled={isAdding}
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-marica-amber-dark px-4 py-3 font-body text-sm font-semibold text-marica-amber-text transition hover:bg-marica-amber/10 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          <ShoppingCart className="h-4 w-4" />
+                          {isAdding ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ShoppingCart className="h-4 w-4" />
+                          )}
                           Keranjang
                         </button>
                         <button
                           type="button"
                           onClick={handleBeliSekarang}
-                          className="flex-1 rounded-full bg-marica-amber-dark px-4 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
+                          disabled={isAdding}
+                          className="flex-1 rounded-full bg-marica-amber-dark px-4 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           Beli Sekarang
                         </button>
@@ -431,6 +488,17 @@ export default function ProductDetailPage() {
                       </button>
                     )}
                   </div>
+
+                  {addedMessage && (
+                    <p className="mt-3 font-body text-xs font-medium text-marica-green">
+                      {addedMessage}
+                    </p>
+                  )}
+                  {buyError && (
+                    <p className="mt-3 font-body text-xs text-marica-rose-deep">
+                      {buyError}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -449,11 +517,23 @@ export default function ProductDetailPage() {
                     key={bundle.id}
                     className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-4"
                   >
-                    <BundleTile name={product.name} price={product.price} image={product.images[0]?.url} highlighted />
-                    {bundle.otherProducts.map((item, i) => (
-                      <div key={item.id} className="flex items-center gap-4 sm:contents">
+                    <BundleTile
+                      name={product.name}
+                      price={product.price}
+                      image={product.images[0]?.url}
+                      highlighted
+                    />
+                    {bundle.otherProducts.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-4 sm:contents"
+                      >
                         <Plus className="h-5 w-5 shrink-0 text-marica-ink-soft/40" />
-                        <BundleTile name={item.name} price={item.price} image={item.images[0]?.url} />
+                        <BundleTile
+                          name={item.name}
+                          price={item.price}
+                          image={item.images[0]?.url}
+                        />
                       </div>
                     ))}
 
@@ -466,7 +546,9 @@ export default function ProductDetailPage() {
                         <BadgePercent className="h-3.5 w-3.5" />
                         Hemat {formatRupiah(bundle.savings)}
                       </p>
-                      <p className="mt-1.5 font-body text-xs text-marica-ink-soft">Total Paket:</p>
+                      <p className="mt-1.5 font-body text-xs text-marica-ink-soft">
+                        Total Paket:
+                      </p>
                       <p className="font-display text-lg font-bold text-marica-ink">
                         {formatRupiah(bundle.bundlePrice)}
                       </p>
@@ -496,11 +578,22 @@ export default function ProductDetailPage() {
         selectedId={selectedAddressId}
         onSelect={setSelectedAddressId}
         onAddAddress={(addr) => {
-          setAddresses((prev) => [...prev, addr]);
+          setAddresses((prev) => {
+            const next = addr.isPrimary
+              ? [
+                  ...prev.map((address) => ({ ...address, isPrimary: false })),
+                  addr,
+                ]
+              : [...prev, addr];
+            saveAddresses(next);
+            return next;
+          });
           setSelectedAddressId(addr.id);
-          // TODO: persist to your backend, e.g. POST /api/addresses
         }}
-        onConfirm={handleConfirmAddress}
+        totalWeightGrams={totalWeightGrams}
+        onConfirm={confirmCheckout}
+        isSubmitting={isCheckingOut}
+        submitError={buyError}
       />
     </div>
   );
@@ -547,8 +640,12 @@ function BundleTile({
           </div>
         )}
       </div>
-      <p className="line-clamp-2 font-body text-xs font-medium text-marica-ink">{name}</p>
-      <p className="font-body text-xs font-semibold text-marica-amber-text">{formatRupiah(price)}</p>
+      <p className="line-clamp-2 font-body text-xs font-medium text-marica-ink">
+        {name}
+      </p>
+      <p className="font-body text-xs font-semibold text-marica-amber-text">
+        {formatRupiah(price)}
+      </p>
     </div>
   );
 }

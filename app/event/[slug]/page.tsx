@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -26,26 +27,50 @@ import {
 export default function EventDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
   const [event, setEvent] = useState<EventItem | null>(null);
   const [related, setRelated] = useState<EventItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/events/${encodeURIComponent(params.slug)}`).then((response) =>
-        response.ok ? response.json() : Promise.reject(new Error("Event tidak ditemukan"))
-      ),
-      fetch("/api/events").then((response) => (response.ok ? response.json() : [])),
+      fetch(`/api/events/${encodeURIComponent(params.slug)}`, {
+        cache: "no-store",
+      }),
+      fetch("/api/events", { cache: "no-store" }),
     ])
-      .then(([eventData, events]: [EventItem, EventItem[]]) => {
+      .then(async ([eventResponse, eventsResponse]) => {
+        if (!eventResponse.ok) throw new Error("Event tidak ditemukan");
+        const eventData = (await eventResponse.json()) as EventItem;
+        const events = eventsResponse.ok
+          ? ((await eventsResponse.json()) as EventItem[])
+          : [];
         setEvent(eventData);
-        setRelated(events.filter((item) => item.slug !== eventData.slug).slice(0, 3));
+        setRelated(
+          events.filter((item) => item.slug !== eventData.slug).slice(0, 3),
+        );
       })
-      .catch((error) => console.error("[EventDetailPage]", error));
+      .catch((loadError) =>
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Event tidak ditemukan",
+        ),
+      );
   }, [params.slug]);
 
-  if (!event) {
-    return <div className="flex min-h-screen items-center justify-center font-body text-marica-ink-soft">Memuat event...</div>;
-  }
+  if (error)
+    return (
+      <div className="flex min-h-screen items-center justify-center font-body text-marica-ink-soft">
+        {error}
+      </div>
+    );
+  if (!event)
+    return (
+      <div className="flex min-h-screen items-center justify-center font-body text-marica-ink-soft">
+        Memuat event...
+      </div>
+    );
 
   const style = CATEGORY_STYLE[event.category];
   const quotaFilled = event.quota - event.quotaLeft;
@@ -241,7 +266,12 @@ export default function EventDetailPage() {
                 whileTap={{ scale: 0.98 }}
                 disabled={event.quotaLeft === 0}
                 onClick={() => {
-                  router.push(`/event/${event.slug}/daftar`);
+                  const destination = `/event/${event.slug}/daftar`;
+                  router.push(
+                    sessionStatus === "unauthenticated"
+                      ? `/login?callbackUrl=${encodeURIComponent(destination)}`
+                      : destination,
+                  );
                 }}
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               >

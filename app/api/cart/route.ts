@@ -57,10 +57,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
     }
 
-    if (product.stock < quantity) {
-      return NextResponse.json({ error: `Stok tidak cukup, sisa ${product.stock}` }, { status: 400 });
-    }
-
     const cart = await prisma.cart.upsert({
       where: { userId: session.user.id },
       update: {},
@@ -71,6 +67,14 @@ export async function POST(request: Request) {
     const existingItem = await prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
     });
+
+    const requestedQuantity = (existingItem?.quantity ?? 0) + quantity;
+    if (product.stock < requestedQuantity) {
+      return NextResponse.json(
+        { error: `Stok "${product.name}" tidak cukup, sisa ${product.stock}` },
+        { status: 400 }
+      );
+    }
 
     const cartItem = existingItem
       ? await prisma.cartItem.update({
@@ -85,5 +89,67 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[POST /api/cart]", error);
     return NextResponse.json({ error: "Gagal menambah ke keranjang" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 });
+  }
+
+  try {
+    const { itemId, quantity } = (await request.json()) as {
+      itemId?: string;
+      quantity?: number;
+    };
+    if (!itemId || quantity == null || !Number.isInteger(quantity) || quantity < 1) {
+      return NextResponse.json({ error: "itemId dan quantity wajib valid" }, { status: 400 });
+    }
+
+    const item = await prisma.cartItem.findFirst({
+      where: { id: itemId, cart: { userId: session.user.id } },
+      include: { product: true },
+    });
+    if (!item) return NextResponse.json({ error: "Item keranjang tidak ditemukan" }, { status: 404 });
+    if (quantity > item.product.stock) {
+      return NextResponse.json(
+        { error: `Stok "${item.product.name}" tidak cukup, sisa ${item.product.stock}` },
+        { status: 400 },
+      );
+    }
+
+    const updated = await prisma.cartItem.update({
+      where: { id: item.id },
+      data: { quantity },
+    });
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("[PATCH /api/cart]", error);
+    return NextResponse.json({ error: "Gagal mengubah jumlah item" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 });
+  }
+
+  try {
+    const { itemId } = (await request.json()) as { itemId?: string };
+    if (!itemId) return NextResponse.json({ error: "itemId wajib diisi" }, { status: 400 });
+
+    const item = await prisma.cartItem.findFirst({
+      where: { id: itemId, cart: { userId: session.user.id } },
+      select: { id: true },
+    });
+    if (!item) return NextResponse.json({ error: "Item keranjang tidak ditemukan" }, { status: 404 });
+
+    await prisma.cartItem.delete({ where: { id: item.id } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[DELETE /api/cart]", error);
+    return NextResponse.json({ error: "Gagal menghapus item" }, { status: 500 });
   }
 }

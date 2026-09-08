@@ -58,7 +58,7 @@ function buildMonthGrid(year: number, month: number): CalendarCell[] {
 function isoOf(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
@@ -73,18 +73,39 @@ function isSameDay(a: Date, b: Date) {
 export default function EventCalendarPage() {
   const today = useMemo(() => new Date(), []);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [cursor, setCursor] = useState(
-    () => new Date(today.getFullYear(), today.getMonth(), 1)
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
   );
   const [category, setCategory] = useState<CategoryFilter>("semua");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("kalender");
 
   useEffect(() => {
-    fetch("/api/events")
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Gagal memuat event"))))
-      .then((data: EventItem[]) => setEvents(data))
-      .catch((error) => console.error("[EventCalendarPage]", error));
+    let cancelled = false;
+    fetch("/api/events", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Gagal memuat daftar event");
+        return response.json() as Promise<EventItem[]>;
+      })
+      .then((data) => {
+        if (!cancelled) setEvents(Array.isArray(data) ? data : []);
+      })
+      .catch((error) => {
+        if (!cancelled)
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "Gagal memuat daftar event",
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const year = cursor.getFullYear();
@@ -108,7 +129,7 @@ export default function EventCalendarPage() {
         .includes(query.trim().toLowerCase());
       return matchesCategory && matchesQuery;
     });
-  }, [category, query, events]);
+  }, [category, events, query]);
 
   const eventsThisMonth = useMemo(
     () =>
@@ -116,7 +137,7 @@ export default function EventCalendarPage() {
         const d = new Date(`${ev.date}T00:00:00`);
         return d.getFullYear() === year && d.getMonth() === month;
       }),
-    [filteredEvents, year, month]
+    [filteredEvents, year, month],
   );
 
   const stats = useMemo(() => {
@@ -129,7 +150,7 @@ export default function EventCalendarPage() {
       workshop: monthAll.filter((e) => e.category === "workshop").length,
       parenting: monthAll.filter((e) => e.category === "parenting").length,
     };
-  }, [year, month, events]);
+  }, [events, year, month]);
 
   const grid = useMemo(() => buildMonthGrid(year, month), [year, month]);
 
@@ -165,8 +186,7 @@ export default function EventCalendarPage() {
               Kalender Event & Workshop
             </h1>
             <p className="mt-3 max-w-xl font-body text-marica-ink-soft">
-              Temukan jadwal weekend workshop dan sesi parenting bersama
-              Marica.
+              Temukan jadwal weekend workshop dan sesi parenting bersama Marica.
             </p>
 
             <motion.div
@@ -180,6 +200,12 @@ export default function EventCalendarPage() {
               </div>
             </motion.div>
           </motion.div>
+
+          {loadError && (
+            <p className="mt-6 rounded-2xl bg-marica-rose-deep/10 px-4 py-3 font-body text-sm text-marica-rose-deep">
+              {loadError}
+            </p>
+          )}
 
           {/* Stats */}
           <motion.div
@@ -352,11 +378,10 @@ export default function EventCalendarPage() {
                             ).filter(
                               (ev) =>
                                 category === "semua" ||
-                                ev.category === category
+                                ev.category === category,
                             );
                             const isToday = isSameDay(cell.date, today);
-                            const isWeekend =
-                              (cell.date.getDay() + 6) % 7 >= 5;
+                            const isWeekend = (cell.date.getDay() + 6) % 7 >= 5;
 
                             return (
                               <div
@@ -409,13 +434,18 @@ export default function EventCalendarPage() {
                       Semua jadwal
                     </h2>
                     <div className="mt-5 flex flex-col gap-3">
-                      {filteredEvents
-                        .slice()
-                        .sort((a, b) => a.date.localeCompare(b.date))
-                        .map((ev, i) => (
-                          <EventCard key={ev.slug} event={ev} index={i} />
-                        ))}
-                      {filteredEvents.length === 0 && (
+                      {isLoading ? (
+                        <p className="py-10 text-center font-body text-sm text-marica-ink-soft">
+                          Memuat event...
+                        </p>
+                      ) : filteredEvents.length > 0 ? (
+                        filteredEvents
+                          .slice()
+                          .sort((a, b) => a.date.localeCompare(b.date))
+                          .map((ev, i) => (
+                            <EventCard key={ev.slug} event={ev} index={i} />
+                          ))
+                      ) : (
                         <EmptyState />
                       )}
                     </div>
