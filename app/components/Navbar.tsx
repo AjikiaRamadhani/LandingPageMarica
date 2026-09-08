@@ -2,9 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, User, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
+import {
+  Menu,
+  X,
+  User,
+  LogOut,
+  ChevronDown,
+  LayoutDashboard,
+  ClipboardList,
+} from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
 // Catatan: /belanja, /aktivitas, /edugames, /event belum ada halamannya —
@@ -28,7 +37,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
-  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
+  const isAdmin =
+    (session?.user as { role?: string } | undefined)?.role === "ADMIN";
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -43,7 +53,7 @@ export default function Navbar() {
     const routeLink = navLinks.find(
       (link) =>
         pathname === link.href ||
-        (link.href !== "/" && pathname?.startsWith(`${link.href}/`))
+        (link.href !== "/" && pathname?.startsWith(`${link.href}/`)),
     );
     setActiveHref(routeLink?.href ?? pathname ?? "/");
   }, [pathname]);
@@ -65,12 +75,16 @@ export default function Navbar() {
   useEffect(() => {
     if (!profileOpen) return;
     const handleClickOutside = (e: PointerEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(e.target as Node)
+      ) {
         setProfileOpen(false);
       }
     };
     document.addEventListener("pointerdown", handleClickOutside);
-    return () => document.removeEventListener("pointerdown", handleClickOutside);
+    return () =>
+      document.removeEventListener("pointerdown", handleClickOutside);
   }, [profileOpen]);
 
   // Header sticky: begitu halaman digeser turun, background gradient-transparan
@@ -130,7 +144,9 @@ export default function Navbar() {
           onMouseLeave={() => setHoveredIndex(null)}
         >
           {navLinks.map((link, i) => {
-            const isHighlighted = hoveredIndex === i || (hoveredIndex === null && link.href === activeHref);
+            const isHighlighted =
+              hoveredIndex === i ||
+              (hoveredIndex === null && link.href === activeHref);
             return (
               <a
                 key={link.label}
@@ -138,7 +154,9 @@ export default function Navbar() {
                 onMouseEnter={() => setHoveredIndex(i)}
                 onClick={() => setActiveHref(link.href)}
                 className={`relative rounded-full px-3 py-1.5 transition-colors ${
-                  isHighlighted ? "text-marica-amber-text" : "hover:text-marica-ink"
+                  isHighlighted
+                    ? "text-marica-amber-text"
+                    : "hover:text-marica-ink"
                 }`}
               >
                 {isHighlighted && (
@@ -200,6 +218,14 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
+                    <Link
+                      href="/belanja/pesanan-saya"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Pesanan Saya
+                    </Link>
                     {isAdmin && (
                       <a
                         href="/admin"
@@ -320,7 +346,10 @@ export default function Navbar() {
                   <motion.div
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
+                    transition={{
+                      duration: 0.25,
+                      delay: navLinks.length * 0.05,
+                    }}
                     className="rounded-xl bg-marica-cream/60 px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
@@ -336,6 +365,14 @@ export default function Navbar() {
                         </p>
                       </div>
                     </div>
+                    <Link
+                      href="/belanja/pesanan-saya"
+                      onClick={() => setIsOpen(false)}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Pesanan Saya
+                    </Link>
                     {isAdmin && (
                       <a
                         href="/admin"
@@ -364,7 +401,10 @@ export default function Navbar() {
                       href="/login"
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.25, delay: navLinks.length * 0.05 }}
+                      transition={{
+                        duration: 0.25,
+                        delay: navLinks.length * 0.05,
+                      }}
                       className="rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 text-center font-body text-[15px] font-semibold text-marica-ink"
                     >
                       Masuk
@@ -373,7 +413,10 @@ export default function Navbar() {
                       href="/register"
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.25, delay: (navLinks.length + 1) * 0.05 }}
+                      transition={{
+                        duration: 0.25,
+                        delay: (navLinks.length + 1) * 0.05,
+                      }}
                       className="rounded-xl bg-marica-amber-dark px-4 py-2.5 text-center font-body text-[15px] font-semibold text-white"
                     >
                       Daftar Sekarang

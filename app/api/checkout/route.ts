@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       shippingCourier,
       shippingService,
       shippingCost,
+      checkoutProductId,
     } = body as {
       shippingName?: string;
       shippingPhone?: string;
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       shippingCourier?: string;
       shippingService?: string;
       shippingCost?: number;
+      checkoutProductId?: string;
     };
 
     if (
@@ -60,12 +62,16 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!cart || cart.items.length === 0) {
+    const checkoutItems = checkoutProductId
+      ? cart?.items.filter((item) => item.productId === checkoutProductId) ?? []
+      : cart?.items ?? [];
+
+    if (!cart || checkoutItems.length === 0) {
       return NextResponse.json({ error: "Keranjang kosong" }, { status: 400 });
     }
 
     // Validasi ulang stok sebelum checkout, siapa tau stok berubah sejak ditambah ke keranjang
-    for (const item of cart.items) {
+    for (const item of checkoutItems) {
       if (item.product.stock < item.quantity) {
         return NextResponse.json(
           { error: `Stok "${item.product.name}" tidak cukup, sisa ${item.product.stock}` },
@@ -74,7 +80,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const subtotal = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const subtotal = checkoutItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
     const total = subtotal + shippingCost;
     const orderNumber = generateOrderNumber();
 
@@ -96,7 +102,7 @@ export async function POST(request: Request) {
         paymentMethod: "midtrans",
         midtransOrderId: orderNumber,
         items: {
-          create: cart.items.map((item) => ({
+          create: checkoutItems.map((item) => ({
             productId: item.productId,
             productName: item.product.name,
             productImageUrl: item.product.images[0]?.url,
@@ -139,7 +145,7 @@ export async function POST(request: Request) {
           name: `Ongkir (${shippingCourier ?? "-"} ${shippingService ?? ""})`,
         },
       ],
-    });
+    } as Parameters<typeof snap.createTransaction>[0]);
 
     await prisma.order.update({
       where: { id: order.id },
@@ -147,7 +153,12 @@ export async function POST(request: Request) {
     });
 
     // Kosongin keranjang setelah order berhasil dibuat
-    await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+    await prisma.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+        ...(checkoutProductId ? { productId: checkoutProductId } : {}),
+      },
+    });
 
     return NextResponse.json(
       {

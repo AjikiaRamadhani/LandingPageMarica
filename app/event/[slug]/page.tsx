@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { notFound, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -16,23 +18,61 @@ import {
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import {
-  getEventBySlug,
-  getRelatedEvents,
   CATEGORY_LABEL,
   CATEGORY_STYLE,
   formatLongDateID,
+  type EventItem,
 } from "../events-data";
 
 export default function EventDetailPage() {
   const params = useParams<{ slug: string }>();
-  const event = getEventBySlug(params.slug);
+  const router = useRouter();
+  const { status: sessionStatus } = useSession();
+  const [event, setEvent] = useState<EventItem | null>(null);
+  const [related, setRelated] = useState<EventItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!event) {
-    notFound();
-  }
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/events/${encodeURIComponent(params.slug)}`, {
+        cache: "no-store",
+      }),
+      fetch("/api/events", { cache: "no-store" }),
+    ])
+      .then(async ([eventResponse, eventsResponse]) => {
+        if (!eventResponse.ok) throw new Error("Event tidak ditemukan");
+        const eventData = (await eventResponse.json()) as EventItem;
+        const events = eventsResponse.ok
+          ? ((await eventsResponse.json()) as EventItem[])
+          : [];
+        setEvent(eventData);
+        setRelated(
+          events.filter((item) => item.slug !== eventData.slug).slice(0, 3),
+        );
+      })
+      .catch((loadError) =>
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Event tidak ditemukan",
+        ),
+      );
+  }, [params.slug]);
+
+  if (error)
+    return (
+      <div className="flex min-h-screen items-center justify-center font-body text-marica-ink-soft">
+        {error}
+      </div>
+    );
+  if (!event)
+    return (
+      <div className="flex min-h-screen items-center justify-center font-body text-marica-ink-soft">
+        Memuat event...
+      </div>
+    );
 
   const style = CATEGORY_STYLE[event.category];
-  const related = getRelatedEvents(event.slug);
   const quotaFilled = event.quota - event.quotaLeft;
   const quotaPct = Math.round((quotaFilled / event.quota) * 100);
 
@@ -225,6 +265,14 @@ export default function EventDetailPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={event.quotaLeft === 0}
+                onClick={() => {
+                  const destination = `/event/${event.slug}/daftar`;
+                  router.push(
+                    sessionStatus === "unauthenticated"
+                      ? `/login?callbackUrl=${encodeURIComponent(destination)}`
+                      : destination,
+                  );
+                }}
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Ticket className="h-4 w-4" />

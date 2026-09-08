@@ -12,6 +12,7 @@ import {
   Newspaper,
   Tags,
   ShoppingBag,
+  ClipboardList,
   CalendarDays,
   Palette,
   Briefcase,
@@ -27,13 +28,44 @@ import {
 // Struktur daftar navigasi utama
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, enabled: true },
-  { label: "Program", href: "/admin/program", icon: GraduationCap, enabled: false },
+  {
+    label: "Program",
+    href: "/admin/program",
+    icon: GraduationCap,
+    enabled: false,
+  },
   // Group Artikel & Submenu Kategori ditangani secara khusus di komponen Nav
-  { label: "Belanja", href: "/admin/belanja", icon: ShoppingBag, enabled: true },
-  { label: "Event", href: "/admin/event", icon: CalendarDays, enabled: false },
-  { label: "Kreativitas", href: "/admin/kreativitas", icon: Palette, enabled: false },
-  { label: "Business", href: "/admin/business", icon: Briefcase, enabled: false },
-  { label: "Pengaturan", href: "/admin/pengaturan", icon: Settings, enabled: false },
+  {
+    label: "Belanja",
+    href: "/admin/belanja",
+    icon: ShoppingBag,
+    enabled: true,
+  },
+  {
+    label: "Pesanan",
+    href: "/admin/pesanan",
+    icon: ClipboardList,
+    enabled: true,
+  },
+  { label: "Event", href: "/admin/event", icon: CalendarDays, enabled: true },
+  {
+    label: "Kreativitas",
+    href: "/admin/kreativitas",
+    icon: Palette,
+    enabled: false,
+  },
+  {
+    label: "Business",
+    href: "/admin/business",
+    icon: Briefcase,
+    enabled: false,
+  },
+  {
+    label: "Pengaturan",
+    href: "/admin/pengaturan",
+    icon: Settings,
+    enabled: false,
+  },
 ];
 
 function AccountMenu({
@@ -52,7 +84,10 @@ function AccountMenu({
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -61,7 +96,10 @@ function AccountMenu({
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className="relative border-t border-black/5 px-3 py-3">
+    <div
+      ref={containerRef}
+      className="relative border-t border-black/5 px-3 py-3"
+    >
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -114,7 +152,9 @@ function AccountMenu({
           <p className="truncate font-body text-sm font-semibold leading-tight text-marica-ink">
             {name ?? "Admin"}
           </p>
-          <p className="truncate font-body text-xs leading-tight text-marica-ink-soft/70">{email}</p>
+          <p className="truncate font-body text-xs leading-tight text-marica-ink-soft/70">
+            {email}
+          </p>
         </div>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-marica-ink-soft/50 transition-transform ${
@@ -139,11 +179,15 @@ function SidebarContent({
 
   // State untuk mengontrol tampil/sembunyinya submenu Kategori
   // Default terbuka (true) jika halaman aktif ada di bawah /admin/artikel atau /admin/kategori
-  const isArticleRoute = pathname.startsWith("/admin/artikel") || pathname.startsWith("/admin/kategori");
+  const isArticleRoute =
+    pathname.startsWith("/admin/artikel") ||
+    pathname.startsWith("/admin/kategori");
   const [isArticlesExpanded, setIsArticlesExpanded] = useState(true);
 
-  const isArtikelActive = pathname === "/admin/artikel" || pathname.startsWith("/admin/artikel/");
-  const isKategoriActive = pathname === "/admin/kategori" || pathname.startsWith("/admin/kategori/");
+  const isArtikelActive =
+    pathname === "/admin/artikel" || pathname.startsWith("/admin/artikel/");
+  const isKategoriActive =
+    pathname === "/admin/kategori" || pathname.startsWith("/admin/kategori/");
 
   return (
     <>
@@ -202,7 +246,11 @@ function SidebarContent({
         <div className="flex flex-col gap-1">
           <div className="relative flex items-center">
             {/* Link ke Halaman Artikel */}
-            <Link href="/admin/artikel" onClick={onNavigate} className="relative flex-1">
+            <Link
+              href="/admin/artikel"
+              onClick={onNavigate}
+              className="relative flex-1"
+            >
               {isArtikelActive && (
                 <motion.span
                   layoutId="admin-nav-active"
@@ -231,7 +279,9 @@ function SidebarContent({
               }}
               aria-label="Toggle submenu Artikel"
               className={`absolute right-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg transition-transform ${
-                isArtikelActive ? "text-white/80 hover:text-white" : "text-marica-ink-soft/60 hover:text-marica-ink"
+                isArtikelActive
+                  ? "text-white/80 hover:text-white"
+                  : "text-marica-ink-soft/60 hover:text-marica-ink"
               }`}
             >
               <ChevronDown
@@ -252,11 +302,19 @@ function SidebarContent({
                 transition={{ duration: 0.2, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <Link href="/admin/kategori" onClick={onNavigate} className="relative block">
+                <Link
+                  href="/admin/kategori"
+                  onClick={onNavigate}
+                  className="relative block"
+                >
                   {isKategoriActive && (
                     <motion.span
                       layoutId="admin-nav-active"
-                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 32,
+                      }}
                       className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
                     />
                   )}
@@ -279,7 +337,9 @@ function SidebarContent({
         {/* Sisa Menu Navigasi */}
         {navItems.slice(2).map((item) => {
           const isActive =
-            item.enabled && pathname.startsWith(item.href) && item.href !== "/admin"
+            item.enabled &&
+            pathname.startsWith(item.href) &&
+            item.href !== "/admin"
               ? true
               : pathname === item.href;
           const Icon = item.icon;
@@ -302,7 +362,12 @@ function SidebarContent({
           }
 
           return (
-            <Link key={item.label} href={item.href} onClick={onNavigate} className="relative">
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={onNavigate}
+              className="relative"
+            >
               {isActive && (
                 <motion.span
                   layoutId="admin-nav-active"
@@ -397,7 +462,11 @@ export default function AdminSidebar({
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <SidebarContent name={name} email={email} onNavigate={() => setIsOpen(false)} />
+              <SidebarContent
+                name={name}
+                email={email}
+                onNavigate={() => setIsOpen(false)}
+              />
             </motion.aside>
           </>
         )}
@@ -408,4 +477,4 @@ export default function AdminSidebar({
       </aside>
     </>
   );
-}                                                                     
+}
