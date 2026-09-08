@@ -481,6 +481,7 @@ export const OrderScalarFieldEnum = {
   midtransTransactionId: 'midtransTransactionId',
   midtransSnapToken: 'midtransSnapToken',
   paidAt: 'paidAt',
+  ticketEmailSentAt: 'ticketEmailSentAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -543,6 +544,7 @@ export const EventBookingScalarFieldEnum = {
   midtransTransactionId: 'midtransTransactionId',
   midtransSnapToken: 'midtransSnapToken',
   paidAt: 'paidAt',
+  ticketEmailSentAt: 'ticketEmailSentAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
