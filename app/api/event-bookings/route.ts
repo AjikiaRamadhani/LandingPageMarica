@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { snap } from "@/lib/midtrans";
 import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
+import { expireStalePendingBookings } from "@/lib/event-booking";
+import { auditAction } from "@/lib/audit";
+import { validateText, validateInteger } from "@/lib/request-validation";
 
 const MAX_PARTICIPANTS_PER_BOOKING = 10;
 const PENDING_BOOKING_MINUTES = 30;
@@ -37,12 +40,18 @@ export async function POST(request: Request) {
       customerPhone?: string;
     };
 
+    const quantityCheck = validateInteger(body.quantity, "Jumlah tiket", 1);
+    if (quantityCheck.error || typeof quantityCheck.value !== "number") {
+      return NextResponse.json({ error: quantityCheck.error ?? "Jumlah tiket tidak valid" }, { status: 400 });
+    }
+
+    const quantity = quantityCheck.value;
+
     const eventId = body.eventId?.trim();
     const eventSlug = body.eventSlug?.trim();
-    const quantity = Number(body.quantity);
     const participantNames = normalizeParticipantNames(body.participantNames);
 
-    if ((!eventId && !eventSlug) || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_PARTICIPANTS_PER_BOOKING) {
+    if ((!eventId && !eventSlug) || quantity > MAX_PARTICIPANTS_PER_BOOKING) {
       return NextResponse.json({ error: "Data booking tidak valid" }, { status: 400 });
     }
 
@@ -53,6 +62,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const customerPhoneCheck = validateText(body.customerPhone ?? "", "Nomor telepon", 30);
+    if (body.customerPhone !== undefined && customerPhoneCheck.error) {
+      return NextResponse.json({ error: customerPhoneCheck.error }, { status: 400 });
+    }
+
     const event = await prisma.event.findFirst({
       where: eventId ? { id: eventId } : { slug: eventSlug },
     });
@@ -60,58 +74,72 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Event tidak tersedia" }, { status: 404 });
     }
 
-    const activeBookings = await prisma.eventBooking.aggregate({
-      where: {
-        eventId: event.id,
-        OR: [
-          { status: "PAID" },
-          { status: "PENDING_PAYMENT", expiresAt: { gt: new Date() } },
-        ],
-      },
-      _sum: { quantity: true },
-    });
-
-    const bookedQuantity = activeBookings._sum.quantity ?? 0;
-    if (bookedQuantity + quantity > event.quota) {
-      return NextResponse.json({ error: "Kuota event tidak mencukupi" }, { status: 409 });
-    }
-
     const bookingNumber = generateBookingNumber();
     const totalPrice = event.price * quantity;
     const expiresAt = new Date(Date.now() + PENDING_BOOKING_MINUTES * 60 * 1000);
+    const userEmail = String(session.user.email);
+    const userName = String(session.user.name?.trim() || userEmail || "Pengguna");
 
-    const booking = await prisma.eventBooking.create({
-      data: {
-        bookingNumber,
-        eventId: event.id,
-        userId: session.user.id,
-        customerName: session.user.name?.trim() || session.user.email,
-        customerEmail: session.user.email,
-        customerPhone: body.customerPhone?.trim() || null,
-        participantNames,
-        quantity,
-        totalPrice,
-        expiresAt: event.price > 0 ? expiresAt : null,
-        midtransOrderId: event.price > 0 ? bookingNumber : null,
-        status: event.price > 0 ? "PENDING_PAYMENT" : "PAID",
-        paidAt: event.price > 0 ? null : new Date(),
-        tickets:
-          event.price === 0
-            ? {
-                create: participantNames.map((participantName, index) => ({
-                  ticketCode: `${bookingNumber}-${index + 1}`,
-                  qrToken: crypto.randomUUID(),
-                  participantName,
-                })),
-              }
-            : undefined,
-      },
-      include: { tickets: true },
+    await expireStalePendingBookings();
+
+    const bookingResult = await prisma.$transaction(async (tx) => {
+
+      const activeBookings = await tx.eventBooking.aggregate({
+        where: {
+          eventId: event.id,
+          OR: [
+            { status: "PAID" },
+            { status: "PENDING_PAYMENT", expiresAt: { gt: new Date() } },
+          ],
+        },
+        _sum: { quantity: true },
+      });
+
+      const bookedQuantity = activeBookings._sum.quantity ?? 0;
+      if (bookedQuantity + quantity > event.quota) {
+        throw Object.assign(new Error("QUOTA_EXCEEDED"), { statusCode: 409 });
+      }
+
+      const booking = await tx.eventBooking.create({
+        data: {
+          bookingNumber,
+          eventId: event.id,
+          userId: session.user.id,
+          customerName: userName,
+          customerEmail: userEmail,
+          customerPhone: body.customerPhone?.trim() || null,
+          participantNames,
+          quantity,
+          totalPrice,
+          expiresAt: event.price > 0 ? expiresAt : null,
+          midtransOrderId: event.price > 0 ? bookingNumber : null,
+          status: event.price > 0 ? "PENDING_PAYMENT" : "PAID",
+          paidAt: event.price > 0 ? null : new Date(),
+          tickets:
+            event.price === 0
+              ? {
+                  create: participantNames.map((participantName, index) => ({
+                    ticketCode: `${bookingNumber}-${index + 1}`,
+                    qrToken: crypto.randomUUID(),
+                    participantName,
+                  })),
+                }
+              : undefined,
+        },
+        include: { tickets: true },
+      });
+
+      return { booking, isFree: event.price === 0 };
     });
 
-    if (event.price === 0) {
-      await sendEventTicketEmailIfNeeded(booking.id);
-      return NextResponse.json({ booking }, { status: 201 });
+    if (bookingResult.isFree) {
+      await sendEventTicketEmailIfNeeded(bookingResult.booking.id);
+      auditAction({
+        action: "event_booking_created",
+        status: "success",
+        payload: { bookingNumber, eventId: event.id, quantity, userId: session.user.id },
+      });
+      return NextResponse.json({ booking: bookingResult.booking }, { status: 201 });
     }
 
     const transaction = await snap.createTransaction({
@@ -120,9 +148,9 @@ export async function POST(request: Request) {
         gross_amount: totalPrice,
       },
       customer_details: {
-        first_name: booking.customerName,
-        email: booking.customerEmail,
-        phone: booking.customerPhone ?? undefined,
+        first_name: bookingResult.booking.customerName,
+        email: bookingResult.booking.customerEmail,
+        phone: bookingResult.booking.customerPhone ?? undefined,
       },
       item_details: [
         {
@@ -135,11 +163,17 @@ export async function POST(request: Request) {
     });
 
     const updatedBooking = await prisma.eventBooking.update({
-      where: { id: booking.id },
+      where: { id: bookingResult.booking.id },
       data: {
         midtransSnapToken: transaction.token,
       },
       include: { tickets: true },
+    });
+
+    auditAction({
+      action: "event_booking_created",
+      status: "success",
+      payload: { bookingNumber, eventId: event.id, quantity, userId: session.user.id },
     });
 
     return NextResponse.json(
@@ -151,6 +185,15 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
+    const statusCode =
+      typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number"
+        ? error.statusCode
+        : 500;
+
+    if (statusCode === 409) {
+      return NextResponse.json({ error: "Kuota event tidak mencukupi" }, { status: 409 });
+    }
+
     console.error("[POST /api/event-bookings]", error);
     return NextResponse.json({ error: "Gagal membuat booking event" }, { status: 500 });
   }

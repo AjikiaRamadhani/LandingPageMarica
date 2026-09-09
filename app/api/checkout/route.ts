@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { snap } from "@/lib/midtrans";
+import {
+  validateOptionalText,
+  validateText,
+  validateInteger,
+} from "@/lib/request-validation";
 
 function generateOrderNumber() {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -41,17 +46,69 @@ export async function POST(request: Request) {
       checkoutProductId?: string;
     };
 
+    const shippingNameCheck = validateText(shippingName, "Nama pengirim", 120);
+    const shippingPhoneCheck = validateText(shippingPhone, "Nomor telepon", 30);
+    const shippingAddressCheck = validateText(shippingAddress, "Alamat pengiriman", 500);
+    const shippingCityCheck = validateText(shippingCity, "Kota", 120);
+    const shippingProvinceCheck = validateText(shippingProvince, "Provinsi", 120);
+    const shippingPostalCodeCheck = validateText(shippingPostalCode, "Kode pos", 20);
+    const shippingCourierCheck = validateOptionalText(
+      shippingCourier,
+      "Kurir pengiriman",
+      40,
+    );
+    const shippingServiceCheck = validateOptionalText(
+      shippingService,
+      "Layanan pengiriman",
+      80,
+    );
+    const shippingCostCheck = validateInteger(shippingCost, "Biaya ongkir", 0);
+
     if (
-      !shippingName ||
-      !shippingPhone ||
-      !shippingAddress ||
-      !shippingCity ||
-      !shippingProvince ||
-      !shippingPostalCode ||
-      shippingCost === undefined
+      shippingNameCheck.error ||
+      shippingPhoneCheck.error ||
+      shippingAddressCheck.error ||
+      shippingCityCheck.error ||
+      shippingProvinceCheck.error ||
+      shippingPostalCodeCheck.error ||
+      shippingCourierCheck.error ||
+      shippingServiceCheck.error ||
+      shippingCostCheck.error ||
+      typeof shippingNameCheck.value !== "string" ||
+      typeof shippingPhoneCheck.value !== "string" ||
+      typeof shippingAddressCheck.value !== "string" ||
+      typeof shippingCityCheck.value !== "string" ||
+      typeof shippingProvinceCheck.value !== "string" ||
+      typeof shippingPostalCodeCheck.value !== "string" ||
+      (shippingCourierCheck.value !== null &&
+        typeof shippingCourierCheck.value !== "string") ||
+      (shippingServiceCheck.value !== null &&
+        typeof shippingServiceCheck.value !== "string") ||
+      typeof shippingCostCheck.value !== "number"
     ) {
-      return NextResponse.json({ error: "Data alamat pengiriman belum lengkap" }, { status: 400 });
+      const errorMessage =
+        shippingNameCheck.error ??
+        shippingPhoneCheck.error ??
+        shippingAddressCheck.error ??
+        shippingCityCheck.error ??
+        shippingProvinceCheck.error ??
+        shippingPostalCodeCheck.error ??
+        shippingCourierCheck.error ??
+        shippingServiceCheck.error ??
+        shippingCostCheck.error ??
+        "Data alamat pengiriman belum lengkap";
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
+
+    const shippingNameValue = shippingNameCheck.value;
+    const shippingPhoneValue = shippingPhoneCheck.value;
+    const shippingAddressValue = shippingAddressCheck.value;
+    const shippingCityValue = shippingCityCheck.value;
+    const shippingProvinceValue = shippingProvinceCheck.value;
+    const shippingPostalCodeValue = shippingPostalCodeCheck.value;
+    const shippingCourierValue = shippingCourierCheck.value;
+    const shippingServiceValue = shippingServiceCheck.value;
+    const shippingCostValue = shippingCostCheck.value;
 
     const cart = await prisma.cart.findUnique({
       where: { userId: session.user.id },
@@ -70,50 +127,65 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Keranjang kosong" }, { status: 400 });
     }
 
-    // Validasi ulang stok sebelum checkout, siapa tau stok berubah sejak ditambah ke keranjang
-    for (const item of checkoutItems) {
-      if (item.product.stock < item.quantity) {
-        return NextResponse.json(
-          { error: `Stok "${item.product.name}" tidak cukup, sisa ${item.product.stock}` },
-          { status: 400 }
-        );
-      }
-    }
-
     const subtotal = checkoutItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    const total = subtotal + shippingCost;
+    const total = subtotal + shippingCostValue;
     const orderNumber = generateOrderNumber();
 
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        userId: session.user.id,
-        shippingName,
-        shippingPhone,
-        shippingAddress,
-        shippingCity,
-        shippingProvince,
-        shippingPostalCode,
-        shippingCourier,
-        shippingService,
-        shippingCost,
-        subtotal,
-        total,
-        paymentMethod: "midtrans",
-        midtransOrderId: orderNumber,
-        items: {
-          create: checkoutItems.map((item) => ({
-            productId: item.productId,
-            productName: item.product.name,
-            productImageUrl: item.product.images[0]?.url,
-            price: item.product.price,
-            quantity: item.quantity,
-            subtotal: item.product.price * item.quantity,
-            bundleId: item.bundleId,
-          })),
+    const order = await prisma.$transaction(async (tx) => {
+      const productIds = checkoutItems.map((item) => item.productId);
+      const lockedProducts = await tx.$queryRaw<Array<{ id: string; name: string; stock: number }>>`
+        SELECT id, name, stock
+        FROM "products"
+        WHERE id = ANY (${productIds})
+        FOR UPDATE
+      `;
+
+      const stockMap = new Map(lockedProducts.map((product) => [product.id, product]));
+      const shortage = checkoutItems.find((item) => {
+        const product = stockMap.get(item.productId);
+        return !product || product.stock < item.quantity;
+      });
+
+      if (shortage) {
+        const product = stockMap.get(shortage.productId);
+        const currentStock = product?.stock ?? 0;
+        throw Object.assign(new Error("STOCK_SHORTAGE"), {
+          statusCode: 400,
+          detail: `Stok "${shortage.product.name}" tidak cukup, sisa ${currentStock}`,
+        });
+      }
+
+      return tx.order.create({
+        data: {
+          orderNumber,
+          userId: session.user.id,
+          shippingName: shippingNameValue,
+          shippingPhone: shippingPhoneValue,
+          shippingAddress: shippingAddressValue,
+          shippingCity: shippingCityValue,
+          shippingProvince: shippingProvinceValue,
+          shippingPostalCode: shippingPostalCodeValue,
+          shippingCourier: shippingCourierValue,
+          shippingService: shippingServiceValue,
+          shippingCost: shippingCostValue,
+          subtotal,
+          total,
+          paymentMethod: "midtrans",
+          midtransOrderId: orderNumber,
+          items: {
+            create: checkoutItems.map((item) => ({
+              productId: item.productId,
+              productName: item.product.name,
+              productImageUrl: item.product.images[0]?.url,
+              price: item.product.price,
+              quantity: item.quantity,
+              subtotal: item.product.price * item.quantity,
+              bundleId: item.bundleId,
+            })),
+          },
         },
-      },
-      include: { items: true },
+        include: { items: true },
+      });
     });
 
     // Minta Snap Token dari Midtrans
@@ -123,12 +195,12 @@ export async function POST(request: Request) {
         gross_amount: total,
       },
       customer_details: {
-        first_name: shippingName,
-        phone: shippingPhone,
+        first_name: shippingNameValue,
+        phone: shippingPhoneValue,
         shipping_address: {
-          address: shippingAddress,
-          city: shippingCity,
-          postal_code: shippingPostalCode,
+          address: shippingAddressValue,
+          city: shippingCityValue,
+          postal_code: shippingPostalCodeValue,
         },
       },
       item_details: [
@@ -140,7 +212,7 @@ export async function POST(request: Request) {
         })),
         {
           id: "SHIPPING",
-          price: shippingCost,
+          price: shippingCostValue,
           quantity: 1,
           name: `Ongkir (${shippingCourier ?? "-"} ${shippingService ?? ""})`,
         },
@@ -169,6 +241,19 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
+    const statusCode =
+      typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number"
+        ? error.statusCode
+        : 500;
+
+    if (statusCode === 400) {
+      const detail =
+        typeof error === "object" && error && "detail" in error && typeof error.detail === "string"
+          ? error.detail
+          : "Stok produk tidak cukup";
+      return NextResponse.json({ error: detail }, { status: 400 });
+    }
+
     console.error("[POST /api/checkout]", error);
     return NextResponse.json({ error: "Gagal memproses checkout" }, { status: 500 });
   }
