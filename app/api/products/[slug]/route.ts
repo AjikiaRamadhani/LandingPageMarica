@@ -59,6 +59,7 @@ export async function GET(
     });
 
     const { bundleItems, ...productData } = product;
+    void bundleItems;
 
     return NextResponse.json({ ...productData, bundles });
   } catch (error) {

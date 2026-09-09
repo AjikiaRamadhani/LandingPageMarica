@@ -74,14 +74,20 @@ export async function POST(request: Request) {
 
           if (paidBooking.count === 0) return;
 
-          await transaction.eventTicket.createMany({
-            data: booking.participantNames.map((participantName, index) => ({
-              ticketCode: `${booking.bookingNumber}-${index + 1}`,
-              qrToken: crypto.randomUUID(),
-              bookingId: booking.id,
-              participantName,
-            })),
+          const existingTickets = await transaction.eventTicket.count({
+            where: { bookingId: booking.id },
           });
+
+          if (existingTickets === 0) {
+            await transaction.eventTicket.createMany({
+              data: booking.participantNames.map((participantName, index) => ({
+                ticketCode: `${booking.bookingNumber}-${index + 1}`,
+                qrToken: crypto.randomUUID(),
+                bookingId: booking.id,
+                participantName,
+              })),
+            });
+          }
         });
         await sendEventTicketEmailIfNeeded(booking.id);
       } else if (transaction_status === "pending") {
@@ -124,6 +130,24 @@ export async function POST(request: Request) {
 
     if (transaction_status === "capture" || transaction_status === "settlement") {
       await prisma.$transaction(async (transaction) => {
+        const productIds = order.items.map((item) => item.productId);
+        const lockedProducts = await transaction.$queryRaw<Array<{ id: string; stock: number }>>`
+          SELECT id, stock
+          FROM "products"
+          WHERE id = ANY (${productIds})
+          FOR UPDATE
+        `;
+
+        const stockMap = new Map(lockedProducts.map((product) => [product.id, product.stock]));
+        const shortage = order.items.find((item) => (stockMap.get(item.productId) ?? 0) < item.quantity);
+
+        if (shortage) {
+          throw Object.assign(new Error("STOCK_SHORTAGE"), {
+            statusCode: 409,
+            detail: `Stok produk tidak cukup untuk pesanan ${order.orderNumber}`,
+          });
+        }
+
         const paidOrder = await transaction.order.updateMany({
           where: { id: order.id, status: "PENDING_PAYMENT" },
           data: {
@@ -163,6 +187,19 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: "OK" });
   } catch (error) {
+    const statusCode =
+      typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number"
+        ? error.statusCode
+        : 500;
+
+    if (statusCode === 409) {
+      const detail =
+        typeof error === "object" && error && "detail" in error && typeof error.detail === "string"
+          ? error.detail
+          : "Stok produk tidak cukup";
+      return NextResponse.json({ error: detail }, { status: 409 });
+    }
+
     console.error("[POST /api/webhooks/midtrans]", error);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }

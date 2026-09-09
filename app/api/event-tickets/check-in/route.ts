@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { isRateLimited } from "@/lib/rate-limit";
+import { auditAction } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (isRateLimited(request, "event-ticket-checkin", 20)) {
+    return NextResponse.json({ error: "Terlalu banyak percobaan check-in, coba lagi nanti" }, { status: 429 });
   }
 
   try {
@@ -62,11 +68,22 @@ export async function POST(request: Request) {
     });
 
     if (updated.count === 0) {
+      auditAction({
+        action: "event_ticket_checkin_failed",
+        status: "warning",
+        payload: { qrToken, adminUserId: session.user.id },
+      });
       return NextResponse.json(
         { error: "Tiket baru saja digunakan oleh petugas lain" },
         { status: 409 }
       );
     }
+
+    auditAction({
+      action: "event_ticket_checkin_success",
+      status: "success",
+      payload: { ticketCode: ticket.ticketCode, adminUserId: session.user.id },
+    });
 
     return NextResponse.json({
       message: "Check-in berhasil",

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import {
+  validateInteger,
+  validateOptionalText,
+  validateText,
+} from "@/lib/request-validation";
 
 export async function GET() {
   const session = await auth();
@@ -48,11 +53,34 @@ export async function POST(request: Request) {
       bundleId?: string;
     };
 
-    if (!productId || !quantity || quantity < 1) {
-      return NextResponse.json({ error: "productId dan quantity wajib diisi" }, { status: 400 });
+    const productIdCheck = validateText(productId, "productId", 100);
+    const quantityCheck = validateInteger(quantity, "Quantity", 1);
+    const bundleIdCheck = validateOptionalText(bundleId, "bundleId", 100);
+    if (
+      productIdCheck.error ||
+      quantityCheck.error ||
+      bundleIdCheck.error ||
+      typeof productIdCheck.value !== "string" ||
+      typeof quantityCheck.value !== "number" ||
+      (bundleIdCheck.value !== null &&
+        typeof bundleIdCheck.value !== "string")
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            productIdCheck.error ??
+            quantityCheck.error ??
+            bundleIdCheck.error ??
+            "Data item keranjang tidak valid",
+        },
+        { status: 400 },
+      );
     }
 
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    const productIdValue = productIdCheck.value;
+    const quantityValue = quantityCheck.value;
+
+    const product = await prisma.product.findUnique({ where: { id: productIdValue } });
     if (!product || !product.isActive) {
       return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
     }
@@ -65,10 +93,10 @@ export async function POST(request: Request) {
 
     // Kalau produk udah ada di cart, tambahin quantity-nya; kalau belum, bikin baris baru
     const existingItem = await prisma.cartItem.findUnique({
-      where: { cartId_productId: { cartId: cart.id, productId } },
+      where: { cartId_productId: { cartId: cart.id, productId: productIdValue } },
     });
 
-    const requestedQuantity = (existingItem?.quantity ?? 0) + quantity;
+    const requestedQuantity = (existingItem?.quantity ?? 0) + quantityValue;
     if (product.stock < requestedQuantity) {
       return NextResponse.json(
         { error: `Stok "${product.name}" tidak cukup, sisa ${product.stock}` },
@@ -79,10 +107,15 @@ export async function POST(request: Request) {
     const cartItem = existingItem
       ? await prisma.cartItem.update({
           where: { id: existingItem.id },
-          data: { quantity: existingItem.quantity + quantity },
+          data: { quantity: existingItem.quantity + quantityValue },
         })
       : await prisma.cartItem.create({
-          data: { cartId: cart.id, productId, quantity, bundleId },
+          data: {
+            cartId: cart.id,
+            productId: productIdValue,
+            quantity: quantityValue,
+            bundleId: bundleIdCheck.value,
+          },
         });
 
     return NextResponse.json(cartItem, { status: 201 });
@@ -103,16 +136,26 @@ export async function PATCH(request: Request) {
       itemId?: string;
       quantity?: number;
     };
-    if (!itemId || quantity == null || !Number.isInteger(quantity) || quantity < 1) {
-      return NextResponse.json({ error: "itemId dan quantity wajib valid" }, { status: 400 });
+    const itemIdCheck = validateText(itemId, "itemId", 100);
+    const quantityCheck = validateInteger(quantity, "Quantity", 1);
+    if (
+      itemIdCheck.error ||
+      quantityCheck.error ||
+      typeof itemIdCheck.value !== "string" ||
+      typeof quantityCheck.value !== "number"
+    ) {
+      return NextResponse.json(
+        { error: itemIdCheck.error ?? quantityCheck.error ?? "Data tidak valid" },
+        { status: 400 },
+      );
     }
 
     const item = await prisma.cartItem.findFirst({
-      where: { id: itemId, cart: { userId: session.user.id } },
+      where: { id: itemIdCheck.value, cart: { userId: session.user.id } },
       include: { product: true },
     });
     if (!item) return NextResponse.json({ error: "Item keranjang tidak ditemukan" }, { status: 404 });
-    if (quantity > item.product.stock) {
+    if (quantityCheck.value > item.product.stock) {
       return NextResponse.json(
         { error: `Stok "${item.product.name}" tidak cukup, sisa ${item.product.stock}` },
         { status: 400 },
@@ -121,7 +164,7 @@ export async function PATCH(request: Request) {
 
     const updated = await prisma.cartItem.update({
       where: { id: item.id },
-      data: { quantity },
+      data: { quantity: quantityCheck.value },
     });
     return NextResponse.json(updated);
   } catch (error) {
@@ -138,10 +181,13 @@ export async function DELETE(request: Request) {
 
   try {
     const { itemId } = (await request.json()) as { itemId?: string };
-    if (!itemId) return NextResponse.json({ error: "itemId wajib diisi" }, { status: 400 });
+    const itemIdCheck = validateText(itemId, "itemId", 100);
+    if (itemIdCheck.error || typeof itemIdCheck.value !== "string") {
+      return NextResponse.json({ error: itemIdCheck.error }, { status: 400 });
+    }
 
     const item = await prisma.cartItem.findFirst({
-      where: { id: itemId, cart: { userId: session.user.id } },
+      where: { id: itemIdCheck.value, cart: { userId: session.user.id } },
       select: { id: true },
     });
     if (!item) return NextResponse.json({ error: "Item keranjang tidak ditemukan" }, { status: 404 });
