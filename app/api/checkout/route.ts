@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { snap } from "@/lib/midtrans";
 import { calculatePointsDiscount } from "@/lib/points";
+import { calculateBundleDiscount } from "@/lib/checkout-pricing";
 import {
   validateOptionalText,
   validateText,
@@ -179,7 +180,31 @@ export async function POST(request: Request) {
         (sum, item) => sum + (stockMap.get(item.productId)?.price ?? 0) * item.quantity,
         0,
       );
-      const totalBeforePoints = subtotal + shippingCostValue;
+      const bundleIds = [...new Set(checkoutItems.map((item) => item.bundleId).filter((id): id is string => Boolean(id)))];
+      const bundles = bundleIds.length > 0
+        ? await tx.productBundle.findMany({
+            where: { id: { in: bundleIds }, isActive: true },
+            include: { items: { select: { productId: true } } },
+          })
+        : [];
+      const bundleById = new Map(bundles.map((bundle) => [bundle.id, bundle]));
+      const bundleGroups = bundleIds.flatMap((bundleId) => {
+        const bundle = bundleById.get(bundleId);
+        if (!bundle) return [];
+        return [{
+          bundlePrice: bundle.bundlePrice,
+          productIds: bundle.items.map((item) => item.productId),
+          items: checkoutItems
+            .filter((item) => item.bundleId === bundleId)
+            .map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: stockMap.get(item.productId)?.price ?? item.product.price,
+            })),
+        }];
+      });
+      const bundleDiscount = Math.min(subtotal, calculateBundleDiscount(bundleGroups));
+      const totalBeforePoints = subtotal + shippingCostValue - bundleDiscount;
       let voucherDiscount = 0;
       if (userVoucherIdValue) {
         const userVoucher = await tx.userVoucher.findUnique({ where: { id: userVoucherIdValue }, include: { voucher: true } });
@@ -284,10 +309,10 @@ export async function POST(request: Request) {
         if (changedVoucher.count !== 1) throw Object.assign(new Error("VOUCHER_UNAVAILABLE"), { statusCode: 400, detail: "Voucher sudah digunakan" });
       }
 
-      return { order, subtotal, total, pointsDiscount, voucherDiscount };
+      return { order, subtotal, total, pointsDiscount, voucherDiscount, bundleDiscount };
     });
 
-    const { order, total, pointsDiscount, voucherDiscount } = checkoutResult;
+    const { order, total, pointsDiscount, voucherDiscount, bundleDiscount } = checkoutResult;
 
     // Minta Snap Token dari Midtrans
     const transaction = await snap.createTransaction({
@@ -327,6 +352,9 @@ export async function POST(request: Request) {
           : []),
         ...(voucherDiscount > 0
           ? [{ id: "VOUCHER_DISCOUNT", price: -voucherDiscount, quantity: 1, name: "Diskon Voucher Marica" }]
+          : []),
+        ...(bundleDiscount > 0
+          ? [{ id: "BUNDLE_DISCOUNT", price: -bundleDiscount, quantity: 1, name: "Diskon Paket Hemat" }]
           : []),
       ],
     } as Parameters<typeof snap.createTransaction>[0]);

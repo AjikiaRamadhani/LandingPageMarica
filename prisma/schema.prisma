@@ -18,6 +18,7 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
+  whatsapp      String?
   emailVerified DateTime?
   image         String?
   password      String? // hash bcrypt, buat login credentials (email/password)
@@ -497,6 +498,8 @@ model Order {
   pointsDiscount         Int          @default(0)
   userVoucherId          String?      @unique
   userVoucher            UserVoucher? @relation(fields: [userVoucherId], references: [id])
+  trackingNumber         String?
+  fulfillmentNote        String?      @db.Text
   total                  Int // subtotal + shippingCost
 
   // Midtrans

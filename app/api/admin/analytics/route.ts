@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       ],
     };
 
-    const [events, bookings, orders, printableLeads, ticketSummary, paidOrders, topProducts, paymentMethods] = await Promise.all([
+    const [events, bookings, orders, printableLeads, ticketSummary, paidOrders, topProducts, paymentMethods, lowStockProducts] = await Promise.all([
       prisma.event.count({ where: { isActive: true } }),
       prisma.eventBooking.count({ where: { createdAt: { gte: from, lt: until } } }),
       prisma.order.count({ where: { createdAt: { gte: from, lt: until } } }),
@@ -54,6 +54,12 @@ export async function GET(request: Request) {
         by: ["paymentMethod"],
         where: paidOrderWhere,
         _count: { paymentMethod: true },
+      }),
+      prisma.product.findMany({
+        where: { isActive: true, stock: { lte: 10 } },
+        orderBy: [{ stock: "asc" }, { name: "asc" }],
+        take: 10,
+        select: { id: true, name: true, sku: true, stock: true },
       }),
     ]);
 
@@ -126,6 +132,9 @@ export async function GET(request: Request) {
         method: item.paymentMethod ?? "Tidak diketahui",
         count: item._count?.paymentMethod ?? 0,
       })),
+      leadSummary: { total: printableLeads },
+      lowStockProducts,
+      salesChannels: [{ channel: "ONLINE", revenue: paidOrdersRevenue._sum?.total ?? 0 }],
     });
   } catch (error) {
     console.error("[GET /api/admin/analytics]", error);

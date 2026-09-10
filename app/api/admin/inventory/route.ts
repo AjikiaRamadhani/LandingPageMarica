@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         : {}),
     };
 
-    const [movements, total] = await Promise.all([
+    const [movements, total, totalProducts, stockAggregate, lowStockCount, outOfStockCount, lowStockProducts] = await Promise.all([
       prisma.inventoryMovement.findMany({
         where,
         orderBy: { createdAt: "desc" },
@@ -36,11 +36,33 @@ export async function GET(request: Request) {
         },
       }),
       prisma.inventoryMovement.count({ where }),
+      prisma.product.count({ where: { isActive: true } }),
+      prisma.product.aggregate({ where: { isActive: true }, _sum: { stock: true } }),
+      prisma.product.count({ where: { isActive: true, stock: { gt: 0, lte: 10 } } }),
+      prisma.product.count({ where: { isActive: true, stock: 0 } }),
+      prisma.product.findMany({
+        where: { isActive: true, stock: { lte: 10 } },
+        orderBy: [{ stock: "asc" }, { name: "asc" }],
+        take: 10,
+        select: { id: true, name: true, sku: true, stock: true, price: true },
+      }),
     ]);
+
+    const totalStock = stockAggregate._sum.stock ?? 0;
 
     return NextResponse.json({
       movements,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      summary: {
+        totalProducts,
+        totalStock,
+        reservedStock: 0,
+        availableStock: totalStock,
+        lowStockCount,
+        outOfStockCount,
+        lowStockProducts,
+        reservationSupported: false,
+      },
     });
   } catch (error) {
     console.error("[GET /api/admin/inventory]", error);
