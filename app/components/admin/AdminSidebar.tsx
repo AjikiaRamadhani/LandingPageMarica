@@ -9,7 +9,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
   Newspaper,
-  Tags,
   ShoppingBag,
   FileDown,
   ClipboardList,
@@ -27,7 +26,7 @@ import {
 // Struktur daftar navigasi utama
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, enabled: true },
-  // Group Artikel & Submenu Kategori ditangani secara khusus di komponen Nav
+  // Group Artikel dan submenu utilitas ditangani secara khusus di komponen Nav
   {
     label: "Produk",
     href: "/admin/belanja",
@@ -166,9 +165,10 @@ function SidebarContent({
   const [isArticlesExpanded, setIsArticlesExpanded] = useState(true);
 
   const isArtikelActive =
-    pathname === "/admin/artikel" || pathname.startsWith("/admin/artikel/");
-  const isKategoriActive =
-    pathname === "/admin/kategori" || pathname.startsWith("/admin/kategori/");
+    pathname === "/admin/artikel" ||
+    pathname.startsWith("/admin/artikel/") ||
+    pathname === "/admin/kategori" ||
+    pathname.startsWith("/admin/kategori/");
   const isPrintableActive =
     pathname === "/admin/printables" ||
     pathname.startsWith("/admin/printables/");
@@ -265,7 +265,7 @@ function SidebarContent({
             </button>
           </div>
 
-          {/* Submenu Kategori dengan Animasi Gulir */}
+          {/* Submenu artikel dengan animasi gulir */}
           <AnimatePresence initial={false}>
             {isArticlesExpanded && (
               <motion.div
@@ -275,33 +275,6 @@ function SidebarContent({
                 transition={{ duration: 0.2, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <Link
-                  href="/admin/kategori"
-                  onClick={onNavigate}
-                  className="relative block"
-                >
-                  {isKategoriActive && (
-                    <motion.span
-                      layoutId="admin-nav-active"
-                      transition={{
-                        type: "spring",
-                        stiffness: 380,
-                        damping: 32,
-                      }}
-                      className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
-                    />
-                  )}
-                  <span
-                    className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
-                      isKategoriActive
-                        ? "text-white"
-                        : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
-                    }`}
-                  >
-                    <Tags className="h-4.5 w-4.5" />
-                    Kategori
-                  </span>
-                </Link>
                 <Link
                   href="/admin/printables"
                   onClick={onNavigate}
