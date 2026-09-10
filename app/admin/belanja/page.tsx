@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import DeleteProductModal from "../../components/admin/DeleteProductModal";
+import ConfirmActionModal from "../../components/admin/ConfirmActionModal";
 import { categoryBadgeStyle } from "@/lib/category-color";
 
 type ApiCategory = {
@@ -89,6 +90,8 @@ export default function AdminBelanjaPage() {
   const [bundlePrice, setBundlePrice] = useState("");
   const [bundleProductIds, setBundleProductIds] = useState<string[]>([]);
   const [isSavingBundle, setIsSavingBundle] = useState(false);
+  const [bundleToDelete, setBundleToDelete] = useState<ApiBundle | null>(null);
+  const [isDeletingBundle, setIsDeletingBundle] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -189,20 +192,29 @@ export default function AdminBelanjaPage() {
     }
   };
 
-  const handleDeleteBundle = async (bundleId: string) => {
-    if (!window.confirm("Hapus paket hemat ini?")) return;
+  const openDeleteBundle = (bundle: ApiBundle) => {
+    setActionError(null);
+    setBundleToDelete(bundle);
+  };
+
+  const handleDeleteBundle = async () => {
+    if (!bundleToDelete) return;
+    setIsDeletingBundle(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/admin/product-bundles/${bundleId}`, {
+      const res = await fetch(`/api/admin/product-bundles/${bundleToDelete.id}`, {
         method: "DELETE",
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Gagal menghapus paket hemat");
+      setBundleToDelete(null);
       await fetchBundles();
     } catch (err) {
       setActionError(
         err instanceof Error ? err.message : "Gagal menghapus paket hemat",
       );
+    } finally {
+      setIsDeletingBundle(false);
     }
   };
 
@@ -466,7 +478,7 @@ export default function AdminBelanjaPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDeleteBundle(bundle.id)}
+                  onClick={() => openDeleteBundle(bundle)}
                   className="rounded-lg px-3 py-1.5 font-body text-xs font-semibold text-marica-rose-deep hover:bg-marica-rose-deep/10"
                 >
                   Hapus
@@ -713,6 +725,26 @@ export default function AdminBelanjaPage() {
         )}
       </motion.div>
 
+      <ConfirmActionModal
+        isOpen={bundleToDelete !== null}
+        title="Hapus Paket Hemat?"
+        description={
+          <>
+            Apakah kamu yakin ingin menghapus paket{" "}
+            <span className="font-semibold text-marica-ink">&ldquo;{bundleToDelete?.name ?? "Tanpa nama"}&rdquo;</span>?
+            Tindakan ini tidak dapat dibatalkan.
+          </>
+        }
+        confirmLabel="Ya, Hapus"
+        loadingLabel="Menghapus..."
+        isProcessing={isDeletingBundle}
+        error={actionError}
+        onCancel={() => {
+          setBundleToDelete(null);
+          setActionError(null);
+        }}
+        onConfirm={handleDeleteBundle}
+      />
       <DeleteProductModal
         productName={toDelete?.name ?? null}
         isDeleting={isDeleting}

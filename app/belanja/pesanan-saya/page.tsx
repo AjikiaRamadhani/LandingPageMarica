@@ -126,14 +126,13 @@ export default function PesananSayaPage() {
 
       <main className="section-soft-bg flex-1">
         <div className="mx-auto max-w-5xl px-5 py-8 sm:px-6 lg:px-10">
-          <button
-            type="button"
-            onClick={() => router.back()}
+          <Link
+            href="/belanja"
             className="mb-5 inline-flex items-center gap-1.5 font-body text-sm font-medium text-marica-ink-soft transition hover:text-marica-ink"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Kembali
-          </button>
+          </Link>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">

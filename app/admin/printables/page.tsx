@@ -18,6 +18,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import ConfirmActionModal from "../../components/admin/ConfirmActionModal";
 
 type Printable = {
   id: string;
@@ -89,6 +90,8 @@ export default function AdminPrintablesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [printableToDelete, setPrintableToDelete] = useState<Printable | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadPrintables = useCallback(async () => {
     setIsLoading(true);
@@ -264,16 +267,23 @@ export default function AdminPrintablesPage() {
     }
   };
 
-  const handleDelete = async (item: Printable) => {
-    if (!window.confirm(`Nonaktifkan printable "${item.title}"?`)) return;
+  const openDelete = (item: Printable) => {
+    setActionError(null);
+    setPrintableToDelete(item);
+  };
+
+  const handleDelete = async () => {
+    if (!printableToDelete) return;
+    setIsDeleting(true);
     setActionError(null);
     try {
-      const response = await fetch(`/api/admin/printables/${item.id}`, {
+      const response = await fetch(`/api/admin/printables/${printableToDelete.id}`, {
         method: "DELETE",
       });
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.error ?? "Gagal menonaktifkan printable");
+      setPrintableToDelete(null);
       await loadPrintables();
     } catch (deleteError) {
       setActionError(
@@ -281,6 +291,8 @@ export default function AdminPrintablesPage() {
           ? deleteError.message
           : "Gagal menonaktifkan printable",
       );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -403,7 +415,7 @@ export default function AdminPrintablesPage() {
                         {item.isActive && (
                           <button
                             type="button"
-                            onClick={() => handleDelete(item)}
+                            onClick={() => openDelete(item)}
                             title="Nonaktifkan printable"
                             className="rounded-lg p-2 text-marica-ink-soft hover:bg-marica-rose-deep/10 hover:text-marica-rose-deep"
                           >
@@ -691,6 +703,26 @@ export default function AdminPrintablesPage() {
           </form>
         </div>
       )}
+      <ConfirmActionModal
+        isOpen={printableToDelete !== null}
+        title="Nonaktifkan Printable?"
+        description={
+          <>
+            Printable{" "}
+            <span className="font-semibold text-marica-ink">&ldquo;{printableToDelete?.title}&rdquo;</span>{" "}
+            tidak akan ditampilkan lagi kepada pengguna.
+          </>
+        }
+        confirmLabel="Ya, Nonaktifkan"
+        loadingLabel="Menonaktifkan..."
+        isProcessing={isDeleting}
+        error={actionError}
+        onCancel={() => {
+          setPrintableToDelete(null);
+          setActionError(null);
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
