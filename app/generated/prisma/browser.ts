@@ -153,6 +153,36 @@ export type Order = Prisma.OrderModel
  */
 export type InventoryMovement = Prisma.InventoryMovementModel
 /**
+ * Model PlaypassPackage
+ * 
+ */
+export type PlaypassPackage = Prisma.PlaypassPackageModel
+/**
+ * Model PlaypassTicket
+ * 
+ */
+export type PlaypassTicket = Prisma.PlaypassTicketModel
+/**
+ * Model TableFeePackage
+ * 
+ */
+export type TableFeePackage = Prisma.TableFeePackageModel
+/**
+ * Model TableFeeSession
+ * 
+ */
+export type TableFeeSession = Prisma.TableFeeSessionModel
+/**
+ * Model PosTransaction
+ * 
+ */
+export type PosTransaction = Prisma.PosTransactionModel
+/**
+ * Model PosTransactionItem
+ * 
+ */
+export type PosTransactionItem = Prisma.PosTransactionItemModel
+/**
  * Model OrderItem
  * 
  */

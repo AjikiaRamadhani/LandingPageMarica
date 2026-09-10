@@ -51,6 +51,42 @@ export const InventoryMovementType = {
 export type InventoryMovementType = (typeof InventoryMovementType)[keyof typeof InventoryMovementType]
 
 
+export const PosPaymentMethod = {
+  CASH: 'CASH',
+  CARD: 'CARD',
+  QRIS: 'QRIS'
+} as const
+
+export type PosPaymentMethod = (typeof PosPaymentMethod)[keyof typeof PosPaymentMethod]
+
+
+export const PosTransactionStatus = {
+  COMPLETED: 'COMPLETED',
+  VOIDED: 'VOIDED'
+} as const
+
+export type PosTransactionStatus = (typeof PosTransactionStatus)[keyof typeof PosTransactionStatus]
+
+
+export const PlaypassTicketStatus = {
+  ACTIVE: 'ACTIVE',
+  CHECKED_IN: 'CHECKED_IN',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type PlaypassTicketStatus = (typeof PlaypassTicketStatus)[keyof typeof PlaypassTicketStatus]
+
+
+export const TableFeeSessionStatus = {
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type TableFeeSessionStatus = (typeof TableFeeSessionStatus)[keyof typeof TableFeeSessionStatus]
+
+
 export const EventBookingStatus = {
   PENDING_PAYMENT: 'PENDING_PAYMENT',
   PAID: 'PAID',

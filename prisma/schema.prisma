@@ -11,37 +11,41 @@ datasource db {
   provider = "postgresql"
 }
 
-
 // AUTH (Auth.js / NextAuth) - login & register
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  whatsapp      String?
-  emailVerified DateTime?
-  image         String?
-  password      String? // hash bcrypt, buat login credentials (email/password)
-  cart   Cart?
-  orders Order[]
-  accounts      Account[]
-  sessions      Session[]
-  role     Role      @default(USER)
-  articles Article[]
-  comments Comment[]
-  eventBookings  EventBooking[]
-  printableLeads PrintableLead[]
-  inventoryMovements InventoryMovement[] @relation("InventoryMovementCreatedBy")
-  pointAccount PointAccount?
-  pointTransactions PointTransaction[]
-  vouchers        UserVoucher[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
- 
- 
+  id                      String              @id @default(cuid())
+  name                    String?
+  email                   String?             @unique
+  whatsapp                String?
+  emailVerified           DateTime?
+  image                   String?
+  password                String? // hash bcrypt, buat login credentials (email/password)
+  cart                    Cart?
+  orders                  Order[]
+  accounts                Account[]
+  sessions                Session[]
+  role                    Role                @default(USER)
+  articles                Article[]
+  comments                Comment[]
+  eventBookings           EventBooking[]
+  printableLeads          PrintableLead[]
+  inventoryMovements      InventoryMovement[] @relation("InventoryMovementCreatedBy")
+  pointAccount            PointAccount?
+  pointTransactions       PointTransaction[]
+  vouchers                UserVoucher[]
+  posTransactions         PosTransaction[]    @relation("PosCashier")
+  posCustomerTransactions PosTransaction[]    @relation("PosCustomer")
+  playpassTickets         PlaypassTicket[]    @relation("PlaypassCustomer")
+  issuedPlaypassTickets   PlaypassTicket[]    @relation("PlaypassCashier")
+  tableFeeSessions        TableFeeSession[]   @relation("TableFeeCustomer")
+  openedTableFeeSessions  TableFeeSession[]   @relation("TableFeeCashier")
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
   @@map("users")
 }
- 
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -55,28 +59,28 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
- 
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
- 
+
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@map("sessions")
 }
- 
+
 model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
- 
+
   @@unique([identifier, token])
   @@map("verificationtokens")
 }
@@ -269,22 +273,22 @@ model ArticleCategory {
 }
 
 model Article {
-  id          String          @id @default(cuid())
-  title       String
-  slug        String          @unique
-  excerpt     String?
-  content     String          @db.Text // rich text HTML dari editor
+  id            String           @id @default(cuid())
+  title         String
+  slug          String           @unique
+  excerpt       String?
+  content       String           @db.Text // rich text HTML dari editor
   coverImageUrl String?
-  status      ArticleStatus   @default(DRAFT)
-  publishedAt DateTime?
-  views       Int             @default(0)
-  categoryId  String?
-  category    ArticleCategory? @relation(fields: [categoryId], references: [id])
-  authorId    String?
-  author      User?           @relation(fields: [authorId], references: [id])
-  comments    Comment[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  status        ArticleStatus    @default(DRAFT)
+  publishedAt   DateTime?
+  views         Int              @default(0)
+  categoryId    String?
+  category      ArticleCategory? @relation(fields: [categoryId], references: [id])
+  authorId      String?
+  author        User?            @relation(fields: [authorId], references: [id])
+  comments      Comment[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   @@map("articles")
 }
@@ -331,78 +335,79 @@ model NewsletterSubscriber {
 // ============================================
 
 model ProductCategory {
-  id        String            @id @default(cuid())
-  name      String
-  slug      String            @unique
-  imageUrl  String? // buat tile "Explore by Category" di homepage
-  colorTag  String?
-  order     Int               @default(0)
-  isActive  Boolean           @default(true)
+  id       String  @id @default(cuid())
+  name     String
+  slug     String  @unique
+  imageUrl String? // buat tile "Explore by Category" di homepage
+  colorTag String?
+  order    Int     @default(0)
+  isActive Boolean @default(true)
 
   // Kategori berjenjang: "Mainan Edukasi" > "Board Games"
-  parentId  String?
-  parent    ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  ProductCategory[] @relation("CategoryHierarchy")
+  parentId String?
+  parent   ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children ProductCategory[] @relation("CategoryHierarchy")
 
   products  Product[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("product_categories")
 }
 
 model Product {
-  id             String    @id @default(cuid())
-  name           String
-  slug           String    @unique
-  description    String    @db.Text
-  highlights     String[] // bullet manfaat: "Melatih pengenalan pola dan warna", dst
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String   @db.Text
+  highlights  String[] // bullet manfaat: "Melatih pengenalan pola dan warna", dst
 
   price          Int // dalam Rupiah, tanpa desimal
   compareAtPrice Int? // harga coret sebelum diskon, null kalau gak ada diskon
 
-  stock          Int       @default(0)
-  sku            String?   @unique
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  stock               Int                  @default(0)
+  sku                 String?              @unique
+  cartItems           CartItem[]
+  orderItems          OrderItem[]
+  posTransactionItems PosTransactionItem[]
 
   // Atribut buat Smart Filter
-  ageMin         Int?
-  ageMax         Int?
-  skillFocus     String[] // "Kognitif", "Motorik", "STEM", "Bahasa", "Sosial"
-  playerCount    String? // "2-4 Pemain", opsional (khusus board game dkk)
+  ageMin      Int?
+  ageMax      Int?
+  skillFocus  String[] // "Kognitif", "Motorik", "STEM", "Bahasa", "Sosial"
+  playerCount String? // "2-4 Pemain", opsional (khusus board game dkk)
 
-  isBestSeller   Boolean   @default(false)
-  isFeatured     Boolean   @default(false) // buat "Trending Now"
-  isActive       Boolean   @default(true)
+  isBestSeller Boolean @default(false)
+  isFeatured   Boolean @default(false) // buat "Trending Now"
+  isActive     Boolean @default(true)
 
-  soldCount      Int       @default(0)
+  soldCount Int @default(0)
 
   // Placeholder dulu, gampang di-upgrade ke sistem Review beneran nanti
   // (tinggal tambah model Review terpisah, field ini tetap kepake sebagai cache/fallback)
-  ratingAvg      Float     @default(0)
-  reviewCount    Int       @default(0)
+  ratingAvg   Float @default(0)
+  reviewCount Int   @default(0)
 
-  categoryId     String?
-  category       ProductCategory? @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  category   ProductCategory? @relation(fields: [categoryId], references: [id])
 
-  images         ProductImage[]
-  bundleItems    ProductBundleItem[]
+  images             ProductImage[]
+  bundleItems        ProductBundleItem[]
   inventoryMovements InventoryMovement[]
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("products")
 }
 
 model ProductImage {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   url       String
-  isVideo   Boolean  @default(false)
-  order     Int      @default(0)
+  isVideo   Boolean @default(false)
+  order     Int     @default(0)
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_images")
 }
@@ -474,46 +479,46 @@ enum OrderStatus {
 }
 
 model Order {
-  id                     String      @id @default(cuid())
-  orderNumber            String      @unique // format: ORD-20260828-0001
-  userId                 String
-  user                   User        @relation(fields: [userId], references: [id])
-  status                 OrderStatus @default(PENDING_PAYMENT)
+  id          String      @id @default(cuid())
+  orderNumber String      @unique // format: ORD-20260828-0001
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  status      OrderStatus @default(PENDING_PAYMENT)
 
   // Alamat pengiriman - input manual tiap checkout, snapshot di sini
-  shippingName           String
-  shippingPhone          String
-  shippingAddress        String      @db.Text
-  shippingCity           String
-  shippingProvince       String
-  shippingPostalCode     String
+  shippingName       String
+  shippingPhone      String
+  shippingAddress    String @db.Text
+  shippingCity       String
+  shippingProvince   String
+  shippingPostalCode String
 
   // Ongkir dari RajaOngkir
-  shippingCourier        String? // "jne", "jnt", dst
-  shippingService        String? // "REG", "YES", dst
-  shippingCost           Int         @default(0)
+  shippingCourier String? // "jne", "jnt", dst
+  shippingService String? // "REG", "YES", dst
+  shippingCost    Int     @default(0)
 
-  subtotal               Int // total harga produk sebelum ongkir
-  pointsUsed             Int          @default(0)
-  pointsDiscount         Int          @default(0)
-  userVoucherId          String?      @unique
-  userVoucher            UserVoucher? @relation(fields: [userVoucherId], references: [id])
-  trackingNumber         String?
-  fulfillmentNote        String?      @db.Text
-  total                  Int // subtotal + shippingCost
+  subtotal        Int // total harga produk sebelum ongkir
+  pointsUsed      Int          @default(0)
+  pointsDiscount  Int          @default(0)
+  userVoucherId   String?      @unique
+  userVoucher     UserVoucher? @relation(fields: [userVoucherId], references: [id])
+  trackingNumber  String?
+  fulfillmentNote String?      @db.Text
+  total           Int // subtotal + shippingCost
 
   // Midtrans
-  paymentMethod          String? // "midtrans"
-  midtransOrderId        String?     @unique
-  midtransTransactionId  String?
-  midtransSnapToken      String?
-  paidAt                 DateTime?
-  ticketEmailSentAt      DateTime?
+  paymentMethod         String? // "midtrans"
+  midtransOrderId       String?   @unique
+  midtransTransactionId String?
+  midtransSnapToken     String?
+  paidAt                DateTime?
+  ticketEmailSentAt     DateTime?
 
-  items                  OrderItem[]
-  inventoryMovements     InventoryMovement[]
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
+  items              OrderItem[]
+  inventoryMovements InventoryMovement[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@map("orders")
 }
@@ -528,31 +533,186 @@ enum InventoryMovementType {
 }
 
 model InventoryMovement {
-  id           String                 @id @default(cuid())
-  productId    String
-  product      Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
-  orderId      String?
-  order        Order?                 @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  createdById  String?
-  createdBy    User?                  @relation("InventoryMovementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  type         InventoryMovementType
-  quantityDelta Int
-  reason       String?
-  referenceId  String?
-  createdAt    DateTime               @default(now())
+  id               String                @id @default(cuid())
+  productId        String
+  product          Product               @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderId          String?
+  order            Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  posTransactionId String?
+  posTransaction   PosTransaction?       @relation(fields: [posTransactionId], references: [id], onDelete: SetNull)
+  createdById      String?
+  createdBy        User?                 @relation("InventoryMovementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  type             InventoryMovementType
+  quantityDelta    Int
+  reason           String?
+  referenceId      String?
+  createdAt        DateTime              @default(now())
 
   @@index([productId, createdAt])
   @@index([orderId])
+  @@index([posTransactionId])
   @@index([type, createdAt])
   @@map("inventory_movements")
 }
 
+enum PosPaymentMethod {
+  CASH
+  CARD
+  QRIS
+}
+
+enum PosTransactionStatus {
+  COMPLETED
+  VOIDED
+}
+
+enum PlaypassTicketStatus {
+  ACTIVE
+  CHECKED_IN
+  EXPIRED
+  CANCELLED
+}
+
+model PlaypassPackage {
+  id              String           @id @default(cuid())
+  name            String
+  durationMinutes Int
+  price           Int
+  maxParticipants Int              @default(1)
+  isActive        Boolean          @default(true)
+  tickets         PlaypassTicket[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([isActive])
+  @@map("playpass_packages")
+}
+
+model PlaypassTicket {
+  id            String               @id @default(cuid())
+  ticketNumber  String               @unique
+  qrToken       String               @unique @default(cuid())
+  packageId     String
+  package       PlaypassPackage      @relation(fields: [packageId], references: [id])
+  customerId    String?
+  customer      User?                @relation("PlaypassCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  cashierId     String
+  cashier       User                 @relation("PlaypassCashier", fields: [cashierId], references: [id])
+  quantity      Int                  @default(1)
+  total         Int
+  paymentMethod String
+  paidAmount    Int
+  changeAmount  Int                  @default(0)
+  validFrom     DateTime             @default(now())
+  expiresAt     DateTime
+  status        PlaypassTicketStatus @default(ACTIVE)
+  checkedInAt   DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([customerId, createdAt])
+  @@index([status, expiresAt])
+  @@map("playpass_tickets")
+}
+
+enum TableFeeSessionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model TableFeePackage {
+  id              String            @id @default(cuid())
+  name            String
+  durationMinutes Int
+  price           Int
+  maxPlayers      Int               @default(4)
+  isActive        Boolean           @default(true)
+  sessions        TableFeeSession[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([isActive])
+  @@map("table_fee_packages")
+}
+
+model TableFeeSession {
+  id            String                @id @default(cuid())
+  sessionNumber String                @unique
+  tableNumber   String
+  packageId     String
+  package       TableFeePackage       @relation(fields: [packageId], references: [id])
+  customerId    String?
+  customer      User?                 @relation("TableFeeCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  cashierId     String
+  cashier       User                  @relation("TableFeeCashier", fields: [cashierId], references: [id])
+  total         Int
+  paymentMethod String
+  paidAmount    Int
+  changeAmount  Int                   @default(0)
+  startedAt     DateTime              @default(now())
+  endsAt        DateTime
+  status        TableFeeSessionStatus @default(ACTIVE)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([tableNumber, status])
+  @@index([customerId, createdAt])
+  @@map("table_fee_sessions")
+}
+
+model PosTransaction {
+  id                 String               @id @default(cuid())
+  transactionNumber  String               @unique
+  cashierId          String
+  cashier            User                 @relation("PosCashier", fields: [cashierId], references: [id])
+  customerId         String?
+  customer           User?                @relation("PosCustomer", fields: [customerId], references: [id])
+  subtotal           Int
+  discountAmount     Int                  @default(0)
+  total              Int
+  userVoucherId      String?              @unique
+  userVoucher        UserVoucher?         @relation(fields: [userVoucherId], references: [id])
+  paymentMethod      PosPaymentMethod
+  paidAmount         Int
+  changeAmount       Int                  @default(0)
+  paymentReference   String?
+  status             PosTransactionStatus @default(COMPLETED)
+  notes              String?              @db.Text
+  items              PosTransactionItem[]
+  inventoryMovements InventoryMovement[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([cashierId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
+  @@map("pos_transactions")
+}
+
+model PosTransactionItem {
+  id            String         @id @default(cuid())
+  transactionId String
+  transaction   PosTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id])
+  productName   String
+  price         Int
+  quantity      Int
+  subtotal      Int
+  createdAt     DateTime       @default(now())
+
+  @@index([transactionId])
+  @@index([productId, createdAt])
+  @@map("pos_transaction_items")
+}
+
 model OrderItem {
-  id              String  @id @default(cuid())
-  orderId         String
-  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId       String
-  product         Product @relation(fields: [productId], references: [id])
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
 
   // Snapshot data produk saat transaksi (biar gak berubah kalau produk aslinya diedit/dihapus admin nanti)
   productName     String
@@ -617,31 +777,31 @@ model Event {
 }
 
 model EventBooking {
-  id                    String             @id @default(cuid())
-  bookingNumber         String             @unique // "EVT-20260828-0001"
-  eventId               String
-  event                 Event              @relation(fields: [eventId], references: [id])
-  userId                String
-  user                  User               @relation(fields: [userId], references: [id])
-  customerName          String
-  customerEmail         String
-  customerPhone         String?
-  participantNames      String[]
-  quantity              Int
-  totalPrice            Int
-  status                EventBookingStatus @default(PENDING_PAYMENT)
-  expiresAt             DateTime?
+  id               String             @id @default(cuid())
+  bookingNumber    String             @unique // "EVT-20260828-0001"
+  eventId          String
+  event            Event              @relation(fields: [eventId], references: [id])
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  customerName     String
+  customerEmail    String
+  customerPhone    String?
+  participantNames String[]
+  quantity         Int
+  totalPrice       Int
+  status           EventBookingStatus @default(PENDING_PAYMENT)
+  expiresAt        DateTime?
 
   // Midtrans - pola sama kayak Order produk
-  midtransOrderId       String?            @unique
+  midtransOrderId       String?   @unique
   midtransTransactionId String?
   midtransSnapToken     String?
   paidAt                DateTime?
-  ticketEmailSentAt      DateTime?
+  ticketEmailSentAt     DateTime?
 
-  tickets               EventTicket[]
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  tickets   EventTicket[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   @@map("event_bookings")
 }
@@ -668,25 +828,25 @@ model EventTicket {
 // ============================================
 
 model Printable {
-  id             String          @id @default(cuid())
-  title          String
-  slug           String          @unique
-  description    String          @db.Text
-  subject        String // "Matematika", "Bahasa", "Sains"
-  ageMin         Int?
-  ageMax         Int?
-  thumbnailUrl   String?
-  fileUrl        String // link PDF di Supabase Storage
-  price          Int             @default(0) // 0 = gratis (lead magnet)
-  points         Int             @default(0) // poin yang diberikan saat printable berhasil diunduh
-  isFeatured     Boolean         @default(false)
-  downloadCount  Int             @default(0)
-  ratingAvg      Float           @default(0)
-  reviewCount    Int             @default(0)
-  isActive       Boolean         @default(true)
-  leads          PrintableLead[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  title         String
+  slug          String          @unique
+  description   String          @db.Text
+  subject       String // "Matematika", "Bahasa", "Sains"
+  ageMin        Int?
+  ageMax        Int?
+  thumbnailUrl  String?
+  fileUrl       String // link PDF di Supabase Storage
+  price         Int             @default(0) // 0 = gratis (lead magnet)
+  points        Int             @default(0) // poin yang diberikan saat printable berhasil diunduh
+  isFeatured    Boolean         @default(false)
+  downloadCount Int             @default(0)
+  ratingAvg     Float           @default(0)
+  reviewCount   Int             @default(0)
+  isActive      Boolean         @default(true)
+  leads         PrintableLead[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@map("printables")
 }
@@ -711,18 +871,18 @@ model PointAccount {
 }
 
 model PointTransaction {
-  id             String              @id @default(cuid())
+  id             String               @id @default(cuid())
   accountId      String
-  account        PointAccount        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account        PointAccount         @relation(fields: [accountId], references: [id], onDelete: Cascade)
   userId         String
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   type           PointTransactionType
   pointsDelta    Int
   reason         String?
   referenceType  String?
   referenceId    String?
-  idempotencyKey String?             @unique
-  createdAt      DateTime            @default(now())
+  idempotencyKey String?              @unique
+  createdAt      DateTime             @default(now())
 
   @@index([userId, createdAt])
   @@index([accountId, createdAt])
@@ -754,15 +914,16 @@ enum UserVoucherStatus {
 }
 
 model UserVoucher {
-  id          String            @id @default(cuid())
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  voucherId   String
-  voucher     Voucher           @relation(fields: [voucherId], references: [id], onDelete: Restrict)
-  status      UserVoucherStatus @default(AVAILABLE)
-  redeemedAt  DateTime          @default(now())
-  usedAt      DateTime?
-  order       Order?
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voucherId      String
+  voucher        Voucher           @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  status         UserVoucherStatus @default(AVAILABLE)
+  redeemedAt     DateTime          @default(now())
+  usedAt         DateTime?
+  order          Order?
+  posTransaction PosTransaction?
 
   @@index([userId, status])
   @@index([voucherId])

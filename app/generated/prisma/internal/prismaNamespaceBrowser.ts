@@ -78,6 +78,12 @@ export const ModelName = {
   CartItem: 'CartItem',
   Order: 'Order',
   InventoryMovement: 'InventoryMovement',
+  PlaypassPackage: 'PlaypassPackage',
+  PlaypassTicket: 'PlaypassTicket',
+  TableFeePackage: 'TableFeePackage',
+  TableFeeSession: 'TableFeeSession',
+  PosTransaction: 'PosTransaction',
+  PosTransactionItem: 'PosTransactionItem',
   OrderItem: 'OrderItem',
   Event: 'Event',
   EventBooking: 'EventBooking',
@@ -504,6 +510,7 @@ export const InventoryMovementScalarFieldEnum = {
   id: 'id',
   productId: 'productId',
   orderId: 'orderId',
+  posTransactionId: 'posTransactionId',
   createdById: 'createdById',
   type: 'type',
   quantityDelta: 'quantityDelta',
@@ -513,6 +520,114 @@ export const InventoryMovementScalarFieldEnum = {
 } as const
 
 export type InventoryMovementScalarFieldEnum = (typeof InventoryMovementScalarFieldEnum)[keyof typeof InventoryMovementScalarFieldEnum]
+
+
+export const PlaypassPackageScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  durationMinutes: 'durationMinutes',
+  price: 'price',
+  maxParticipants: 'maxParticipants',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlaypassPackageScalarFieldEnum = (typeof PlaypassPackageScalarFieldEnum)[keyof typeof PlaypassPackageScalarFieldEnum]
+
+
+export const PlaypassTicketScalarFieldEnum = {
+  id: 'id',
+  ticketNumber: 'ticketNumber',
+  qrToken: 'qrToken',
+  packageId: 'packageId',
+  customerId: 'customerId',
+  cashierId: 'cashierId',
+  quantity: 'quantity',
+  total: 'total',
+  paymentMethod: 'paymentMethod',
+  paidAmount: 'paidAmount',
+  changeAmount: 'changeAmount',
+  validFrom: 'validFrom',
+  expiresAt: 'expiresAt',
+  status: 'status',
+  checkedInAt: 'checkedInAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlaypassTicketScalarFieldEnum = (typeof PlaypassTicketScalarFieldEnum)[keyof typeof PlaypassTicketScalarFieldEnum]
+
+
+export const TableFeePackageScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  durationMinutes: 'durationMinutes',
+  price: 'price',
+  maxPlayers: 'maxPlayers',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TableFeePackageScalarFieldEnum = (typeof TableFeePackageScalarFieldEnum)[keyof typeof TableFeePackageScalarFieldEnum]
+
+
+export const TableFeeSessionScalarFieldEnum = {
+  id: 'id',
+  sessionNumber: 'sessionNumber',
+  tableNumber: 'tableNumber',
+  packageId: 'packageId',
+  customerId: 'customerId',
+  cashierId: 'cashierId',
+  total: 'total',
+  paymentMethod: 'paymentMethod',
+  paidAmount: 'paidAmount',
+  changeAmount: 'changeAmount',
+  startedAt: 'startedAt',
+  endsAt: 'endsAt',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TableFeeSessionScalarFieldEnum = (typeof TableFeeSessionScalarFieldEnum)[keyof typeof TableFeeSessionScalarFieldEnum]
+
+
+export const PosTransactionScalarFieldEnum = {
+  id: 'id',
+  transactionNumber: 'transactionNumber',
+  cashierId: 'cashierId',
+  customerId: 'customerId',
+  subtotal: 'subtotal',
+  discountAmount: 'discountAmount',
+  total: 'total',
+  userVoucherId: 'userVoucherId',
+  paymentMethod: 'paymentMethod',
+  paidAmount: 'paidAmount',
+  changeAmount: 'changeAmount',
+  paymentReference: 'paymentReference',
+  status: 'status',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PosTransactionScalarFieldEnum = (typeof PosTransactionScalarFieldEnum)[keyof typeof PosTransactionScalarFieldEnum]
+
+
+export const PosTransactionItemScalarFieldEnum = {
+  id: 'id',
+  transactionId: 'transactionId',
+  productId: 'productId',
+  productName: 'productName',
+  price: 'price',
+  quantity: 'quantity',
+  subtotal: 'subtotal',
+  createdAt: 'createdAt'
+} as const
+
+export type PosTransactionItemScalarFieldEnum = (typeof PosTransactionItemScalarFieldEnum)[keyof typeof PosTransactionItemScalarFieldEnum]
 
 
 export const OrderItemScalarFieldEnum = {
