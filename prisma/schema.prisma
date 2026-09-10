@@ -30,6 +30,10 @@ model User {
   comments Comment[]
   eventBookings  EventBooking[]
   printableLeads PrintableLead[]
+  inventoryMovements InventoryMovement[] @relation("InventoryMovementCreatedBy")
+  pointAccount PointAccount?
+  pointTransactions PointTransaction[]
+  vouchers        UserVoucher[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
  
@@ -239,6 +243,7 @@ model Faq {
 enum Role {
   USER
   ADMIN
+  KASIR
 }
 
 // ============================================
@@ -382,6 +387,7 @@ model Product {
 
   images         ProductImage[]
   bundleItems    ProductBundleItem[]
+  inventoryMovements InventoryMovement[]
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -487,6 +493,10 @@ model Order {
   shippingCost           Int         @default(0)
 
   subtotal               Int // total harga produk sebelum ongkir
+  pointsUsed             Int          @default(0)
+  pointsDiscount         Int          @default(0)
+  userVoucherId          String?      @unique
+  userVoucher            UserVoucher? @relation(fields: [userVoucherId], references: [id])
   total                  Int // subtotal + shippingCost
 
   // Midtrans
@@ -498,10 +508,40 @@ model Order {
   ticketEmailSentAt      DateTime?
 
   items                  OrderItem[]
+  inventoryMovements     InventoryMovement[]
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
 
   @@map("orders")
+}
+
+enum InventoryMovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  RETURN
+  RESERVATION
+  RELEASE
+}
+
+model InventoryMovement {
+  id           String                 @id @default(cuid())
+  productId    String
+  product      Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderId      String?
+  order        Order?                 @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdById  String?
+  createdBy    User?                  @relation("InventoryMovementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  type         InventoryMovementType
+  quantityDelta Int
+  reason       String?
+  referenceId  String?
+  createdAt    DateTime               @default(now())
+
+  @@index([productId, createdAt])
+  @@index([orderId])
+  @@index([type, createdAt])
+  @@map("inventory_movements")
 }
 
 model OrderItem {
@@ -635,6 +675,7 @@ model Printable {
   thumbnailUrl   String?
   fileUrl        String // link PDF di Supabase Storage
   price          Int             @default(0) // 0 = gratis (lead magnet)
+  points         Int             @default(0) // poin yang diberikan saat printable berhasil diunduh
   isFeatured     Boolean         @default(false)
   downloadCount  Int             @default(0)
   ratingAvg      Float           @default(0)
@@ -645,6 +686,84 @@ model Printable {
   updatedAt      DateTime        @updatedAt
 
   @@map("printables")
+}
+
+enum PointTransactionType {
+  EARN
+  REDEEM
+  ADJUSTMENT
+  REVERSAL
+}
+
+model PointAccount {
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance      Int                @default(0)
+  transactions PointTransaction[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@map("point_accounts")
+}
+
+model PointTransaction {
+  id             String              @id @default(cuid())
+  accountId      String
+  account        PointAccount        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           PointTransactionType
+  pointsDelta    Int
+  reason         String?
+  referenceType  String?
+  referenceId    String?
+  idempotencyKey String?             @unique
+  createdAt      DateTime            @default(now())
+
+  @@index([userId, createdAt])
+  @@index([accountId, createdAt])
+  @@index([referenceType, referenceId])
+  @@map("point_transactions")
+}
+
+model Voucher {
+  id             String        @id @default(cuid())
+  code           String        @unique
+  title          String
+  description    String?
+  pointsCost     Int
+  discountAmount Int
+  isActive       Boolean       @default(true)
+  expiresAt      DateTime?
+  userVouchers   UserVoucher[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([isActive, expiresAt])
+  @@map("vouchers")
+}
+
+enum UserVoucherStatus {
+  AVAILABLE
+  USED
+  EXPIRED
+}
+
+model UserVoucher {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voucherId   String
+  voucher     Voucher           @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  status      UserVoucherStatus @default(AVAILABLE)
+  redeemedAt  DateTime          @default(now())
+  usedAt      DateTime?
+  order       Order?
+
+  @@index([userId, status])
+  @@index([voucherId])
+  @@map("user_vouchers")
 }
 
 // Nyimpen data lead tiap kali ada yang download - baik dari form manual (anonim)

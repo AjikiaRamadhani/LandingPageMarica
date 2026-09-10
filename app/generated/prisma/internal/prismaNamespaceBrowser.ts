@@ -77,11 +77,16 @@ export const ModelName = {
   Cart: 'Cart',
   CartItem: 'CartItem',
   Order: 'Order',
+  InventoryMovement: 'InventoryMovement',
   OrderItem: 'OrderItem',
   Event: 'Event',
   EventBooking: 'EventBooking',
   EventTicket: 'EventTicket',
   Printable: 'Printable',
+  PointAccount: 'PointAccount',
+  PointTransaction: 'PointTransaction',
+  Voucher: 'Voucher',
+  UserVoucher: 'UserVoucher',
   PrintableLead: 'PrintableLead'
 } as const
 
@@ -475,6 +480,9 @@ export const OrderScalarFieldEnum = {
   shippingService: 'shippingService',
   shippingCost: 'shippingCost',
   subtotal: 'subtotal',
+  pointsUsed: 'pointsUsed',
+  pointsDiscount: 'pointsDiscount',
+  userVoucherId: 'userVoucherId',
   total: 'total',
   paymentMethod: 'paymentMethod',
   midtransOrderId: 'midtransOrderId',
@@ -487,6 +495,21 @@ export const OrderScalarFieldEnum = {
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const InventoryMovementScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  orderId: 'orderId',
+  createdById: 'createdById',
+  type: 'type',
+  quantityDelta: 'quantityDelta',
+  reason: 'reason',
+  referenceId: 'referenceId',
+  createdAt: 'createdAt'
+} as const
+
+export type InventoryMovementScalarFieldEnum = (typeof InventoryMovementScalarFieldEnum)[keyof typeof InventoryMovementScalarFieldEnum]
 
 
 export const OrderItemScalarFieldEnum = {
@@ -578,6 +601,7 @@ export const PrintableScalarFieldEnum = {
   thumbnailUrl: 'thumbnailUrl',
   fileUrl: 'fileUrl',
   price: 'price',
+  points: 'points',
   isFeatured: 'isFeatured',
   downloadCount: 'downloadCount',
   ratingAvg: 'ratingAvg',
@@ -588,6 +612,61 @@ export const PrintableScalarFieldEnum = {
 } as const
 
 export type PrintableScalarFieldEnum = (typeof PrintableScalarFieldEnum)[keyof typeof PrintableScalarFieldEnum]
+
+
+export const PointAccountScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  balance: 'balance',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PointAccountScalarFieldEnum = (typeof PointAccountScalarFieldEnum)[keyof typeof PointAccountScalarFieldEnum]
+
+
+export const PointTransactionScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  userId: 'userId',
+  type: 'type',
+  pointsDelta: 'pointsDelta',
+  reason: 'reason',
+  referenceType: 'referenceType',
+  referenceId: 'referenceId',
+  idempotencyKey: 'idempotencyKey',
+  createdAt: 'createdAt'
+} as const
+
+export type PointTransactionScalarFieldEnum = (typeof PointTransactionScalarFieldEnum)[keyof typeof PointTransactionScalarFieldEnum]
+
+
+export const VoucherScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  title: 'title',
+  description: 'description',
+  pointsCost: 'pointsCost',
+  discountAmount: 'discountAmount',
+  isActive: 'isActive',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VoucherScalarFieldEnum = (typeof VoucherScalarFieldEnum)[keyof typeof VoucherScalarFieldEnum]
+
+
+export const UserVoucherScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  voucherId: 'voucherId',
+  status: 'status',
+  redeemedAt: 'redeemedAt',
+  usedAt: 'usedAt'
+} as const
+
+export type UserVoucherScalarFieldEnum = (typeof UserVoucherScalarFieldEnum)[keyof typeof UserVoucherScalarFieldEnum]
 
 
 export const PrintableLeadScalarFieldEnum = {

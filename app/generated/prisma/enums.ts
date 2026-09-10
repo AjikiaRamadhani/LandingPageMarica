@@ -11,7 +11,8 @@
 
 export const Role = {
   USER: 'USER',
-  ADMIN: 'ADMIN'
+  ADMIN: 'ADMIN',
+  KASIR: 'KASIR'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
@@ -38,6 +39,18 @@ export const OrderStatus = {
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
 
 
+export const InventoryMovementType = {
+  PURCHASE: 'PURCHASE',
+  SALE: 'SALE',
+  ADJUSTMENT: 'ADJUSTMENT',
+  RETURN: 'RETURN',
+  RESERVATION: 'RESERVATION',
+  RELEASE: 'RELEASE'
+} as const
+
+export type InventoryMovementType = (typeof InventoryMovementType)[keyof typeof InventoryMovementType]
+
+
 export const EventBookingStatus = {
   PENDING_PAYMENT: 'PENDING_PAYMENT',
   PAID: 'PAID',
@@ -55,3 +68,22 @@ export const TicketStatus = {
 } as const
 
 export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus]
+
+
+export const PointTransactionType = {
+  EARN: 'EARN',
+  REDEEM: 'REDEEM',
+  ADJUSTMENT: 'ADJUSTMENT',
+  REVERSAL: 'REVERSAL'
+} as const
+
+export type PointTransactionType = (typeof PointTransactionType)[keyof typeof PointTransactionType]
+
+
+export const UserVoucherStatus = {
+  AVAILABLE: 'AVAILABLE',
+  USED: 'USED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type UserVoucherStatus = (typeof UserVoucherStatus)[keyof typeof UserVoucherStatus]

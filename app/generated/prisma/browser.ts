@@ -148,6 +148,11 @@ export type CartItem = Prisma.CartItemModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model InventoryMovement
+ * 
+ */
+export type InventoryMovement = Prisma.InventoryMovementModel
+/**
  * Model OrderItem
  * 
  */
@@ -172,6 +177,26 @@ export type EventTicket = Prisma.EventTicketModel
  * 
  */
 export type Printable = Prisma.PrintableModel
+/**
+ * Model PointAccount
+ * 
+ */
+export type PointAccount = Prisma.PointAccountModel
+/**
+ * Model PointTransaction
+ * 
+ */
+export type PointTransaction = Prisma.PointTransactionModel
+/**
+ * Model Voucher
+ * 
+ */
+export type Voucher = Prisma.VoucherModel
+/**
+ * Model UserVoucher
+ * 
+ */
+export type UserVoucher = Prisma.UserVoucherModel
 /**
  * Model PrintableLead
  * 

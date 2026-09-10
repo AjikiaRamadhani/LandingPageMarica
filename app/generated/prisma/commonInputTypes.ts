@@ -280,6 +280,23 @@ export type EnumOrderStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumOrderStatusFilter<$PrismaModel>
 }
 
+export type EnumInventoryMovementTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.InventoryMovementType | Prisma.EnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumInventoryMovementTypeFilter<$PrismaModel> | $Enums.InventoryMovementType
+}
+
+export type EnumInventoryMovementTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.InventoryMovementType | Prisma.EnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumInventoryMovementTypeWithAggregatesFilter<$PrismaModel> | $Enums.InventoryMovementType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumInventoryMovementTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumInventoryMovementTypeFilter<$PrismaModel>
+}
+
 export type EnumEventBookingStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.EventBookingStatus | Prisma.EnumEventBookingStatusFieldRefInput<$PrismaModel>
   in?: $Enums.EventBookingStatus[] | Prisma.ListEnumEventBookingStatusFieldRefInput<$PrismaModel>
@@ -312,6 +329,40 @@ export type EnumTicketStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumTicketStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumTicketStatusFilter<$PrismaModel>
+}
+
+export type EnumPointTransactionTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.PointTransactionType | Prisma.EnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel> | $Enums.PointTransactionType
+}
+
+export type EnumPointTransactionTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PointTransactionType | Prisma.EnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPointTransactionTypeWithAggregatesFilter<$PrismaModel> | $Enums.PointTransactionType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel>
+}
+
+export type EnumUserVoucherStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserVoucherStatus | Prisma.EnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserVoucherStatusFilter<$PrismaModel> | $Enums.UserVoucherStatus
+}
+
+export type EnumUserVoucherStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserVoucherStatus | Prisma.EnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserVoucherStatusWithAggregatesFilter<$PrismaModel> | $Enums.UserVoucherStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumUserVoucherStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumUserVoucherStatusFilter<$PrismaModel>
 }
 
 export type NestedStringFilter<$PrismaModel = never> = {
@@ -582,6 +633,23 @@ export type NestedEnumOrderStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumOrderStatusFilter<$PrismaModel>
 }
 
+export type NestedEnumInventoryMovementTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.InventoryMovementType | Prisma.EnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumInventoryMovementTypeFilter<$PrismaModel> | $Enums.InventoryMovementType
+}
+
+export type NestedEnumInventoryMovementTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.InventoryMovementType | Prisma.EnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.InventoryMovementType[] | Prisma.ListEnumInventoryMovementTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumInventoryMovementTypeWithAggregatesFilter<$PrismaModel> | $Enums.InventoryMovementType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumInventoryMovementTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumInventoryMovementTypeFilter<$PrismaModel>
+}
+
 export type NestedEnumEventBookingStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.EventBookingStatus | Prisma.EnumEventBookingStatusFieldRefInput<$PrismaModel>
   in?: $Enums.EventBookingStatus[] | Prisma.ListEnumEventBookingStatusFieldRefInput<$PrismaModel>
@@ -614,6 +682,40 @@ export type NestedEnumTicketStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumTicketStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumTicketStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumPointTransactionTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.PointTransactionType | Prisma.EnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel> | $Enums.PointTransactionType
+}
+
+export type NestedEnumPointTransactionTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PointTransactionType | Prisma.EnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PointTransactionType[] | Prisma.ListEnumPointTransactionTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPointTransactionTypeWithAggregatesFilter<$PrismaModel> | $Enums.PointTransactionType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPointTransactionTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumUserVoucherStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserVoucherStatus | Prisma.EnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserVoucherStatusFilter<$PrismaModel> | $Enums.UserVoucherStatus
+}
+
+export type NestedEnumUserVoucherStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.UserVoucherStatus | Prisma.EnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.UserVoucherStatus[] | Prisma.ListEnumUserVoucherStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumUserVoucherStatusWithAggregatesFilter<$PrismaModel> | $Enums.UserVoucherStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumUserVoucherStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumUserVoucherStatusFilter<$PrismaModel>
 }
 
 

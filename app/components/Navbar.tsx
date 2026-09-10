@@ -13,6 +13,7 @@ import {
   ChevronDown,
   LayoutDashboard,
   ClipboardList,
+  Coins,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
@@ -44,19 +45,16 @@ export default function Navbar() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [company, setCompany] = useState<ApiCompany | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [activeHref, setActiveHref] = useState<string>("/");
   const [profileOpen, setProfileOpen] = useState(false);
 
   // Menu aktif mengikuti route saat ini. startsWith dipakai supaya halaman
   // detail (mis. /artikel/slug-nya) tetap menyorot menu "Blog" sebagai induknya.
-  useEffect(() => {
-    const routeLink = navLinks.find(
+  const activeHref =
+    navLinks.find(
       (link) =>
         pathname === link.href ||
         (link.href !== "/" && pathname?.startsWith(`${link.href}/`)),
-    );
-    setActiveHref(routeLink?.href ?? pathname ?? "/");
-  }, [pathname]);
+    )?.href ?? pathname ?? "/";
 
   useEffect(() => {
     fetch("/api/company")
@@ -100,8 +98,7 @@ export default function Navbar() {
   // Semua item nav sekarang route halaman asli (bukan hash section di
   // satu halaman panjang), jadi klik di mobile tinggal set active lalu
   // tutup menu — navigasinya sendiri ditangani default <a href>.
-  const handleMobileNavClick = (href: string) => {
-    setActiveHref(href);
+  const handleMobileNavClick = () => {
     setIsOpen(false);
   };
 
@@ -124,7 +121,7 @@ export default function Navbar() {
       />
       <nav className="relative z-20 mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5 lg:px-10">
         {/* Logo */}
-        <a href="/" className="flex shrink-0 items-center gap-3">
+        <Link href="/" className="flex shrink-0 items-center gap-3">
           <Image
             src={company?.logoUrl || "/images/logo.png"}
             alt={company?.name || "Marica"}
@@ -136,7 +133,7 @@ export default function Navbar() {
           {/* <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
             {company?.name || "Marica"}
           </span> */}
-        </a>
+        </Link>
 
         {/* Nav links — absolutely centered relative to the whole navbar, not just the space left after the logo */}
         <div
@@ -152,7 +149,6 @@ export default function Navbar() {
                 key={link.label}
                 href={link.href}
                 onMouseEnter={() => setHoveredIndex(i)}
-                onClick={() => setActiveHref(link.href)}
                 className={`relative rounded-full px-3 py-1.5 transition-colors ${
                   isHighlighted
                     ? "text-marica-amber-text"
@@ -225,6 +221,14 @@ export default function Navbar() {
                     >
                       <ClipboardList className="h-4 w-4" />
                       Pesanan Saya
+                    </Link>
+                    <Link
+                      href="/poin"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
+                    >
+                      <Coins className="h-4 w-4" />
+                      Marica Points
                     </Link>
                     {isAdmin && (
                       <a
@@ -327,7 +331,7 @@ export default function Navbar() {
                 <motion.a
                   key={link.label}
                   href={link.href}
-                  onClick={() => handleMobileNavClick(link.href)}
+                  onClick={handleMobileNavClick}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.25, delay: i * 0.05 }}
@@ -372,6 +376,14 @@ export default function Navbar() {
                     >
                       <ClipboardList className="h-4 w-4" />
                       Pesanan Saya
+                    </Link>
+                    <Link
+                      href="/poin"
+                      onClick={() => setIsOpen(false)}
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
+                    >
+                      <Coins className="h-4 w-4" />
+                      Marica Points
                     </Link>
                     {isAdmin && (
                       <a

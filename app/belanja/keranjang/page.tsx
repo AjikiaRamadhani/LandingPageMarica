@@ -43,6 +43,8 @@ export default function CartPage() {
   );
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pointsBalance, setPointsBalance] = useState(0);
+  const [redeemPoints, setRedeemPoints] = useState(0);
 
   const loadCart = async () => {
     setIsLoading(true);
@@ -68,6 +70,10 @@ export default function CartPage() {
 
   useEffect(() => {
     void loadCart(); // eslint-disable-line react-hooks/set-state-in-effect
+    fetch("/api/points")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { balance?: number } | null) => setPointsBalance(data?.balance ?? 0))
+      .catch(() => setPointsBalance(0));
     const saved = loadSavedAddresses();
     setAddresses(saved);
     setSelectedAddressId(
@@ -144,6 +150,7 @@ export default function CartPage() {
           shippingCourier: shipping.courier,
           shippingService: shipping.service,
           shippingCost: shipping.cost,
+          redeemPoints,
         }),
       });
       const json = await response.json().catch(() => null);
@@ -230,6 +237,33 @@ export default function CartPage() {
                 <div className="mt-3 flex items-center justify-between border-t border-marica-ink/10 pt-3 font-body font-bold text-marica-ink">
                   <span>Subtotal</span>
                   <span>{formatRupiah(cart.subtotal)}</span>
+                </div>
+                <div className="mt-4 rounded-xl bg-marica-cream/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <label htmlFor="redeem-points" className="font-body text-sm font-semibold text-marica-ink">
+                      Pakai Marica Points
+                    </label>
+                    <span className="font-body text-xs text-marica-ink-soft">
+                      Saldo {pointsBalance.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      id="redeem-points"
+                      type="number"
+                      min={0}
+                      max={pointsBalance}
+                      value={redeemPoints || ""}
+                      onChange={(event) => {
+                        const next = Math.max(0, Math.min(pointsBalance, Number(event.target.value) || 0));
+                        setRedeemPoints(Math.floor(next));
+                      }}
+                      className="w-full rounded-lg border border-marica-ink/10 bg-white px-3 py-2 font-body text-sm text-marica-ink outline-none focus:border-marica-amber"
+                      placeholder="0"
+                    />
+                    <span className="shrink-0 font-body text-xs text-marica-ink-soft">= Rp{redeemPoints.toLocaleString("id-ID")}</span>
+                  </div>
+                  <p className="mt-2 font-body text-xs text-marica-ink-soft">1 poin = Rp1. Potongan dihitung saat ongkir dipilih.</p>
                 </div>
                 <button
                   type="button"

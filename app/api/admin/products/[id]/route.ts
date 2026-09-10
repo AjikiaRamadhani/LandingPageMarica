@@ -85,43 +85,65 @@ export async function PUT(
       return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
     }
 
-    // Kalau images dikirim ulang, kita replace semua (hapus lama, buat baru)
-    // -- lebih simpel & aman daripada nyoba diff satu-satu
-    if (images) {
-      await prisma.productImage.deleteMany({ where: { productId: id } });
+    if (
+      (price !== undefined && (!Number.isInteger(price) || price < 0)) ||
+      (stock !== undefined && (!Number.isInteger(stock) || stock < 0))
+    ) {
+      return NextResponse.json({ error: "Harga dan stok harus berupa bilangan bulat valid" }, { status: 400 });
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        ...(name !== undefined ? { name } : {}),
-        ...(description !== undefined ? { description } : {}),
-        ...(highlights !== undefined ? { highlights } : {}),
-        ...(price !== undefined ? { price } : {}),
-        ...(compareAtPrice !== undefined ? { compareAtPrice } : {}),
-        ...(stock !== undefined ? { stock } : {}),
-        ...(sku !== undefined ? { sku } : {}),
-        ...(ageMin !== undefined ? { ageMin } : {}),
-        ...(ageMax !== undefined ? { ageMax } : {}),
-        ...(skillFocus !== undefined ? { skillFocus } : {}),
-        ...(playerCount !== undefined ? { playerCount } : {}),
-        ...(isBestSeller !== undefined ? { isBestSeller } : {}),
-        ...(isFeatured !== undefined ? { isFeatured } : {}),
-        ...(isActive !== undefined ? { isActive } : {}),
-        ...(categoryId !== undefined ? { categoryId } : {}),
-        ...(images
-          ? {
-              images: {
-                create: images.map((img, i) => ({
-                  url: img.url,
-                  isVideo: img.isVideo ?? false,
-                  order: i,
-                })),
-              },
-            }
-          : {}),
-      },
-      include: { images: true, category: true },
+    const product = await prisma.$transaction(async (tx) => {
+      // Kalau images dikirim ulang, replace semua secara atomik bersama update produk.
+      if (images) {
+        await tx.productImage.deleteMany({ where: { productId: id } });
+      }
+
+      const updated = await tx.product.update({
+        where: { id },
+        data: {
+          ...(name !== undefined ? { name } : {}),
+          ...(description !== undefined ? { description } : {}),
+          ...(highlights !== undefined ? { highlights } : {}),
+          ...(price !== undefined ? { price } : {}),
+          ...(compareAtPrice !== undefined ? { compareAtPrice } : {}),
+          ...(stock !== undefined ? { stock } : {}),
+          ...(sku !== undefined ? { sku } : {}),
+          ...(ageMin !== undefined ? { ageMin } : {}),
+          ...(ageMax !== undefined ? { ageMax } : {}),
+          ...(skillFocus !== undefined ? { skillFocus } : {}),
+          ...(playerCount !== undefined ? { playerCount } : {}),
+          ...(isBestSeller !== undefined ? { isBestSeller } : {}),
+          ...(isFeatured !== undefined ? { isFeatured } : {}),
+          ...(isActive !== undefined ? { isActive } : {}),
+          ...(categoryId !== undefined ? { categoryId } : {}),
+          ...(images
+            ? {
+                images: {
+                  create: images.map((img, i) => ({
+                    url: img.url,
+                    isVideo: img.isVideo ?? false,
+                    order: i,
+                  })),
+                },
+              }
+            : {}),
+        },
+        include: { images: true, category: true },
+      });
+
+      if (stock !== undefined && stock !== existing.stock) {
+        await tx.inventoryMovement.create({
+          data: {
+            productId: id,
+            type: "ADJUSTMENT",
+            quantityDelta: stock - existing.stock,
+            reason: "Admin stock adjustment",
+            createdById: session.user.id,
+          },
+        });
+      }
+
+      return updated;
     });
 
     return NextResponse.json(product);
