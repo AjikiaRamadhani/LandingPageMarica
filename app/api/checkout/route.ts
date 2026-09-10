@@ -179,7 +179,31 @@ export async function POST(request: Request) {
         (sum, item) => sum + (stockMap.get(item.productId)?.price ?? 0) * item.quantity,
         0,
       );
-      const totalBeforePoints = subtotal + shippingCostValue;
+      const bundleIds = [...new Set(checkoutItems.map((item) => item.bundleId).filter((id): id is string => Boolean(id)))];
+      const bundles = bundleIds.length
+        ? await tx.productBundle.findMany({
+            where: { id: { in: bundleIds }, isActive: true },
+            include: { items: { select: { productId: true, product: { select: { price: true } } } } },
+          })
+        : [];
+      let bundleDiscount = 0;
+      const itemBundleDiscounts = new Map<string, number>();
+      for (const bundle of bundles) {
+        const bundleItems = checkoutItems.filter((item) => item.bundleId === bundle.id);
+        const quantities = bundle.items.map(
+          (bundleItem) => bundleItems.find((item) => item.productId === bundleItem.productId)?.quantity ?? 0,
+        );
+        const packageCount = quantities.length ? Math.min(...quantities) : 0;
+        const regularBundlePrice = bundle.items.reduce((sum, item) => sum + item.product.price, 0);
+        const discount = Math.max(0, regularBundlePrice - bundle.bundlePrice) * packageCount;
+        bundleDiscount += discount;
+        if (discount > 0 && bundle.items[0]) {
+          const discountedItem = bundleItems.find((item) => item.productId === bundle.items[0].productId);
+          if (discountedItem) itemBundleDiscounts.set(discountedItem.id, discount);
+        }
+      }
+      const discountedSubtotal = subtotal - bundleDiscount;
+      const totalBeforePoints = discountedSubtotal + shippingCostValue;
       let voucherDiscount = 0;
       if (userVoucherIdValue) {
         const userVoucher = await tx.userVoucher.findUnique({ where: { id: userVoucherIdValue }, include: { voucher: true } });
@@ -220,7 +244,7 @@ export async function POST(request: Request) {
           shippingCourier: shippingCourierValue,
           shippingService: shippingServiceValue,
           shippingCost: shippingCostValue,
-          subtotal,
+          subtotal: discountedSubtotal,
           pointsUsed,
           pointsDiscount,
           userVoucherId: userVoucherIdValue,
@@ -241,7 +265,11 @@ export async function POST(request: Request) {
               productId: item.productId,
               productImageUrl: item.product.images[0]?.url,
               quantity: item.quantity,
-              subtotal: (stockMap.get(item.productId)?.price ?? item.product.price) * item.quantity,
+              subtotal: Math.max(
+                0,
+                (stockMap.get(item.productId)?.price ?? item.product.price) * item.quantity -
+                  (itemBundleDiscounts.get(item.id) ?? 0),
+              ),
               bundleId: item.bundleId,
             })),
           },
@@ -307,9 +335,10 @@ export async function POST(request: Request) {
       item_details: [
         ...order.items.map((item) => ({
           id: item.productId,
-          price: item.price,
-          quantity: item.quantity,
-          name: item.productName.slice(0, 50),
+          // Use the effective line subtotal so Midtrans matches the bundle-discounted gross amount.
+          price: item.subtotal,
+          quantity: 1,
+          name: `${item.productName} (${item.quantity}x)`.slice(0, 50),
         })),
         {
           id: "SHIPPING",

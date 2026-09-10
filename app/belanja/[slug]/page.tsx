@@ -65,6 +65,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [descExpanded, setDescExpanded] = useState(false);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
+  const [isAddingBundle, setIsAddingBundle] = useState<string | null>(null);
 
   // --- Shipping/checkout flow ------------------------------------------
   const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
@@ -179,6 +180,24 @@ export default function ProductDetailPage() {
     if (!product) return;
     setAddedMessage(null);
     startBuyNow(product.id, qty);
+  };
+
+  const handleTambahPaket = async (
+    bundle: ApiProductDetail["bundles"][number],
+  ) => {
+    if (!product) return;
+    setIsAddingBundle(bundle.id);
+    setAddedMessage(null);
+    try {
+      const items = [{ id: product.id }, ...bundle.otherProducts];
+      for (const item of items) {
+        const ok = await addToCart(item.id, 1, bundle.id);
+        if (!ok) return;
+      }
+      setAddedMessage("Paket berhasil ditambahkan ke keranjang.");
+    } finally {
+      setIsAddingBundle(null);
+    }
   };
 
   return (
@@ -554,9 +573,13 @@ export default function ProductDetailPage() {
                       </p>
                       <button
                         type="button"
-                        className="mt-2.5 w-full rounded-full bg-marica-amber-dark px-3 py-2 font-body text-xs font-semibold text-white shadow-sm transition hover:brightness-105"
+                        onClick={() => handleTambahPaket(bundle)}
+                        disabled={isAddingBundle !== null}
+                        className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-marica-amber-dark px-3 py-2 font-body text-xs font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Tambah Paket
+                        {isAddingBundle === bundle.id
+                          ? "Menambahkan..."
+                          : "Tambah Paket"}
                       </button>
                     </div>
                   </div>

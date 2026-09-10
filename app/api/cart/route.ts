@@ -32,8 +32,25 @@ export async function GET() {
     }
 
     const subtotal = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const bundleIds = [...new Set(cart.items.map((item) => item.bundleId).filter((id): id is string => Boolean(id)))];
+    const bundles = bundleIds.length
+      ? await prisma.productBundle.findMany({
+          where: { id: { in: bundleIds }, isActive: true },
+          include: { items: { select: { productId: true, product: { select: { price: true } } } } },
+        })
+      : [];
+    let bundleDiscount = 0;
+    for (const bundle of bundles) {
+      const bundleCartItems = cart.items.filter((item) => item.bundleId === bundle.id);
+      const quantities = bundle.items.map(
+        (bundleItem) => bundleCartItems.find((item) => item.productId === bundleItem.productId)?.quantity ?? 0,
+      );
+      const packageCount = quantities.length ? Math.min(...quantities) : 0;
+      const regularBundlePrice = bundle.items.reduce((sum, item) => sum + item.product.price, 0);
+      bundleDiscount += Math.max(0, regularBundlePrice - bundle.bundlePrice) * packageCount;
+    }
 
-    return NextResponse.json({ ...cart, subtotal });
+    return NextResponse.json({ ...cart, subtotal: subtotal - bundleDiscount, originalSubtotal: subtotal, bundleDiscount });
   } catch (error) {
     console.error("[GET /api/cart]", error);
     return NextResponse.json({ error: "Gagal mengambil keranjang" }, { status: 500 });
@@ -107,7 +124,10 @@ export async function POST(request: Request) {
     const cartItem = existingItem
       ? await prisma.cartItem.update({
           where: { id: existingItem.id },
-          data: { quantity: existingItem.quantity + quantityValue },
+          data: {
+            quantity: existingItem.quantity + quantityValue,
+            ...(bundleIdCheck.value ? { bundleId: bundleIdCheck.value } : {}),
+          },
         })
       : await prisma.cartItem.create({
           data: {

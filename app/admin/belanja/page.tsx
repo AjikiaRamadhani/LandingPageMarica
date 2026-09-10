@@ -3,11 +3,25 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plus, Search, Pencil, Trash2, ImageOff, Tags } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  ImageOff,
+  Tags,
+  PackagePlus,
+  Check,
+} from "lucide-react";
 import DeleteProductModal from "../../components/admin/DeleteProductModal";
 import { categoryBadgeStyle } from "@/lib/category-color";
 
-type ApiCategory = { id: string; name: string; slug: string; colorTag: string | null };
+type ApiCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  colorTag: string | null;
+};
 type ApiProductImage = { id: string; url: string; isVideo: boolean };
 type ApiProduct = {
   id: string;
@@ -23,7 +37,23 @@ type ApiProduct = {
 };
 type ProductsResponse = {
   products: ApiProduct[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+type ApiBundle = {
+  id: string;
+  name: string | null;
+  bundlePrice: number;
+  isActive: boolean;
+  items: {
+    id: string;
+    productId: string;
+    product: { id: string; name: string; price: number; slug: string };
+  }[];
 };
 
 const TABS = [
@@ -40,7 +70,8 @@ function formatRupiah(value: number) {
 }
 
 export default function AdminBelanjaPage() {
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["value"]>("");
+  const [activeTab, setActiveTab] =
+    useState<(typeof TABS)[number]["value"]>("");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -52,6 +83,12 @@ export default function AdminBelanjaPage() {
   const [toDelete, setToDelete] = useState<ApiProduct | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [allProducts, setAllProducts] = useState<ApiProduct[]>([]);
+  const [bundles, setBundles] = useState<ApiBundle[]>([]);
+  const [bundleName, setBundleName] = useState("");
+  const [bundlePrice, setBundlePrice] = useState("");
+  const [bundleProductIds, setBundleProductIds] = useState<string[]>([]);
+  const [isSavingBundle, setIsSavingBundle] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -65,11 +102,16 @@ export default function AdminBelanjaPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(LIMIT),
+      });
       if (activeTab) params.set("status", activeTab);
       if (debouncedQuery) params.set("search", debouncedQuery);
 
-      const res = await fetch(`/api/admin/products?${params.toString()}`, { cache: "no-store" });
+      const res = await fetch(`/api/admin/products?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error("Gagal memuat produk");
       const json = (await res.json()) as ProductsResponse;
       setData(json);
@@ -85,6 +127,104 @@ export default function AdminBelanjaPage() {
     fetchProducts();
   }, [fetchProducts]);
 
+  const fetchBundles = useCallback(async () => {
+    const res = await fetch("/api/admin/product-bundles", {
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Gagal memuat paket hemat");
+    setBundles((await res.json()) as ApiBundle[]);
+  }, []);
+
+  useEffect(() => {
+    void Promise.all([
+      fetch("/api/admin/products?limit=50", { cache: "no-store" }).then((res) =>
+        res.json(),
+      ),
+      fetch("/api/admin/product-bundles", { cache: "no-store" }).then(
+        async (res) => {
+          if (!res.ok) throw new Error("Gagal memuat paket hemat");
+          return res.json();
+        },
+      ),
+    ])
+      .then(([productsResponse, bundlesResponse]) => {
+        setAllProducts((productsResponse as ProductsResponse).products);
+        setBundles(bundlesResponse as ApiBundle[]);
+      })
+      .catch((err) =>
+        setActionError(
+          err instanceof Error ? err.message : "Gagal memuat paket hemat",
+        ),
+      );
+  }, []);
+
+  const handleCreateBundle = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setIsSavingBundle(true);
+    setActionError(null);
+    try {
+      const res = await fetch("/api/admin/product-bundles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: bundleName.trim() || null,
+          bundlePrice: Number(bundlePrice),
+          productIds: bundleProductIds,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Gagal membuat paket hemat");
+      setBundleName("");
+      setBundlePrice("");
+      setBundleProductIds([]);
+      await fetchBundles();
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Gagal membuat paket hemat",
+      );
+    } finally {
+      setIsSavingBundle(false);
+    }
+  };
+
+  const handleDeleteBundle = async (bundleId: string) => {
+    if (!window.confirm("Hapus paket hemat ini?")) return;
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/admin/product-bundles/${bundleId}`, {
+        method: "DELETE",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Gagal menghapus paket hemat");
+      await fetchBundles();
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Gagal menghapus paket hemat",
+      );
+    }
+  };
+
+  const handleToggleBundle = async (bundle: ApiBundle) => {
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/admin/product-bundles/${bundle.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !bundle.isActive }),
+      });
+      if (!res.ok) throw new Error("Gagal mengubah status paket hemat");
+      await fetchBundles();
+    } catch (err) {
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Gagal mengubah status paket hemat",
+      );
+    }
+  };
+
   const openDeleteModal = (product: ApiProduct) => {
     setActionError(null);
     setToDelete(product);
@@ -95,19 +235,40 @@ export default function AdminBelanjaPage() {
     setIsDeleting(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/admin/products/${toDelete.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/products/${toDelete.id}`, {
+        method: "DELETE",
+      });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Gagal menghapus produk");
       setToDelete(null);
       await fetchProducts();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Gagal menghapus produk");
+      setActionError(
+        err instanceof Error ? err.message : "Gagal menghapus produk",
+      );
     } finally {
       setIsDeleting(false);
     }
   };
 
   const totalPages = data?.pagination.totalPages ?? 1;
+  const selectedBundleProducts = allProducts.filter((product) =>
+    bundleProductIds.includes(product.id),
+  );
+
+  const handleBundleProductToggle = (productId: string) => {
+    const nextIds = bundleProductIds.includes(productId)
+      ? bundleProductIds.filter((id) => id !== productId)
+      : [...bundleProductIds, productId];
+    setBundleProductIds(nextIds);
+
+    const selectedNames = allProducts
+      .filter((product) => nextIds.includes(product.id))
+      .map((product) => product.name);
+    setBundleName(
+      selectedNames.length > 0 ? `Paket: ${selectedNames.join(" + ")}` : "",
+    );
+  };
 
   return (
     <div>
@@ -118,7 +279,9 @@ export default function AdminBelanjaPage() {
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
-          <h1 className="font-display text-2xl font-semibold text-marica-ink">Manajemen Produk</h1>
+          <h1 className="font-display text-2xl font-semibold text-marica-ink">
+            Manajemen Produk
+          </h1>
           <p className="mt-1 font-body text-sm text-marica-ink-soft">
             Kelola semua produk yang tampil di halaman Belanja Marica.
           </p>
@@ -141,6 +304,184 @@ export default function AdminBelanjaPage() {
         </div>
       </motion.div>
 
+      <motion.section
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:p-6"
+      >
+        <div className="flex items-start gap-3">
+          <PackagePlus className="mt-0.5 h-5 w-5 text-marica-amber-text" />
+          <div>
+            <h2 className="font-display text-lg font-semibold text-marica-ink">
+              Paket Hemat
+            </h2>
+            <p className="mt-1 font-body text-sm text-marica-ink-soft">
+              Paket aktif akan muncul otomatis di rekomendasi halaman detail
+              produk.
+            </p>
+          </div>
+        </div>
+
+        <form
+          onSubmit={handleCreateBundle}
+          className="mt-5 grid gap-5 rounded-2xl border border-marica-ink/8 bg-marica-sky-light/20 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.85fr)]"
+        >
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-body text-sm font-semibold text-marica-ink">
+                  Pilih isi paket
+                </h3>
+                <p className="mt-1 font-body text-xs text-marica-ink-soft">
+                  Pilih minimal dua produk aktif.
+                </p>
+              </div>
+              <span className="rounded-full bg-white px-2.5 py-1 font-body text-xs font-semibold text-marica-amber-text">
+                {bundleProductIds.length} dipilih
+              </span>
+            </div>
+            <div className="mt-3 grid max-h-64 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+              {allProducts
+                .filter((product) => product.isActive)
+                .map((product) => {
+                  const isSelected = bundleProductIds.includes(product.id);
+                  return (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => handleBundleProductToggle(product.id)}
+                      className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${isSelected ? "border-marica-amber-dark bg-white shadow-sm" : "border-black/8 bg-white/65 hover:border-marica-amber/70"}`}
+                    >
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${isSelected ? "border-marica-amber-dark bg-marica-amber-dark text-white" : "border-black/15 text-transparent"}`}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-body text-xs font-semibold text-marica-ink">
+                          {product.name}
+                        </span>
+                        <span className="mt-0.5 block font-body text-xs text-marica-ink-soft">
+                          {formatRupiah(product.price)}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+
+          <div className="flex flex-col rounded-xl border border-black/8 bg-white p-4">
+            <div>
+              <label className="font-body text-sm font-semibold text-marica-ink">
+                Nama paket
+                <input
+                  value={bundleName}
+                  onChange={(event) => setBundleName(event.target.value)}
+                  placeholder="Pilih produk untuk mengisi otomatis"
+                  className="mt-1.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2.5 font-body text-sm outline-none transition focus:border-marica-amber focus:ring-4 focus:ring-marica-amber/15"
+                />
+              </label>
+              <p className="mt-1.5 font-body text-xs text-marica-ink-soft">
+                Nama akan dibuat otomatis dari produk yang dipilih dan masih
+                bisa diedit.
+              </p>
+            </div>
+            <label className="mt-4 font-body text-sm font-semibold text-marica-ink">
+              Harga paket
+              <div className="relative mt-1.5">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-body text-sm text-marica-ink-soft">
+                  Rp
+                </span>
+                <input
+                  required
+                  min="1"
+                  type="number"
+                  value={bundlePrice}
+                  onChange={(event) => setBundlePrice(event.target.value)}
+                  placeholder="210000"
+                  className="w-full rounded-lg border border-black/10 bg-white py-2.5 pl-9 pr-3 font-body text-sm outline-none transition focus:border-marica-amber focus:ring-4 focus:ring-marica-amber/15"
+                />
+              </div>
+            </label>
+            <div className="mt-4 flex-1 rounded-lg bg-marica-cream/70 p-3">
+              <p className="font-body text-xs font-semibold uppercase tracking-wide text-marica-ink-soft/70">
+                Isi paket
+              </p>
+              {selectedBundleProducts.length > 0 ? (
+                <p className="mt-1.5 font-body text-sm leading-relaxed text-marica-ink">
+                  {selectedBundleProducts
+                    .map((product) => product.name)
+                    .join(" + ")}
+                </p>
+              ) : (
+                <p className="mt-1.5 font-body text-sm text-marica-ink-soft">
+                  Belum ada produk dipilih.
+                </p>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={isSavingBundle || bundleProductIds.length < 2}
+              className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-marica-amber-dark px-4 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />{" "}
+              {isSavingBundle ? "Menyimpan..." : "Buat Paket Hemat"}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {bundles.map((bundle) => (
+            <div
+              key={bundle.id}
+              className={`rounded-xl border p-4 transition ${bundle.isActive ? "border-marica-amber/35 bg-marica-cream/20" : "border-black/8 bg-black/1.5 opacity-75"}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-body text-sm font-semibold text-marica-ink">
+                    {bundle.name || "Paket Hemat"}
+                  </h3>
+                  <p className="mt-1 font-body text-sm text-marica-amber-text">
+                    {formatRupiah(bundle.bundlePrice)}
+                  </p>
+                </div>
+                <span
+                  className={`rounded-full px-2 py-1 font-body text-[11px] font-semibold ${bundle.isActive ? "bg-marica-green/15 text-marica-green" : "bg-black/5 text-marica-ink-soft"}`}
+                >
+                  {bundle.isActive ? "Aktif" : "Nonaktif"}
+                </span>
+              </div>
+              <p className="mt-3 font-body text-xs leading-relaxed text-marica-ink-soft">
+                {bundle.items.map((item) => item.product.name).join(" + ")}
+              </p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleToggleBundle(bundle)}
+                  className="rounded-lg border border-black/10 px-3 py-1.5 font-body text-xs font-semibold text-marica-ink-soft hover:bg-black/5"
+                >
+                  {bundle.isActive ? "Nonaktifkan" : "Aktifkan"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteBundle(bundle.id)}
+                  className="rounded-lg px-3 py-1.5 font-body text-xs font-semibold text-marica-rose-deep hover:bg-marica-rose-deep/10"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+          ))}
+          {bundles.length === 0 && (
+            <p className="font-body text-sm text-marica-ink-soft">
+              Belum ada paket hemat.
+            </p>
+          )}
+        </div>
+      </motion.section>
+
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -158,7 +499,9 @@ export default function AdminBelanjaPage() {
                   setPage(1);
                 }}
                 className={`relative rounded-full px-4 py-1.5 font-body text-sm font-medium transition-colors ${
-                  activeTab === tab.value ? "text-white" : "text-marica-ink-soft hover:text-marica-ink"
+                  activeTab === tab.value
+                    ? "text-white"
+                    : "text-marica-ink-soft hover:text-marica-ink"
                 }`}
               >
                 {activeTab === tab.value && (
@@ -209,7 +552,10 @@ export default function AdminBelanjaPage() {
 
               {!isLoading && error && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center font-body text-sm text-marica-rose-deep">
+                  <td
+                    colSpan={6}
+                    className="py-10 text-center font-body text-sm text-marica-rose-deep"
+                  >
                     {error}
                   </td>
                 </tr>
@@ -217,7 +563,10 @@ export default function AdminBelanjaPage() {
 
               {!isLoading && !error && data?.products.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center font-body text-sm text-marica-ink-soft">
+                  <td
+                    colSpan={6}
+                    className="py-10 text-center font-body text-sm text-marica-ink-soft"
+                  >
                     Belum ada produk yang cocok dengan filter ini.
                   </td>
                 </tr>
@@ -238,7 +587,11 @@ export default function AdminBelanjaPage() {
                         <div className="flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-marica-sky-light/60">
                           {product.images[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={product.images[0].url} alt="" className="h-full w-full object-cover" />
+                            <img
+                              src={product.images[0].url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <ImageOff className="h-4 w-4 text-marica-ink-soft/40" />
                           )}
@@ -257,18 +610,25 @@ export default function AdminBelanjaPage() {
                       {product.category ? (
                         <span
                           className="rounded-full px-2.5 py-1 font-body text-xs font-medium"
-                          style={categoryBadgeStyle(product.category.colorTag, product.category.slug)}
+                          style={categoryBadgeStyle(
+                            product.category.colorTag,
+                            product.category.slug,
+                          )}
                         >
                           {product.category.name}
                         </span>
                       ) : (
-                        <span className="font-body text-xs text-marica-ink-soft/50">Tanpa kategori</span>
+                        <span className="font-body text-xs text-marica-ink-soft/50">
+                          Tanpa kategori
+                        </span>
                       )}
                     </td>
                     <td className="py-3 pr-4 font-body text-sm text-marica-ink-soft">
                       {formatRupiah(product.price)}
                     </td>
-                    <td className="py-3 pr-4 font-body text-sm text-marica-ink-soft">{product.stock}</td>
+                    <td className="py-3 pr-4 font-body text-sm text-marica-ink-soft">
+                      {product.stock}
+                    </td>
                     <td className="py-3 pr-4">
                       <span
                         className={`rounded-full px-2.5 py-1 font-body text-xs font-semibold ${
@@ -279,7 +639,11 @@ export default function AdminBelanjaPage() {
                               : "bg-marica-rose-deep/10 text-marica-rose-deep"
                         }`}
                       >
-                        {!product.isActive ? "Nonaktif" : product.stock > 0 ? "Tersedia" : "Stok Habis"}
+                        {!product.isActive
+                          ? "Nonaktif"
+                          : product.stock > 0
+                            ? "Tersedia"
+                            : "Stok Habis"}
                       </span>
                     </td>
                     <td className="py-3 pr-4">
@@ -307,14 +671,22 @@ export default function AdminBelanjaPage() {
           </table>
         </div>
 
-        {actionError && <p className="mt-3 font-body text-sm text-marica-rose-deep">{actionError}</p>}
+        {actionError && (
+          <p className="mt-3 font-body text-sm text-marica-rose-deep">
+            {actionError}
+          </p>
+        )}
 
         {!isLoading && data && data.pagination.total > 0 && (
           <div className="mt-5 flex flex-col gap-3 font-body text-sm text-marica-ink-soft sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Menampilkan {(data.pagination.page - 1) * data.pagination.limit + 1}–
-              {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)} dari{" "}
-              {data.pagination.total} produk
+              Menampilkan{" "}
+              {(data.pagination.page - 1) * data.pagination.limit + 1}–
+              {Math.min(
+                data.pagination.page * data.pagination.limit,
+                data.pagination.total,
+              )}{" "}
+              dari {data.pagination.total} produk
             </span>
             <div className="flex items-center justify-between gap-1.5 sm:justify-start">
               <button

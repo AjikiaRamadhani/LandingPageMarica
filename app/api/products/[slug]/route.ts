@@ -44,7 +44,7 @@ export async function GET(
 
     // Susun ulang data bundle biar gampang dipakai di frontend:
     // setiap bundle nampilin produk LAIN (bukan produk ini sendiri) + total harga & hematnya
-    const bundles = product.bundleItems.map(({ bundle }) => {
+    const bundles = product.bundleItems.filter(({ bundle }) => bundle.isActive).map(({ bundle }) => {
       const otherItems = bundle.items.filter((item) => item.product.slug !== slug);
       const originalTotal = bundle.items.reduce((sum, item) => sum + item.product.price, 0);
       const savings = originalTotal - bundle.bundlePrice;

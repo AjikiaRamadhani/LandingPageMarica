@@ -29,14 +29,14 @@ export function useBuyNow() {
   };
 
   /** Adds a product to the cart only (for a plain "Keranjang" button). */
-  const addToCart = async (productId: string, quantity: number) => {
+  const addToCart = async (productId: string, quantity: number, bundleId?: string) => {
     setError(null);
     setIsAdding(true);
     try {
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity }),
+        body: JSON.stringify({ productId, quantity, bundleId }),
       });
       if (res.status === 401) {
         redirectToLogin();

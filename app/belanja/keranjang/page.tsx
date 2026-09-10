@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
+  BadgePercent,
   Loader2,
   Minus,
   Plus,
+  ShoppingCart,
   ShoppingBag,
   Trash2,
 } from "lucide-react";
@@ -22,6 +24,7 @@ import AddressModal, {
 import type {
   ApiCart,
   ApiCartItem,
+  ApiProduct,
   ShippingCourierOption,
 } from "../../components/belanja/types";
 
@@ -30,6 +33,14 @@ const DEFAULT_ITEM_WEIGHT_GRAMS = 500;
 function formatRupiah(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`;
 }
+
+type CartBundle = {
+  id: string;
+  name: string | null;
+  bundlePrice: number;
+  savings: number;
+  products: ApiProduct[];
+};
 
 export default function CartPage() {
   const router = useRouter();
@@ -45,6 +56,58 @@ export default function CartPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pointsBalance, setPointsBalance] = useState(0);
   const [redeemPoints, setRedeemPoints] = useState(0);
+  const [recommendedBundles, setRecommendedBundles] = useState<CartBundle[]>(
+    [],
+  );
+  const [busyBundleId, setBusyBundleId] = useState<string | null>(null);
+
+  const loadBundleRecommendations = async (items: ApiCartItem[]) => {
+    if (items.length === 0) {
+      setRecommendedBundles([]);
+      return;
+    }
+
+    try {
+      const responses = await Promise.all(
+        items.map((item) =>
+          fetch(`/api/products/${encodeURIComponent(item.product.slug)}`),
+        ),
+      );
+      const products = (await Promise.all(
+        responses
+          .filter((response) => response.ok)
+          .map((response) => response.json()),
+      )) as Array<
+        ApiProduct & {
+          bundles?: Array<{
+            id: string;
+            name: string | null;
+            bundlePrice: number;
+            savings: number;
+            otherProducts: ApiProduct[];
+          }>;
+        }
+      >;
+      const bundles = new Map<string, CartBundle>();
+
+      products.forEach((product) => {
+        product.bundles?.forEach((bundle) => {
+          if (bundles.has(bundle.id)) return;
+          bundles.set(bundle.id, {
+            id: bundle.id,
+            name: bundle.name,
+            bundlePrice: bundle.bundlePrice,
+            savings: bundle.savings,
+            products: [product, ...bundle.otherProducts],
+          });
+        });
+      });
+
+      setRecommendedBundles(Array.from(bundles.values()));
+    } catch {
+      setRecommendedBundles([]);
+    }
+  };
 
   const loadCart = async () => {
     setIsLoading(true);
@@ -60,7 +123,9 @@ export default function CartPage() {
       }
       if (!response.ok)
         throw new Error(json?.error ?? "Gagal memuat keranjang");
-      setCart(json as ApiCart);
+      const nextCart = json as ApiCart;
+      setCart(nextCart);
+      void loadBundleRecommendations(nextCart.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat keranjang");
     } finally {
@@ -72,7 +137,9 @@ export default function CartPage() {
     void loadCart(); // eslint-disable-line react-hooks/set-state-in-effect
     fetch("/api/points")
       .then((response) => (response.ok ? response.json() : null))
-      .then((data: { balance?: number } | null) => setPointsBalance(data?.balance ?? 0))
+      .then((data: { balance?: number } | null) =>
+        setPointsBalance(data?.balance ?? 0),
+      )
       .catch(() => setPointsBalance(0));
     const saved = loadSavedAddresses();
     setAddresses(saved);
@@ -127,6 +194,33 @@ export default function CartPage() {
       setError(err instanceof Error ? err.message : "Gagal menghapus produk");
     } finally {
       setBusyItemId(null);
+    }
+  };
+
+  const addBundleToCart = async (bundle: CartBundle) => {
+    setBusyBundleId(bundle.id);
+    setError(null);
+    try {
+      for (const product of bundle.products) {
+        const response = await fetch("/api/cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product.id,
+            quantity: 1,
+            bundleId: bundle.id,
+          }),
+        });
+        const json = await response.json().catch(() => null);
+        if (!response.ok)
+          throw new Error(json?.error ?? "Gagal menambahkan paket");
+      }
+      await loadCart();
+      setAddressModalOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menambahkan paket");
+    } finally {
+      setBusyBundleId(null);
     }
   };
 
@@ -224,6 +318,98 @@ export default function CartPage() {
                     onRemove={removeItem}
                   />
                 ))}
+
+                {!isLoading && recommendedBundles.length > 0 && (
+                  <section className="mt-3 overflow-hidden rounded-2xl border border-marica-amber/25 bg-[linear-gradient(135deg,#fffdf8_0%,#fff5df_100%)] p-4 shadow-sm sm:p-5">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="font-body text-xs font-semibold uppercase tracking-[0.12em] text-marica-amber-text">
+                          Pilihan untuk keranjangmu
+                        </p>
+                        <h2 className="mt-1 font-display text-lg font-bold text-marica-ink sm:text-xl">
+                          Paket lebih hemat
+                        </h2>
+                        <p className="mt-1 font-body text-xs text-marica-ink-soft">
+                          Gabungkan produk pilihan dan dapatkan harga spesial.
+                        </p>
+                      </div>
+                      <BadgePercent className="hidden h-7 w-7 text-marica-amber-dark sm:block" />
+                    </div>
+
+                    <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                      {recommendedBundles.map((bundle) => (
+                        <div
+                          key={bundle.id}
+                          className="rounded-xl border border-marica-ink/8 bg-white/90 p-3.5"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h3 className="truncate font-body text-sm font-bold text-marica-ink">
+                                {bundle.name || "Paket Hemat"}
+                              </h3>
+                              <p className="mt-1 font-body text-xs text-marica-ink-soft">
+                                {bundle.products.length} produk dalam satu paket
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-marica-rose-deep/10 px-2 py-1 font-body text-[11px] font-bold text-marica-rose-deep">
+                              Hemat {formatRupiah(bundle.savings)}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                            {bundle.products.map((product) => (
+                              <Link
+                                key={product.id}
+                                href={`/belanja/${product.slug}`}
+                                className="w-20 shrink-0"
+                              >
+                                <div className="h-16 overflow-hidden rounded-lg bg-marica-cream">
+                                  {product.images[0]?.url && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={product.images[0].url}
+                                      alt={product.name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  )}
+                                </div>
+                                <p className="mt-1 line-clamp-2 font-body text-[11px] leading-tight text-marica-ink-soft">
+                                  {product.name}
+                                </p>
+                              </Link>
+                            ))}
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between gap-3 border-t border-marica-ink/8 pt-3">
+                            <div>
+                              <p className="font-body text-[11px] text-marica-ink-soft">
+                                Harga paket
+                              </p>
+                              <p className="font-display text-base font-bold text-marica-ink">
+                                {formatRupiah(bundle.bundlePrice)}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => addBundleToCart(bundle)}
+                              disabled={busyBundleId !== null}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-marica-amber-dark px-3.5 py-2 font-body text-xs font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {busyBundleId === bundle.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <ShoppingCart className="h-3.5 w-3.5" />
+                              )}
+                              {busyBundleId === bundle.id
+                                ? "Menambahkan"
+                                : "Tambah Paket"}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
 
               <aside className="h-fit rounded-2xl border border-marica-ink/5 bg-white p-5 shadow-sm">
@@ -234,13 +420,22 @@ export default function CartPage() {
                   <span>{cart.items.length} produk</span>
                   <span>{formatRupiah(cart.subtotal)}</span>
                 </div>
+                {!!cart.bundleDiscount && cart.bundleDiscount > 0 && (
+                  <div className="mt-2 flex items-center justify-between font-body text-xs text-marica-green">
+                    <span>Hemat paket</span>
+                    <span>-{formatRupiah(cart.bundleDiscount)}</span>
+                  </div>
+                )}
                 <div className="mt-3 flex items-center justify-between border-t border-marica-ink/10 pt-3 font-body font-bold text-marica-ink">
                   <span>Subtotal</span>
                   <span>{formatRupiah(cart.subtotal)}</span>
                 </div>
                 <div className="mt-4 rounded-xl bg-marica-cream/60 p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <label htmlFor="redeem-points" className="font-body text-sm font-semibold text-marica-ink">
+                    <label
+                      htmlFor="redeem-points"
+                      className="font-body text-sm font-semibold text-marica-ink"
+                    >
                       Pakai Marica Points
                     </label>
                     <span className="font-body text-xs text-marica-ink-soft">
@@ -255,15 +450,25 @@ export default function CartPage() {
                       max={pointsBalance}
                       value={redeemPoints || ""}
                       onChange={(event) => {
-                        const next = Math.max(0, Math.min(pointsBalance, Number(event.target.value) || 0));
+                        const next = Math.max(
+                          0,
+                          Math.min(
+                            pointsBalance,
+                            Number(event.target.value) || 0,
+                          ),
+                        );
                         setRedeemPoints(Math.floor(next));
                       }}
                       className="w-full rounded-lg border border-marica-ink/10 bg-white px-3 py-2 font-body text-sm text-marica-ink outline-none focus:border-marica-amber"
                       placeholder="0"
                     />
-                    <span className="shrink-0 font-body text-xs text-marica-ink-soft">= Rp{redeemPoints.toLocaleString("id-ID")}</span>
+                    <span className="shrink-0 font-body text-xs text-marica-ink-soft">
+                      = Rp{redeemPoints.toLocaleString("id-ID")}
+                    </span>
                   </div>
-                  <p className="mt-2 font-body text-xs text-marica-ink-soft">1 poin = Rp1. Potongan dihitung saat ongkir dipilih.</p>
+                  <p className="mt-2 font-body text-xs text-marica-ink-soft">
+                    1 poin = Rp1. Potongan dihitung saat ongkir dipilih.
+                  </p>
                 </div>
                 <button
                   type="button"
