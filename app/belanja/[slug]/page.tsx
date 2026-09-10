@@ -29,6 +29,7 @@ import AddressModal, {
   type ShippingAddress,
 } from "../../components/belanja/AddressModal";
 import { useBuyNow } from "../../components/belanja/useBuyNow";
+import FeedbackPopup from "../../components/FeedbackPopup";
 import type {
   ApiProduct,
   ApiProductImage,
@@ -82,6 +83,7 @@ export default function ProductDetailPage() {
     addToCart,
     startBuyNow,
     confirmCheckout,
+    setError: setBuyError,
   } = useBuyNow();
 
   useEffect(() => {
@@ -271,23 +273,23 @@ export default function ProductDetailPage() {
           )}
 
           {!isLoading && !error && product && (
-            <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)] lg:gap-10">
               {/* Gallery */}
-              <div>
-                <div className="relative aspect-square overflow-hidden rounded-2xl border border-marica-ink/5 bg-marica-cream">
+              <div className="mx-auto w-full max-w-[540px]">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-marica-amber/20 bg-[linear-gradient(145deg,#fffdf8_0%,#fff5df_100%)] shadow-[0_14px_35px_rgba(120,60,10,0.08)]">
                   {activeImage?.isVideo ? (
                     <video
                       key={activeImage.id}
                       src={activeImage.url}
                       controls
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain p-4 sm:p-7"
                     />
                   ) : activeImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={activeImage.url}
                       alt={product.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain p-4 transition duration-300 sm:p-7"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center font-display text-sm text-marica-ink-soft/50">
@@ -296,7 +298,7 @@ export default function ProductDetailPage() {
                   )}
 
                   <span
-                    className={`absolute left-3 top-3 rounded-full px-2.5 py-1 font-body text-[11px] font-semibold uppercase tracking-wide ${
+                    className={`absolute left-4 top-4 rounded-full px-2.5 py-1 font-body text-[11px] font-semibold uppercase tracking-wide shadow-sm ${
                       product.isBestSeller
                         ? "bg-marica-amber-dark text-white"
                         : inStock
@@ -313,13 +315,13 @@ export default function ProductDetailPage() {
                 </div>
 
                 {images.length > 1 && (
-                  <div className="mt-3 flex gap-2.5">
+                  <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1">
                     {images.map((img, i) => (
                       <button
                         key={img.id}
                         type="button"
                         onClick={() => setActiveImageIdx(i)}
-                        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition sm:h-20 sm:w-20 ${
+                        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 bg-marica-cream transition sm:h-[72px] sm:w-[72px] ${
                           i === activeImageIdx
                             ? "border-marica-amber-dark"
                             : "border-transparent"
@@ -344,8 +346,13 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Info */}
-              <div className="flex flex-col">
-                <h1 className="font-display text-xl font-bold leading-tight text-marica-ink sm:text-2xl lg:text-3xl">
+              <div className="flex flex-col rounded-3xl border border-marica-ink/5 bg-white p-5 shadow-[0_14px_35px_rgba(120,60,10,0.07)] sm:p-7">
+                {product.category && (
+                  <p className="mb-2 font-body text-xs font-semibold uppercase tracking-[0.14em] text-marica-amber-text">
+                    {product.category.name}
+                  </p>
+                )}
+                <h1 className="font-display text-xl font-bold leading-tight text-marica-ink sm:text-2xl lg:text-[2rem]">
                   {product.name}
                 </h1>
 
@@ -507,17 +514,6 @@ export default function ProductDetailPage() {
                       </button>
                     )}
                   </div>
-
-                  {addedMessage && (
-                    <p className="mt-3 font-body text-xs font-medium text-marica-green">
-                      {addedMessage}
-                    </p>
-                  )}
-                  {buyError && (
-                    <p className="mt-3 font-body text-xs text-marica-rose-deep">
-                      {buyError}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -618,6 +614,12 @@ export default function ProductDetailPage() {
         isSubmitting={isCheckingOut}
         submitError={buyError}
       />
+      <FeedbackPopup
+        message={addedMessage}
+        type="success"
+        onClose={() => setAddedMessage(null)}
+      />
+      <FeedbackPopup message={buyError} onClose={() => setBuyError(null)} />
     </div>
   );
 }
@@ -675,8 +677,8 @@ function BundleTile({
 
 function DetailSkeleton() {
   return (
-    <div className="grid animate-pulse gap-8 lg:grid-cols-2 lg:gap-12">
-      <div className="aspect-square rounded-2xl bg-marica-ink/5" />
+    <div className="grid animate-pulse items-start gap-7 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)] lg:gap-10">
+      <div className="mx-auto aspect-[4/3] w-full max-w-[540px] rounded-3xl bg-marica-ink/5" />
       <div className="flex flex-col gap-3">
         <div className="h-7 w-3/4 rounded bg-marica-ink/5" />
         <div className="h-4 w-1/3 rounded bg-marica-ink/5" />

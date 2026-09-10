@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Coins, History, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import FeedbackPopup from "../components/FeedbackPopup";
 
 type PointTransaction = {
   id: string;
@@ -53,7 +54,9 @@ export default function PointsPage() {
         setTransactions(data.transactions);
       })
       .catch((reason) => {
-        setError(reason instanceof Error ? reason.message : "Gagal memuat poin");
+        setError(
+          reason instanceof Error ? reason.message : "Gagal memuat poin",
+        );
       })
       .finally(() => setLoading(false));
   }, [router]);
@@ -71,10 +74,15 @@ export default function PointsPage() {
           </Link>
 
           <div className="mt-7">
-            <p className="font-body text-sm font-semibold text-marica-amber-text">MARICA REWARDS</p>
-            <h1 className="mt-1 font-display text-3xl font-bold text-marica-ink">Marica Points</h1>
+            <p className="font-body text-sm font-semibold text-marica-amber-text">
+              MARICA REWARDS
+            </p>
+            <h1 className="mt-1 font-display text-3xl font-bold text-marica-ink">
+              Marica Points
+            </h1>
             <p className="mt-2 font-body text-marica-ink-soft">
-              Kumpulkan poin dari transaksi dan gunakan sebagai potongan belanja.
+              Kumpulkan poin dari transaksi dan gunakan sebagai potongan
+              belanja.
             </p>
           </div>
 
@@ -83,39 +91,56 @@ export default function PointsPage() {
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15">
                 <Coins className="h-6 w-6" />
               </span>
-              <span className="font-body text-sm font-medium text-white/80">Saldo poin kamu</span>
+              <span className="font-body text-sm font-medium text-white/80">
+                Saldo poin kamu
+              </span>
             </div>
             <p className="mt-5 font-display text-4xl font-bold">
-              {loading ? "..." : balance.toLocaleString("id-ID")} <span className="text-xl">poin</span>
+              {loading ? "..." : balance.toLocaleString("id-ID")}{" "}
+              <span className="text-xl">poin</span>
             </p>
-            <p className="mt-2 font-body text-sm text-white/80">1 poin bernilai Rp1 saat checkout.</p>
+            <p className="mt-2 font-body text-sm text-white/80">
+              1 poin bernilai Rp1 saat checkout.
+            </p>
           </div>
 
           <section className="mt-7 rounded-2xl border border-marica-ink/5 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex items-center gap-2">
               <History className="h-5 w-5 text-marica-amber-text" />
-              <h2 className="font-display text-xl font-bold text-marica-ink">Riwayat poin</h2>
+              <h2 className="font-display text-xl font-bold text-marica-ink">
+                Riwayat poin
+              </h2>
             </div>
 
-            {error && <p className="mt-5 rounded-xl bg-marica-rose-deep/5 p-3 font-body text-sm text-marica-rose-deep">{error}</p>}
-            {loading && <Loader2 className="mx-auto mt-8 h-6 w-6 animate-spin text-marica-amber-text" />}
+            {loading && (
+              <Loader2 className="mx-auto mt-8 h-6 w-6 animate-spin text-marica-amber-text" />
+            )}
             {!loading && !error && transactions.length === 0 && (
-              <p className="mt-6 text-center font-body text-sm text-marica-ink-soft">Belum ada aktivitas poin.</p>
+              <p className="mt-6 text-center font-body text-sm text-marica-ink-soft">
+                Belum ada aktivitas poin.
+              </p>
             )}
             {!loading && transactions.length > 0 && (
               <div className="mt-4 divide-y divide-marica-ink/10">
                 {transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between gap-4 py-4">
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between gap-4 py-4"
+                  >
                     <div className="min-w-0">
                       <p className="truncate font-body text-sm font-semibold text-marica-ink">
                         {transaction.reason ?? typeLabels[transaction.type]}
                       </p>
                       <p className="mt-1 font-body text-xs text-marica-ink-soft">
-                        {typeLabels[transaction.type]} · {formatDate(transaction.createdAt)}
+                        {typeLabels[transaction.type]} ·{" "}
+                        {formatDate(transaction.createdAt)}
                       </p>
                     </div>
-                    <span className={`shrink-0 font-body text-sm font-bold ${transaction.pointsDelta >= 0 ? "text-emerald-600" : "text-marica-rose-deep"}`}>
-                      {transaction.pointsDelta >= 0 ? "+" : ""}{transaction.pointsDelta.toLocaleString("id-ID")}
+                    <span
+                      className={`shrink-0 font-body text-sm font-bold ${transaction.pointsDelta >= 0 ? "text-emerald-600" : "text-marica-rose-deep"}`}
+                    >
+                      {transaction.pointsDelta >= 0 ? "+" : ""}
+                      {transaction.pointsDelta.toLocaleString("id-ID")}
                     </span>
                   </div>
                 ))}
@@ -125,6 +150,7 @@ export default function PointsPage() {
         </div>
       </main>
       <Footer />
+      <FeedbackPopup message={error} onClose={() => setError(null)} />
     </div>
   );
 }

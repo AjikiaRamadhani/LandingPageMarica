@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, Package, Store, XCircle } from "lucide-react";
 
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
+import FeedbackPopup from "../../../components/FeedbackPopup";
 import { payWithSnap } from "../../../components/belanja/snap";
 import {
   ORDER_STATUS_LABEL,
@@ -133,11 +134,7 @@ export default function OrderDetailPage() {
           {isLoading && (
             <div className="h-72 animate-pulse rounded-2xl bg-marica-ink/5" />
           )}
-          {!isLoading && error && !order && (
-            <div className="rounded-2xl bg-marica-rose-deep/5 p-6 font-body text-sm text-marica-rose-deep">
-              {error}
-            </div>
-          )}
+          {!isLoading && error && !order && <div className="h-24" />}
 
           {!isLoading && order && (
             <>
@@ -160,12 +157,6 @@ export default function OrderDetailPage() {
                   {ORDER_STATUS_LABEL[order.status]}
                 </span>
               </div>
-
-              {error && (
-                <p className="mt-4 rounded-xl bg-marica-rose-deep/5 p-3 font-body text-sm text-marica-rose-deep">
-                  {error}
-                </p>
-              )}
 
               <section className="mt-6 rounded-2xl border border-marica-ink/5 bg-white p-5 shadow-sm sm:p-6">
                 <h2 className="font-display text-lg font-bold text-marica-ink">
@@ -280,6 +271,7 @@ export default function OrderDetailPage() {
         </div>
       </main>
       <Footer />
+      <FeedbackPopup message={error} onClose={() => setError(null)} />
     </div>
   );
 }

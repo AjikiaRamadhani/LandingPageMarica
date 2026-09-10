@@ -7,6 +7,7 @@ import { Search, ArrowLeft, Store, PackageSearch, Loader2 } from "lucide-react";
 
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
+import FeedbackPopup from "../../components/FeedbackPopup";
 import { payWithSnap } from "../../components/belanja/snap";
 import {
   ORDER_STATUS_LABEL,
@@ -29,7 +30,11 @@ function formatRupiah(value: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -42,7 +47,8 @@ export default function PesananSayaPage() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["key"]>("Semua");
+  const [activeTab, setActiveTab] =
+    useState<(typeof TABS)[number]["key"]>("Semua");
   const [searchInput, setSearchInput] = useState("");
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
@@ -53,7 +59,9 @@ export default function PesananSayaPage() {
     fetch("/api/orders")
       .then(async (res) => {
         if (res.status === 401) {
-          router.push(`/login?callbackUrl=${encodeURIComponent("/belanja/pesanan-saya")}`);
+          router.push(
+            `/login?callbackUrl=${encodeURIComponent("/belanja/pesanan-saya")}`,
+          );
           return null;
         }
         const json = await res.json().catch(() => null);
@@ -89,7 +97,9 @@ export default function PesananSayaPage() {
   const handleBayarSekarang = async (order: ApiOrder) => {
     setPayError(null);
     if (!order.midtransSnapToken) {
-      setPayError("Token pembayaran untuk pesanan ini tidak ditemukan. Coba muat ulang halaman.");
+      setPayError(
+        "Token pembayaran untuk pesanan ini tidak ditemukan. Coba muat ulang halaman.",
+      );
       return;
     }
     setPayingOrderId(order.id);
@@ -97,11 +107,14 @@ export default function PesananSayaPage() {
       await payWithSnap(order.midtransSnapToken, {
         onSuccess: () => loadOrders(),
         onPending: () => loadOrders(),
-        onError: () => setPayError("Pembayaran gagal diproses. Silakan coba lagi."),
+        onError: () =>
+          setPayError("Pembayaran gagal diproses. Silakan coba lagi."),
         onClose: () => loadOrders(),
       });
     } catch (err) {
-      setPayError(err instanceof Error ? err.message : "Gagal membuka halaman pembayaran");
+      setPayError(
+        err instanceof Error ? err.message : "Gagal membuka halaman pembayaran",
+      );
     } finally {
       setPayingOrderId(null);
     }
@@ -149,7 +162,9 @@ export default function PesananSayaPage() {
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
                   className={`relative shrink-0 whitespace-nowrap pb-3 font-body text-sm font-medium transition ${
-                    active ? "text-marica-amber-dark" : "text-marica-ink-soft hover:text-marica-ink"
+                    active
+                      ? "text-marica-amber-dark"
+                      : "text-marica-ink-soft hover:text-marica-ink"
                   }`}
                 >
                   {tab.label}
@@ -161,15 +176,14 @@ export default function PesananSayaPage() {
             })}
           </div>
 
-          {payError && (
-            <p className="mt-4 font-body text-sm text-marica-rose-deep">{payError}</p>
-          )}
-
           {/* Orders */}
           <div className="mt-6 flex flex-col gap-5">
             {isLoading &&
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-40 animate-pulse rounded-2xl bg-marica-ink/5" />
+                <div
+                  key={i}
+                  className="h-40 animate-pulse rounded-2xl bg-marica-ink/5"
+                />
               ))}
 
             {!isLoading && error && (
@@ -205,6 +219,8 @@ export default function PesananSayaPage() {
       </main>
 
       <Footer />
+      <FeedbackPopup message={error} onClose={() => setError(null)} />
+      <FeedbackPopup message={payError} onClose={() => setPayError(null)} />
     </div>
   );
 }
@@ -229,11 +245,15 @@ function OrderCard({
         <span className="flex items-center gap-2 font-body text-sm font-semibold text-marica-ink">
           <Store className="h-4 w-4 text-marica-ink-soft" />
           Marica Official Store
-          <span className="font-normal text-marica-ink-soft">· {formatDate(order.createdAt)}</span>
+          <span className="font-normal text-marica-ink-soft">
+            · {formatDate(order.createdAt)}
+          </span>
         </span>
 
         <span className="flex items-center gap-2.5">
-          <span className="font-body text-xs text-marica-ink-soft">{order.orderNumber}</span>
+          <span className="font-body text-xs text-marica-ink-soft">
+            {order.orderNumber}
+          </span>
           <span
             className={`rounded-full px-2.5 py-1 font-body text-[11px] font-semibold ${ORDER_STATUS_STYLE[order.status]}`}
           >
@@ -249,7 +269,11 @@ function OrderCard({
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-marica-cream">
               {item.productImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.productImageUrl} alt={item.productName} className="h-full w-full object-cover" />
+                <img
+                  src={item.productImageUrl}
+                  alt={item.productName}
+                  className="h-full w-full object-cover"
+                />
               ) : null}
             </div>
             <div className="min-w-0 flex-1">
@@ -267,7 +291,9 @@ function OrderCard({
       {/* Total + actions */}
       <div className="flex flex-col items-end gap-3 border-t border-marica-ink/5 pt-4">
         <div className="text-right">
-          <p className="font-body text-xs text-marica-ink-soft">Total Pesanan</p>
+          <p className="font-body text-xs text-marica-ink-soft">
+            Total Pesanan
+          </p>
           <p className="font-display text-xl font-bold text-marica-amber-text">
             {formatRupiah(order.total)}
           </p>

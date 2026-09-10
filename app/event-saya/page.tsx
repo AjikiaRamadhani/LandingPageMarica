@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import FeedbackPopup from "@/app/components/FeedbackPopup";
 import { CalendarDays, Ticket } from "lucide-react";
 
 type Booking = {
@@ -52,11 +53,6 @@ export default function MyEventsPage() {
         <p className="mt-2 text-sm text-marica-ink-soft">
           Lihat status booking dan tiket event kamu.
         </p>
-        {error && (
-          <p className="mt-6 rounded-xl bg-marica-rose-deep/10 px-4 py-3 text-sm text-marica-rose-deep">
-            {error}
-          </p>
-        )}
         <div className="mt-8 flex flex-col gap-4">
           {bookings.map((booking) => (
             <article
@@ -105,6 +101,7 @@ export default function MyEventsPage() {
         </div>
       </main>
       <Footer />
+      <FeedbackPopup message={error} onClose={() => setError(null)} />
     </div>
   );
 }

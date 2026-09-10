@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ClipboardList,
   Coins,
+  ShoppingCart,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
@@ -54,7 +55,9 @@ export default function Navbar() {
       (link) =>
         pathname === link.href ||
         (link.href !== "/" && pathname?.startsWith(`${link.href}/`)),
-    )?.href ?? pathname ?? "/";
+    )?.href ??
+    pathname ??
+    "/";
 
   useEffect(() => {
     fetch("/api/company")
@@ -223,6 +226,14 @@ export default function Navbar() {
                       Pesanan Saya
                     </Link>
                     <Link
+                      href="/belanja/keranjang"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      Keranjang
+                    </Link>
+                    <Link
                       href="/poin"
                       onClick={() => setProfileOpen(false)}
                       className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
@@ -376,6 +387,14 @@ export default function Navbar() {
                     >
                       <ClipboardList className="h-4 w-4" />
                       Pesanan Saya
+                    </Link>
+                    <Link
+                      href="/belanja/keranjang"
+                      onClick={() => setIsOpen(false)}
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      Keranjang
                     </Link>
                     <Link
                       href="/poin"

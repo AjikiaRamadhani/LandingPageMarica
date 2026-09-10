@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import FeedbackPopup from "./FeedbackPopup";
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -28,13 +31,20 @@ export default function NewsletterForm() {
       setEmail("");
     } catch (err) {
       setStatus("error");
-      setMessage(err instanceof Error ? err.message : "Gagal berlangganan, coba lagi nanti");
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Gagal berlangganan, coba lagi nanti",
+      );
     }
   }
 
   return (
     <div className="w-full max-w-md">
-      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2 sm:flex-row">
+      <form
+        onSubmit={handleSubmit}
+        className="flex w-full flex-col gap-2 sm:flex-row"
+      >
         <input
           type="email"
           required
@@ -52,15 +62,14 @@ export default function NewsletterForm() {
           {status === "loading" ? "Mengirim..." : "Langganan"}
         </button>
       </form>
-      {message && (
-        <p
-          className={`mt-2 font-body text-xs ${
-            status === "error" ? "text-rose-600" : "text-emerald-800"
-          }`}
-        >
-          {message}
-        </p>
-      )}
+      <FeedbackPopup
+        message={message}
+        type={status === "success" ? "success" : "error"}
+        onClose={() => {
+          setMessage(null);
+          setStatus("idle");
+        }}
+      />
     </div>
   );
 }
