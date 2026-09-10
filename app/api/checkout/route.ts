@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { snap } from "@/lib/midtrans";
-import { calculatePointsDiscount } from "@/lib/points";
+import { calculatePointsDiscount, refundRedeemedPointsInTransaction } from "@/lib/points";
 import {
   validateOptionalText,
   validateText,
@@ -312,58 +312,97 @@ export async function POST(request: Request) {
         if (changedVoucher.count !== 1) throw Object.assign(new Error("VOUCHER_UNAVAILABLE"), { statusCode: 400, detail: "Voucher sudah digunakan" });
       }
 
-      return { order, subtotal, total, pointsDiscount, voucherDiscount };
+      return { order, subtotal, total, pointsUsed, pointsDiscount, voucherDiscount };
     });
 
-    const { order, total, pointsDiscount, voucherDiscount } = checkoutResult;
+    const { order, total, pointsUsed, pointsDiscount, voucherDiscount } = checkoutResult;
+
+    const itemDetailsBase = [
+      ...order.items.map((item) => ({
+        id: item.productId,
+        // Use the effective line subtotal so Midtrans matches bundle discounts.
+        price: item.subtotal,
+        quantity: 1,
+        name: `${item.productName} (${item.quantity}x)`.slice(0, 50),
+      })),
+      {
+        id: "SHIPPING",
+        price: shippingCostValue,
+        quantity: 1,
+        name: `Ongkir (${shippingCourier ?? "-"} ${shippingService ?? ""})`,
+      },
+    ];
+    const itemDetailsBaseTotal = itemDetailsBase.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const bundleDiscount = Math.max(0, itemDetailsBaseTotal - total - pointsDiscount - voucherDiscount);
+    const itemDetails = [
+      ...itemDetailsBase,
+      ...(bundleDiscount > 0
+        ? [{ id: "BUNDLE_DISCOUNT", price: -bundleDiscount, quantity: 1, name: "Diskon Paket Hemat" }]
+        : []),
+      ...(pointsDiscount > 0
+        ? [{ id: "POINTS_DISCOUNT", price: -pointsDiscount, quantity: 1, name: "Diskon Marica Points" }]
+        : []),
+      ...(voucherDiscount > 0
+        ? [{ id: "VOUCHER_DISCOUNT", price: -voucherDiscount, quantity: 1, name: "Diskon Voucher Marica" }]
+        : []),
+    ];
+    const itemDetailsTotal = itemDetails.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    if (itemDetailsTotal !== total) {
+      console.error("[POST /api/checkout] Midtrans item total mismatch", {
+        orderId: order.orderNumber,
+        grossAmount: total,
+        itemDetailsTotal,
+      });
+      throw Object.assign(new Error("MIDTRANS_ITEM_TOTAL_MISMATCH"), {
+        statusCode: 400,
+        detail: "Total item pesanan tidak sesuai dengan total pembayaran",
+      });
+    }
 
     // Minta Snap Token dari Midtrans
-    const transaction = await snap.createTransaction({
-      transaction_details: {
-        order_id: orderNumber,
-        gross_amount: total,
-      },
-      customer_details: {
-        first_name: shippingNameValue,
-        phone: shippingPhoneValue,
-        shipping_address: {
-          address: shippingAddressValue,
-          city: shippingCityValue,
-          postal_code: shippingPostalCodeValue,
+    let transaction;
+    try {
+      transaction = await snap.createTransaction({
+        transaction_details: {
+          order_id: orderNumber,
+          gross_amount: total,
         },
-      },
-      item_details: [
-        ...order.items.map((item) => ({
-          id: item.productId,
-          // Use the effective line subtotal so Midtrans matches the bundle-discounted gross amount.
-          price: item.subtotal,
-          quantity: 1,
-          name: `${item.productName} (${item.quantity}x)`.slice(0, 50),
-        })),
-        {
-          id: "SHIPPING",
-          price: shippingCostValue,
-          quantity: 1,
-          name: `Ongkir (${shippingCourier ?? "-"} ${shippingService ?? ""})`,
+        customer_details: {
+          first_name: shippingNameValue,
+          phone: shippingPhoneValue,
+          shipping_address: {
+            address: shippingAddressValue,
+            city: shippingCityValue,
+            postal_code: shippingPostalCodeValue,
+          },
         },
-        ...(pointsDiscount > 0
-          ? [{
-              id: "POINTS_DISCOUNT",
-              price: -pointsDiscount,
-              quantity: 1,
-              name: "Diskon Marica Points",
-            }]
-          : []),
-        ...(voucherDiscount > 0
-          ? [{ id: "VOUCHER_DISCOUNT", price: -voucherDiscount, quantity: 1, name: "Diskon Voucher Marica" }]
-          : []),
-      ],
-    } as Parameters<typeof snap.createTransaction>[0]);
+        item_details: itemDetails,
+      } as Parameters<typeof snap.createTransaction>[0]);
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { midtransSnapToken: transaction.token },
-    });
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { midtransSnapToken: transaction.token },
+      });
+    } catch (error) {
+      await prisma.$transaction(async (tx) => {
+        if (pointsUsed > 0) {
+          await refundRedeemedPointsInTransaction(tx, {
+            userId: session.user.id,
+            points: pointsUsed,
+            referenceId: order.id,
+            idempotencyKey: `order-points-reversal:${order.id}`,
+          });
+        }
+        if (userVoucherIdValue) {
+          await tx.userVoucher.updateMany({
+            where: { id: userVoucherIdValue, status: "USED" },
+            data: { status: "AVAILABLE", usedAt: null },
+          });
+        }
+        await tx.order.delete({ where: { id: order.id } });
+      });
+      throw error;
+    }
 
     // Kosongin keranjang setelah order berhasil dibuat
     await prisma.cartItem.deleteMany({
