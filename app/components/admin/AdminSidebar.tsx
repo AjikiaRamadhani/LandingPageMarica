@@ -8,15 +8,13 @@ import { signOut } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
-  GraduationCap,
   Newspaper,
   Tags,
   ShoppingBag,
   FileDown,
   ClipboardList,
   CalendarDays,
-  Palette,
-  Briefcase,
+  BarChart3,
   Settings,
   Lock,
   Menu,
@@ -29,23 +27,11 @@ import {
 // Struktur daftar navigasi utama
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, enabled: true },
-  {
-    label: "Program",
-    href: "/admin/program",
-    icon: GraduationCap,
-    enabled: false,
-  },
   // Group Artikel & Submenu Kategori ditangani secara khusus di komponen Nav
   {
-    label: "Belanja",
+    label: "Produk",
     href: "/admin/belanja",
     icon: ShoppingBag,
-    enabled: true,
-  },
-  {
-    label: "Printable",
-    href: "/admin/printables",
-    icon: FileDown,
     enabled: true,
   },
   {
@@ -54,18 +40,11 @@ const navItems = [
     icon: ClipboardList,
     enabled: true,
   },
-  { label: "Event", href: "/admin/event", icon: CalendarDays, enabled: true },
   {
-    label: "Kreativitas",
-    href: "/admin/kreativitas",
-    icon: Palette,
-    enabled: false,
-  },
-  {
-    label: "Business",
-    href: "/admin/business",
-    icon: Briefcase,
-    enabled: false,
+    label: "Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
+    enabled: true,
   },
   {
     label: "Pengaturan",
@@ -184,17 +163,17 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
 
-  // State untuk mengontrol tampil/sembunyinya submenu Kategori
-  // Default terbuka (true) jika halaman aktif ada di bawah /admin/artikel atau /admin/kategori
-  const isArticleRoute =
-    pathname.startsWith("/admin/artikel") ||
-    pathname.startsWith("/admin/kategori");
   const [isArticlesExpanded, setIsArticlesExpanded] = useState(true);
 
   const isArtikelActive =
     pathname === "/admin/artikel" || pathname.startsWith("/admin/artikel/");
   const isKategoriActive =
     pathname === "/admin/kategori" || pathname.startsWith("/admin/kategori/");
+  const isPrintableActive =
+    pathname === "/admin/printables" ||
+    pathname.startsWith("/admin/printables/");
+  const isEventActive =
+    pathname === "/admin/event" || pathname.startsWith("/admin/event/");
 
   return (
     <>
@@ -235,19 +214,6 @@ function SidebarContent({
             Dashboard
           </span>
         </Link>
-
-        {/* Program (Disabled) */}
-        <div
-          aria-disabled
-          title="Segera hadir"
-          className="flex cursor-not-allowed items-center justify-between rounded-xl px-3.5 py-2.5 font-body text-sm text-marica-ink-soft/40"
-        >
-          <span className="flex items-center gap-3">
-            <GraduationCap className="h-4.5 w-4.5" />
-            Program
-          </span>
-          <Lock className="h-3 w-3" />
-        </div>
 
         {/* --- GROUP MENU ARTIKEL + SUBMENU KATEGORI --- */}
         <div className="flex flex-col gap-1">
@@ -336,13 +302,67 @@ function SidebarContent({
                     Kategori
                   </span>
                 </Link>
+                <Link
+                  href="/admin/printables"
+                  onClick={onNavigate}
+                  className="relative block"
+                >
+                  {isPrintableActive && (
+                    <motion.span
+                      layoutId="admin-nav-active"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 32,
+                      }}
+                      className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                    />
+                  )}
+                  <span
+                    className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                      isPrintableActive
+                        ? "text-white"
+                        : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                    }`}
+                  >
+                    <FileDown className="h-4.5 w-4.5" />
+                    Printable
+                  </span>
+                </Link>
+                <Link
+                  href="/admin/event"
+                  onClick={onNavigate}
+                  className="relative block"
+                >
+                  {isEventActive && (
+                    <motion.span
+                      layoutId="admin-nav-active"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 32,
+                      }}
+                      className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                    />
+                  )}
+                  <span
+                    className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                      isEventActive
+                        ? "text-white"
+                        : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                    }`}
+                  >
+                    <CalendarDays className="h-4.5 w-4.5" />
+                    Event
+                  </span>
+                </Link>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Sisa Menu Navigasi */}
-        {navItems.slice(2).map((item) => {
+        {navItems.slice(1).map((item) => {
           const isActive =
             item.enabled &&
             pathname.startsWith(item.href) &&
