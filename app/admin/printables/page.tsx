@@ -90,7 +90,9 @@ export default function AdminPrintablesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
-  const [printableToDelete, setPrintableToDelete] = useState<Printable | null>(null);
+  const [printableToDelete, setPrintableToDelete] = useState<Printable | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
   const loadPrintables = useCallback(async () => {
@@ -277,9 +279,12 @@ export default function AdminPrintablesPage() {
     setIsDeleting(true);
     setActionError(null);
     try {
-      const response = await fetch(`/api/admin/printables/${printableToDelete.id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/admin/printables/${printableToDelete.id}`,
+        {
+          method: "DELETE",
+        },
+      );
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.error ?? "Gagal menonaktifkan printable");
@@ -709,7 +714,9 @@ export default function AdminPrintablesPage() {
         description={
           <>
             Printable{" "}
-            <span className="font-semibold text-marica-ink">&ldquo;{printableToDelete?.title}&rdquo;</span>{" "}
+            <span className="font-semibold text-marica-ink">
+              &ldquo;{printableToDelete?.title}&rdquo;
+            </span>{" "}
             tidak akan ditampilkan lagi kepada pengguna.
           </>
         }

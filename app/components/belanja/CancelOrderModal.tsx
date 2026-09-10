@@ -40,7 +40,12 @@ export default function CancelOrderModal({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 15 }}
+              transition={{
+                delay: 0.1,
+                type: "spring",
+                stiffness: 300,
+                damping: 15,
+              }}
               className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-marica-rose-deep/10 text-marica-rose-deep"
             >
               <AlertTriangle className="h-7 w-7" />
@@ -50,7 +55,10 @@ export default function CancelOrderModal({
               Batalkan Pesanan?
             </h3>
             <p className="mt-2 font-body text-sm text-marica-ink-soft">
-              Pesanan <span className="font-semibold text-marica-ink">&ldquo;{orderNumber}&rdquo;</span>{" "}
+              Pesanan{" "}
+              <span className="font-semibold text-marica-ink">
+                &ldquo;{orderNumber}&rdquo;
+              </span>{" "}
               tidak dapat dibayar lagi setelah dibatalkan.
             </p>
 
@@ -61,7 +69,9 @@ export default function CancelOrderModal({
                 className="mt-4 flex items-start gap-2 rounded-xl bg-marica-rose-deep/10 px-3.5 py-2.5 text-left"
               >
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-marica-rose-deep" />
-                <p className="font-body text-sm text-marica-rose-deep">{error}</p>
+                <p className="font-body text-sm text-marica-rose-deep">
+                  {error}
+                </p>
               </motion.div>
             )}
 

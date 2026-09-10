@@ -280,7 +280,7 @@ export default function OrderDetailPage() {
       <Footer />
       <FeedbackPopup message={error} onClose={() => setError(null)} />
       <CancelOrderModal
-        orderNumber={cancelModalOpen ? order?.orderNumber ?? null : null}
+        orderNumber={cancelModalOpen ? (order?.orderNumber ?? null) : null}
         isCancelling={isCancelling}
         error={cancelError}
         onCancel={closeCancelModal}

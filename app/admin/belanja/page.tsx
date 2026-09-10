@@ -202,9 +202,12 @@ export default function AdminBelanjaPage() {
     setIsDeletingBundle(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/admin/product-bundles/${bundleToDelete.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/admin/product-bundles/${bundleToDelete.id}`,
+        {
+          method: "DELETE",
+        },
+      );
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Gagal menghapus paket hemat");
       setBundleToDelete(null);
@@ -731,8 +734,10 @@ export default function AdminBelanjaPage() {
         description={
           <>
             Apakah kamu yakin ingin menghapus paket{" "}
-            <span className="font-semibold text-marica-ink">&ldquo;{bundleToDelete?.name ?? "Tanpa nama"}&rdquo;</span>?
-            Tindakan ini tidak dapat dibatalkan.
+            <span className="font-semibold text-marica-ink">
+              &ldquo;{bundleToDelete?.name ?? "Tanpa nama"}&rdquo;
+            </span>
+            ? Tindakan ini tidak dapat dibatalkan.
           </>
         }
         confirmLabel="Ya, Hapus"
