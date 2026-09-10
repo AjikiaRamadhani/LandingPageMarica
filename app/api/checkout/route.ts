@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { snap } from "@/lib/midtrans";
+import { calculatePointsDiscount } from "@/lib/points";
 import {
   validateOptionalText,
   validateText,
@@ -10,7 +12,7 @@ import {
 
 function generateOrderNumber() {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const random = Math.floor(1000 + Math.random() * 9000);
+  const random = crypto.randomBytes(4).toString("hex").toUpperCase();
   return `ORD-${date}-${random}`;
 }
 
@@ -33,6 +35,8 @@ export async function POST(request: Request) {
       shippingService,
       shippingCost,
       checkoutProductId,
+      redeemPoints,
+      userVoucherId,
     } = body as {
       shippingName?: string;
       shippingPhone?: string;
@@ -44,6 +48,8 @@ export async function POST(request: Request) {
       shippingService?: string;
       shippingCost?: number;
       checkoutProductId?: string;
+      redeemPoints?: number;
+      userVoucherId?: string;
     };
 
     const shippingNameCheck = validateText(shippingName, "Nama pengirim", 120);
@@ -119,22 +125,36 @@ export async function POST(request: Request) {
       },
     });
 
-    const checkoutItems = checkoutProductId
-      ? cart?.items.filter((item) => item.productId === checkoutProductId) ?? []
+    const checkoutProductIdCheck = validateOptionalText(checkoutProductId, "Produk checkout", 100);
+    if (checkoutProductIdCheck.error || (checkoutProductIdCheck.value !== null && typeof checkoutProductIdCheck.value !== "string")) {
+      return NextResponse.json({ error: checkoutProductIdCheck.error ?? "Produk checkout tidak valid" }, { status: 400 });
+    }
+
+    const checkoutProductIdValue = checkoutProductIdCheck.value;
+    const userVoucherCheck = validateOptionalText(userVoucherId, "Voucher", 100);
+    if (userVoucherCheck.error || (userVoucherCheck.value !== null && typeof userVoucherCheck.value !== "string")) {
+      return NextResponse.json({ error: userVoucherCheck.error ?? "Voucher tidak valid" }, { status: 400 });
+    }
+    const userVoucherIdValue = userVoucherCheck.value;
+    const redeemPointsValue = redeemPoints === undefined ? 0 : redeemPoints;
+    if (!Number.isInteger(redeemPointsValue) || redeemPointsValue < 0) {
+      return NextResponse.json({ error: "Poin yang digunakan tidak valid" }, { status: 400 });
+    }
+    const checkoutItems = checkoutProductIdValue
+      ? cart?.items.filter((item) => item.productId === checkoutProductIdValue) ?? []
       : cart?.items ?? [];
 
     if (!cart || checkoutItems.length === 0) {
       return NextResponse.json({ error: "Keranjang kosong" }, { status: 400 });
     }
 
-    const subtotal = checkoutItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    const total = subtotal + shippingCostValue;
     const orderNumber = generateOrderNumber();
 
-    const order = await prisma.$transaction(async (tx) => {
+    const checkoutResult = await prisma.$transaction(async (tx) => {
       const productIds = checkoutItems.map((item) => item.productId);
-      const lockedProducts = await tx.$queryRaw<Array<{ id: string; name: string; stock: number }>>`
+      const lockedProducts = await tx.$queryRaw<Array<{ id: string; name: string; stock: number; price: number }>>`
         SELECT id, name, stock
+        , price
         FROM "products"
         WHERE id = ANY (${productIds})
         FOR UPDATE
@@ -155,7 +175,39 @@ export async function POST(request: Request) {
         });
       }
 
-      return tx.order.create({
+      const subtotal = checkoutItems.reduce(
+        (sum, item) => sum + (stockMap.get(item.productId)?.price ?? 0) * item.quantity,
+        0,
+      );
+      const totalBeforePoints = subtotal + shippingCostValue;
+      let voucherDiscount = 0;
+      if (userVoucherIdValue) {
+        const userVoucher = await tx.userVoucher.findUnique({ where: { id: userVoucherIdValue }, include: { voucher: true } });
+        if (!userVoucher || userVoucher.userId !== session.user.id || userVoucher.status !== "AVAILABLE" || !userVoucher.voucher.isActive || (userVoucher.voucher.expiresAt && userVoucher.voucher.expiresAt <= new Date())) {
+          throw Object.assign(new Error("VOUCHER_UNAVAILABLE"), { statusCode: 400, detail: "Voucher tidak tersedia" });
+        }
+        voucherDiscount = Math.min(userVoucher.voucher.discountAmount, totalBeforePoints);
+      }
+      const requestedDiscount = calculatePointsDiscount(redeemPointsValue);
+      const pointsDiscount = Math.min(requestedDiscount, totalBeforePoints - voucherDiscount);
+      const pointsUsed = pointsDiscount;
+      const total = totalBeforePoints - voucherDiscount - pointsDiscount;
+
+      if (redeemPointsValue > pointsUsed) {
+        throw Object.assign(new Error("INSUFFICIENT_POINTS"), {
+          statusCode: 400,
+          detail: "Saldo poin tidak cukup atau melebihi total pesanan",
+        });
+      }
+
+      if (total <= 0) {
+        throw Object.assign(new Error("INVALID_POINTS_TOTAL"), {
+          statusCode: 400,
+          detail: "Poin yang digunakan harus menyisakan minimal Rp1 untuk pembayaran",
+        });
+      }
+
+      const order = await tx.order.create({
         data: {
           orderNumber,
           userId: session.user.id,
@@ -169,24 +221,73 @@ export async function POST(request: Request) {
           shippingService: shippingServiceValue,
           shippingCost: shippingCostValue,
           subtotal,
+          pointsUsed,
+          pointsDiscount,
+          userVoucherId: userVoucherIdValue,
           total,
           paymentMethod: "midtrans",
           midtransOrderId: orderNumber,
           items: {
             create: checkoutItems.map((item) => ({
+              ...(stockMap.get(item.productId)
+                ? {
+                    productName: stockMap.get(item.productId)!.name,
+                    price: stockMap.get(item.productId)!.price,
+                  }
+                : {
+                    productName: item.product.name,
+                    price: item.product.price,
+                  }),
               productId: item.productId,
-              productName: item.product.name,
               productImageUrl: item.product.images[0]?.url,
-              price: item.product.price,
               quantity: item.quantity,
-              subtotal: item.product.price * item.quantity,
+              subtotal: (stockMap.get(item.productId)?.price ?? item.product.price) * item.quantity,
               bundleId: item.bundleId,
             })),
           },
         },
         include: { items: true },
       });
+
+      if (pointsUsed > 0) {
+        const account = await tx.pointAccount.upsert({
+          where: { userId: session.user.id },
+          update: {},
+          create: { userId: session.user.id },
+        });
+        const changed = await tx.pointAccount.updateMany({
+          where: { id: account.id, balance: { gte: pointsUsed } },
+          data: { balance: { decrement: pointsUsed } },
+        });
+        if (changed.count !== 1) {
+          throw Object.assign(new Error("INSUFFICIENT_POINTS"), {
+            statusCode: 400,
+            detail: "Saldo poin tidak cukup",
+          });
+        }
+        await tx.pointTransaction.create({
+          data: {
+            accountId: account.id,
+            userId: session.user.id,
+            type: "REDEEM",
+            pointsDelta: -pointsUsed,
+            reason: `Redeem poin untuk pesanan ${orderNumber}`,
+            referenceType: "ORDER",
+            referenceId: order.id,
+            idempotencyKey: `order-points-redeem:${order.id}`,
+          },
+        });
+      }
+
+      if (userVoucherIdValue) {
+        const changedVoucher = await tx.userVoucher.updateMany({ where: { id: userVoucherIdValue, userId: session.user.id, status: "AVAILABLE" }, data: { status: "USED", usedAt: new Date() } });
+        if (changedVoucher.count !== 1) throw Object.assign(new Error("VOUCHER_UNAVAILABLE"), { statusCode: 400, detail: "Voucher sudah digunakan" });
+      }
+
+      return { order, subtotal, total, pointsDiscount, voucherDiscount };
     });
+
+    const { order, total, pointsDiscount, voucherDiscount } = checkoutResult;
 
     // Minta Snap Token dari Midtrans
     const transaction = await snap.createTransaction({
@@ -216,6 +317,17 @@ export async function POST(request: Request) {
           quantity: 1,
           name: `Ongkir (${shippingCourier ?? "-"} ${shippingService ?? ""})`,
         },
+        ...(pointsDiscount > 0
+          ? [{
+              id: "POINTS_DISCOUNT",
+              price: -pointsDiscount,
+              quantity: 1,
+              name: "Diskon Marica Points",
+            }]
+          : []),
+        ...(voucherDiscount > 0
+          ? [{ id: "VOUCHER_DISCOUNT", price: -voucherDiscount, quantity: 1, name: "Diskon Voucher Marica" }]
+          : []),
       ],
     } as Parameters<typeof snap.createTransaction>[0]);
 
@@ -228,7 +340,7 @@ export async function POST(request: Request) {
     await prisma.cartItem.deleteMany({
       where: {
         cartId: cart.id,
-        ...(checkoutProductId ? { productId: checkoutProductId } : {}),
+        ...(checkoutProductIdValue ? { productId: checkoutProductIdValue } : {}),
       },
     });
 

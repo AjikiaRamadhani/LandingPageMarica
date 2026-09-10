@@ -29,12 +29,20 @@ export async function POST(request: Request) {
       thumbnailUrl?: string;
       fileUrl?: string;
       price?: number;
+      points?: number;
       isFeatured?: boolean;
       isActive?: boolean;
     };
 
     if (!body.title?.trim() || !body.description?.trim() || !body.subject?.trim() || !body.fileUrl?.trim()) {
       return NextResponse.json({ error: "Judul, deskripsi, subject, dan file PDF wajib diisi" }, { status: 400 });
+    }
+
+    if (
+      (body.price !== undefined && (!Number.isInteger(body.price) || body.price < 0)) ||
+      (body.points !== undefined && (!Number.isInteger(body.points) || body.points < 0))
+    ) {
+      return NextResponse.json({ error: "Harga dan poin harus berupa bilangan bulat tidak negatif" }, { status: 400 });
     }
 
     const printable = await prisma.printable.create({
@@ -48,6 +56,7 @@ export async function POST(request: Request) {
         thumbnailUrl: body.thumbnailUrl?.trim() || null,
         fileUrl: body.fileUrl.trim(),
         price: body.price ?? 0,
+        points: body.points ?? 0,
         isFeatured: body.isFeatured ?? false,
         isActive: body.isActive ?? true,
       },

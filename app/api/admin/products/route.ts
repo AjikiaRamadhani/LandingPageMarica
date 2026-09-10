@@ -107,36 +107,60 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      !Number.isInteger(price) ||
+      price < 0 ||
+      (stock !== undefined && (!Number.isInteger(stock) || stock < 0))
+    ) {
+      return NextResponse.json({ error: "Harga dan stok harus berupa bilangan bulat valid" }, { status: 400 });
+    }
+
     const slug = await generateUniqueSlug(name);
 
-    const product = await prisma.product.create({
-      data: {
-        name,
-        slug,
-        description,
-        highlights: highlights ?? [],
-        price,
-        compareAtPrice,
-        stock: stock ?? 0,
-        sku,
-        ageMin,
-        ageMax,
-        skillFocus: skillFocus ?? [],
-        playerCount,
-        isBestSeller: isBestSeller ?? false,
-        isFeatured: isFeatured ?? false,
-        categoryId,
-        images: images
-          ? {
-              create: images.map((img, i) => ({
-                url: img.url,
-                isVideo: img.isVideo ?? false,
-                order: i,
-              })),
-            }
-          : undefined,
-      },
-      include: { images: true, category: true },
+    const product = await prisma.$transaction(async (tx) => {
+      const created = await tx.product.create({
+        data: {
+          name,
+          slug,
+          description,
+          highlights: highlights ?? [],
+          price,
+          compareAtPrice,
+          stock: stock ?? 0,
+          sku,
+          ageMin,
+          ageMax,
+          skillFocus: skillFocus ?? [],
+          playerCount,
+          isBestSeller: isBestSeller ?? false,
+          isFeatured: isFeatured ?? false,
+          categoryId,
+          images: images
+            ? {
+                create: images.map((img, i) => ({
+                  url: img.url,
+                  isVideo: img.isVideo ?? false,
+                  order: i,
+                })),
+              }
+            : undefined,
+        },
+        include: { images: true, category: true },
+      });
+
+      if (created.stock !== 0) {
+        await tx.inventoryMovement.create({
+          data: {
+            productId: created.id,
+            type: "ADJUSTMENT",
+            quantityDelta: created.stock,
+            reason: "Initial stock",
+            createdById: session.user.id,
+          },
+        });
+      }
+
+      return created;
     });
 
     return NextResponse.json(product, { status: 201 });

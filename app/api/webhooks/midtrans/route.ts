@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
+import {
+  awardPointsInTransaction,
+  calculateEarnedPoints,
+  refundRedeemedPointsInTransaction,
+} from "@/lib/points";
 
 // Handler GET ini bukan buat fungsi bisnis apa-apa, cuma jaga-jaga kalau Midtrans
 // (atau kamu ngetes manual lewat browser) ngirim GET request buat verifikasi URL ini hidup.
@@ -15,12 +20,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { order_id, status_code, gross_amount, signature_key, transaction_status, transaction_id } =
       body as {
-        order_id: string;
-        status_code: string;
-        gross_amount: string;
-        signature_key: string;
-        transaction_status: string;
-        transaction_id: string;
+        order_id?: string;
+        status_code?: string;
+        gross_amount?: string;
+        signature_key?: string;
+        transaction_status?: string;
+        transaction_id?: string;
       };
 
     if (
@@ -42,7 +47,12 @@ export async function POST(request: Request) {
       .update(`${order_id}${status_code}${gross_amount}${process.env.MIDTRANS_SERVER_KEY}`)
       .digest("hex");
 
-    if (signature_key !== expectedSignature) {
+    const receivedSignature = Buffer.from(signature_key, "utf8");
+    const calculatedSignature = Buffer.from(expectedSignature, "utf8");
+    if (
+      receivedSignature.length !== calculatedSignature.length ||
+      !crypto.timingSafeEqual(receivedSignature, calculatedSignature)
+    ) {
       console.error("[Midtrans webhook] Invalid signature for order", order_id);
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
@@ -88,6 +98,15 @@ export async function POST(request: Request) {
               })),
             });
           }
+
+          await awardPointsInTransaction(transaction, {
+            userId: booking.userId,
+            points: calculateEarnedPoints(booking.totalPrice),
+            reason: `Pembayaran event: ${booking.bookingNumber}`,
+            referenceType: "EVENT_BOOKING",
+            referenceId: booking.id,
+            idempotencyKey: `event-booking-paid:${booking.id}`,
+          });
         });
         await sendEventTicketEmailIfNeeded(booking.id);
       } else if (transaction_status === "pending") {
@@ -130,6 +149,17 @@ export async function POST(request: Request) {
 
     if (transaction_status === "capture" || transaction_status === "settlement") {
       await prisma.$transaction(async (transaction) => {
+        const lockedOrders = await transaction.$queryRaw<Array<{ id: string; status: string }>>`
+          SELECT id, status
+          FROM "orders"
+          WHERE id = ${order.id}
+          FOR UPDATE
+        `;
+
+        // Midtrans dapat mengirim notifikasi yang sama lebih dari sekali.
+        // Setelah order bukan PENDING_PAYMENT, notifikasi tidak boleh menyentuh stok lagi.
+        if (lockedOrders.length === 0 || lockedOrders[0].status !== "PENDING_PAYMENT") return;
+
         const productIds = order.items.map((item) => item.productId);
         const lockedProducts = await transaction.$queryRaw<Array<{ id: string; stock: number }>>`
           SELECT id, stock
@@ -168,6 +198,26 @@ export async function POST(request: Request) {
             },
           })
         ));
+
+        await transaction.inventoryMovement.createMany({
+          data: order.items.map((item) => ({
+            productId: item.productId,
+            orderId: order.id,
+            type: "SALE" as const,
+            quantityDelta: -item.quantity,
+            reason: "Midtrans payment settled",
+            referenceId: transaction_id,
+          })),
+        });
+
+        await awardPointsInTransaction(transaction, {
+          userId: order.userId,
+          points: calculateEarnedPoints(order.total),
+          reason: `Pembayaran pesanan: ${order.orderNumber}`,
+          referenceType: "ORDER",
+          referenceId: order.id,
+          idempotencyKey: `order-paid:${order.id}`,
+        });
       });
     } else if (transaction_status === "pending") {
       await prisma.order.updateMany({
@@ -182,6 +232,25 @@ export async function POST(request: Request) {
       await prisma.order.updateMany({
         where: { id: order.id, status: "PENDING_PAYMENT" },
         data: { status: transaction_status === "expire" ? "EXPIRED" : "CANCELLED" },
+      });
+      await prisma.$transaction(async (transaction) => {
+        const cancelledOrder = await transaction.order.findUnique({
+          where: { id: order.id },
+          select: { status: true, pointsUsed: true, userId: true, userVoucherId: true },
+        });
+        if (!cancelledOrder || cancelledOrder.pointsUsed <= 0) return;
+        await refundRedeemedPointsInTransaction(transaction, {
+          userId: cancelledOrder.userId,
+          points: cancelledOrder.pointsUsed,
+          referenceId: order.id,
+          idempotencyKey: `order-points-reversal:${order.id}`,
+        });
+        if (cancelledOrder.userVoucherId) {
+          await transaction.userVoucher.updateMany({
+            where: { id: cancelledOrder.userVoucherId, status: "USED" },
+            data: { status: "AVAILABLE", usedAt: null },
+          });
+        }
       });
     }
 
