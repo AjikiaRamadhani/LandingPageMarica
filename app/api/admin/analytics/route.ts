@@ -85,6 +85,19 @@ export async function GET(request: Request) {
       _count: { status: true },
     });
 
+    const [playpassSummary, tableFeeSummary] = await Promise.all([
+      prisma.playpassTicket.aggregate({
+        where: { createdAt: { gte: from, lt: until }, status: { in: ["ACTIVE", "CHECKED_IN"] } },
+        _count: { _all: true },
+        _sum: { total: true },
+      }),
+      prisma.tableFeeSession.aggregate({
+        where: { createdAt: { gte: from, lt: until }, status: { in: ["ACTIVE", "COMPLETED"] } },
+        _count: { _all: true },
+        _sum: { total: true },
+      }),
+    ]);
+
     return NextResponse.json({
       period: { days, from: from.toISOString(), until: until.toISOString() },
       metrics: {
@@ -94,6 +107,12 @@ export async function GET(request: Request) {
         totalPrintableLeads: printableLeads,
         totalEventRevenue: totalRevenue._sum.totalPrice ?? 0,
         totalProductRevenue: paidOrdersRevenue._sum?.total ?? 0,
+        totalPlaypassRevenue: playpassSummary._sum.total ?? 0,
+        totalTableFeeRevenue: tableFeeSummary._sum.total ?? 0,
+      },
+      posServiceSummary: {
+        playpass: { count: playpassSummary._count._all, revenue: playpassSummary._sum.total ?? 0 },
+        tableFee: { count: tableFeeSummary._count._all, revenue: tableFeeSummary._sum.total ?? 0 },
       },
       ticketSummary: ticketSummary.map((item) => ({
         status: item.status,
