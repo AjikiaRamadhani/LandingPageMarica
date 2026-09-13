@@ -728,11 +728,31 @@ export default function Navbar() {
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-marica-amber/15 text-marica-amber-dark">
                 <ShoppingCart className="h-6 w-6" />
               </span>
-              <h2 id="cart-auth-title" className="mt-4 font-display text-xl font-semibold text-marica-ink">Masuk untuk melihat keranjang</h2>
-              <p className="mt-2 font-body text-sm leading-relaxed text-marica-ink-soft">Silakan masuk atau daftar terlebih dahulu untuk menyimpan dan melanjutkan belanja.</p>
+              <h2
+                id="cart-auth-title"
+                className="mt-4 font-display text-xl font-semibold text-marica-ink"
+              >
+                Masuk untuk melihat keranjang
+              </h2>
+              <p className="mt-2 font-body text-sm leading-relaxed text-marica-ink-soft">
+                Silakan masuk atau daftar terlebih dahulu untuk menyimpan dan
+                melanjutkan belanja.
+              </p>
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                <Link href="/login" onClick={() => setAuthPromptOpen(false)} className="rounded-xl border border-black/10 px-4 py-3 font-body text-sm font-bold text-marica-ink transition hover:bg-marica-cream">Masuk</Link>
-                <Link href="/daftar" onClick={() => setAuthPromptOpen(false)} className="rounded-xl bg-marica-amber-dark px-4 py-3 font-body text-sm font-bold text-white transition hover:brightness-105">Daftar</Link>
+                <Link
+                  href="/login"
+                  onClick={() => setAuthPromptOpen(false)}
+                  className="rounded-xl border border-black/10 px-4 py-3 font-body text-sm font-bold text-marica-ink transition hover:bg-marica-cream"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/daftar"
+                  onClick={() => setAuthPromptOpen(false)}
+                  className="rounded-xl bg-marica-amber-dark px-4 py-3 font-body text-sm font-bold text-white transition hover:brightness-105"
+                >
+                  Daftar
+                </Link>
               </div>
             </motion.div>
           </motion.div>

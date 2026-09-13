@@ -205,202 +205,216 @@ function SidebarContent({
 
       <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-1">
         {/* Dashboard */}
-        {role !== "KASIR" && <Link href="/admin" onClick={onNavigate} className="relative">
-          {pathname === "/admin" && (
-            <motion.span
-              layoutId="admin-nav-active"
-              transition={{ type: "spring", stiffness: 380, damping: 32 }}
-              className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
-            />
-          )}
-          <span
-            className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
-              pathname === "/admin"
-                ? "text-white"
-                : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
-            }`}
-          >
-            <LayoutDashboard className="h-4.5 w-4.5" />
-            Dashboard
-          </span>
-        </Link>}
-
-        {/* --- GROUP MENU ARTIKEL + SUBMENU KATEGORI --- */}
-        {role !== "KASIR" && <div className="flex flex-col gap-1">
-          <div className="relative flex items-center">
-            {/* Link ke Halaman Artikel */}
-            <Link
-              href="/admin/artikel"
-              onClick={onNavigate}
-              className="relative flex-1"
-            >
-              {isArtikelActive && (
-                <motion.span
-                  layoutId="admin-nav-active"
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                  className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
-                />
-              )}
-              <span
-                className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
-                  isArtikelActive
-                    ? "text-white"
-                    : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
-                }`}
-              >
-                <Newspaper className="h-4.5 w-4.5" />
-                Artikel
-              </span>
-            </Link>
-
-            {/* Tombol Toggle Bergulir (Dropdown Arrow) */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsArticlesExpanded((prev) => !prev);
-              }}
-              aria-label="Toggle submenu Artikel"
-              className={`absolute right-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg transition-transform ${
-                isArtikelActive
-                  ? "text-white/80 hover:text-white"
-                  : "text-marica-ink-soft/60 hover:text-marica-ink"
+        {role !== "KASIR" && (
+          <Link href="/admin" onClick={onNavigate} className="relative">
+            {pathname === "/admin" && (
+              <motion.span
+                layoutId="admin-nav-active"
+                transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+              />
+            )}
+            <span
+              className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                pathname === "/admin"
+                  ? "text-white"
+                  : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
               }`}
             >
-              <ChevronDown
-                className={`h-4 w-4 transition-transform duration-200 ${
-                  isArticlesExpanded ? "rotate-180" : "rotate-0"
-                }`}
-              />
-            </button>
-          </div>
+              <LayoutDashboard className="h-4.5 w-4.5" />
+              Dashboard
+            </span>
+          </Link>
+        )}
 
-          {/* Submenu artikel dengan animasi gulir */}
-          <AnimatePresence initial={false}>
-            {isArticlesExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="overflow-hidden"
+        {/* --- GROUP MENU ARTIKEL + SUBMENU KATEGORI --- */}
+        {role !== "KASIR" && (
+          <div className="flex flex-col gap-1">
+            <div className="relative flex items-center">
+              {/* Link ke Halaman Artikel */}
+              <Link
+                href="/admin/artikel"
+                onClick={onNavigate}
+                className="relative flex-1"
               >
-                <Link
-                  href="/admin/printables"
-                  onClick={onNavigate}
-                  className="relative block"
+                {isArtikelActive && (
+                  <motion.span
+                    layoutId="admin-nav-active"
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                  />
+                )}
+                <span
+                  className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                    isArtikelActive
+                      ? "text-white"
+                      : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                  }`}
                 >
-                  {isPrintableActive && (
-                    <motion.span
-                      layoutId="admin-nav-active"
-                      transition={{
-                        type: "spring",
-                        stiffness: 380,
-                        damping: 32,
-                      }}
-                      className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
-                    />
-                  )}
-                  <span
-                    className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
-                      isPrintableActive
-                        ? "text-white"
-                        : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
-                    }`}
-                  >
-                    <FileDown className="h-4.5 w-4.5" />
-                    Printable
-                  </span>
-                </Link>
-                <Link
-                  href="/admin/event"
-                  onClick={onNavigate}
-                  className="relative block"
+                  <Newspaper className="h-4.5 w-4.5" />
+                  Artikel
+                </span>
+              </Link>
+
+              {/* Tombol Toggle Bergulir (Dropdown Arrow) */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsArticlesExpanded((prev) => !prev);
+                }}
+                aria-label="Toggle submenu Artikel"
+                className={`absolute right-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg transition-transform ${
+                  isArtikelActive
+                    ? "text-white/80 hover:text-white"
+                    : "text-marica-ink-soft/60 hover:text-marica-ink"
+                }`}
+              >
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    isArticlesExpanded ? "rotate-180" : "rotate-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Submenu artikel dengan animasi gulir */}
+            <AnimatePresence initial={false}>
+              {isArticlesExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="overflow-hidden"
                 >
-                  {isEventActive && (
-                    <motion.span
-                      layoutId="admin-nav-active"
-                      transition={{
-                        type: "spring",
-                        stiffness: 380,
-                        damping: 32,
-                      }}
-                      className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
-                    />
-                  )}
-                  <span
-                    className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
-                      isEventActive
-                        ? "text-white"
-                        : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
-                    }`}
+                  <Link
+                    href="/admin/printables"
+                    onClick={onNavigate}
+                    className="relative block"
                   >
-                    <CalendarDays className="h-4.5 w-4.5" />
-                    Event
-                  </span>
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>}
+                    {isPrintableActive && (
+                      <motion.span
+                        layoutId="admin-nav-active"
+                        transition={{
+                          type: "spring",
+                          stiffness: 380,
+                          damping: 32,
+                        }}
+                        className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                      />
+                    )}
+                    <span
+                      className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                        isPrintableActive
+                          ? "text-white"
+                          : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                      }`}
+                    >
+                      <FileDown className="h-4.5 w-4.5" />
+                      Printable
+                    </span>
+                  </Link>
+                  <Link
+                    href="/admin/event"
+                    onClick={onNavigate}
+                    className="relative block"
+                  >
+                    {isEventActive && (
+                      <motion.span
+                        layoutId="admin-nav-active"
+                        transition={{
+                          type: "spring",
+                          stiffness: 380,
+                          damping: 32,
+                        }}
+                        className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                      />
+                    )}
+                    <span
+                      className={`relative flex items-center gap-3 rounded-xl py-2.5 pl-9 pr-3.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                        isEventActive
+                          ? "text-white"
+                          : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                      }`}
+                    >
+                      <CalendarDays className="h-4.5 w-4.5" />
+                      Event
+                    </span>
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* Sisa Menu Navigasi */}
-        {navItems.slice(1).filter((item) => role === "KASIR" ? item.href === "/kasir" : item.href !== "/kasir").map((item) => {
-          const isActive =
-            item.enabled &&
-            pathname.startsWith(item.href) &&
-            item.href !== "/admin"
-              ? true
-              : pathname === item.href;
-          const Icon = item.icon;
+        {navItems
+          .slice(1)
+          .filter((item) =>
+            role === "KASIR" ? item.href === "/kasir" : item.href !== "/kasir",
+          )
+          .map((item) => {
+            const isActive =
+              item.enabled &&
+              pathname.startsWith(item.href) &&
+              item.href !== "/admin"
+                ? true
+                : pathname === item.href;
+            const Icon = item.icon;
 
-          if (!item.enabled) {
+            if (!item.enabled) {
+              return (
+                <div
+                  key={item.label}
+                  aria-disabled
+                  title="Segera hadir"
+                  className="flex cursor-not-allowed items-center justify-between rounded-xl px-3.5 py-2.5 font-body text-sm text-marica-ink-soft/40"
+                >
+                  <span className="flex items-center gap-3">
+                    <Icon className="h-4.5 w-4.5" />
+                    {item.label}
+                  </span>
+                  <Lock className="h-3 w-3" />
+                </div>
+              );
+            }
+
             return (
-              <div
+              <Link
                 key={item.label}
-                aria-disabled
-                title="Segera hadir"
-                className="flex cursor-not-allowed items-center justify-between rounded-xl px-3.5 py-2.5 font-body text-sm text-marica-ink-soft/40"
+                href={item.href}
+                onClick={onNavigate}
+                className="relative"
               >
-                <span className="flex items-center gap-3">
+                {isActive && (
+                  <motion.span
+                    layoutId="admin-nav-active"
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                  />
+                )}
+                <span
+                  className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
+                    isActive
+                      ? "text-white"
+                      : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
+                  }`}
+                >
                   <Icon className="h-4.5 w-4.5" />
                   {item.label}
                 </span>
-                <Lock className="h-3 w-3" />
-              </div>
+              </Link>
             );
-          }
-
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              onClick={onNavigate}
-              className="relative"
-            >
-              {isActive && (
-                <motion.span
-                  layoutId="admin-nav-active"
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                  className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
-                />
-              )}
-              <span
-                className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25 ${
-                  isActive
-                    ? "text-white"
-                    : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"
-                }`}
-              >
-                <Icon className="h-4.5 w-4.5" />
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+          })}
       </nav>
 
-      <AccountMenu name={name} email={email} role={role} onNavigate={onNavigate} />
+      <AccountMenu
+        name={name}
+        email={email}
+        role={role}
+        onNavigate={onNavigate}
+      />
     </>
   );
 }
