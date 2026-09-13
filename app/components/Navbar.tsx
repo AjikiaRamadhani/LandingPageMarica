@@ -11,9 +11,14 @@ import {
   User,
   LogOut,
   ChevronDown,
+  Search,
+  Star,
+  BookOpen,
+  Sparkles,
+  CalendarDays,
+  ArrowRight,
   LayoutDashboard,
   ClipboardList,
-  Coins,
   ShoppingCart,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
@@ -21,18 +26,34 @@ import { useSession, signOut } from "next-auth/react";
 // Catatan: /belanja, /aktivitas, /edugames, /event belum ada halamannya —
 // hrefnya sudah disiapkan lebih dulu supaya begitu halaman dibuat, tinggal
 // dipasang di App Router tanpa perlu balik ke sini. /artikel sudah live.
-const navLinks = [
+type NavMenu = "shop" | "activity" | "edugames" | "event" | "blog";
+type NavLink = { label: string; href: string; menu?: NavMenu };
+
+const navLinks: NavLink[] = [
   { label: "Beranda", href: "/" },
-  { label: "Belanja", href: "/belanja" },
-  { label: "Aktivitas", href: "/aktivitas" },
-  { label: "Edugames", href: "/edugames" },
-  { label: "Event", href: "/event" },
-  { label: "Blog", href: "/artikel" },
+  { label: "Belanja", href: "/belanja", menu: "shop" },
+  { label: "Aktivitas", href: "/aktivitas", menu: "activity" },
+  { label: "Edugames", href: "/edugames", menu: "edugames" },
+  { label: "Event", href: "/event", menu: "event" },
+  { label: "Blog", href: "/artikel", menu: "blog" },
 ];
 
 type ApiCompany = {
   name: string;
   logoUrl: string | null;
+};
+
+type ApiProductCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  children: { id: string; name: string; slug: string }[];
+};
+
+type ApiArticleCategory = {
+  id: string;
+  name: string;
+  slug: string;
 };
 
 export default function Navbar() {
@@ -47,6 +68,15 @@ export default function Navbar() {
   const [company, setCompany] = useState<ApiCompany | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [productCategories, setProductCategories] = useState<
+    ApiProductCategory[]
+  >([]);
+  const [articleCategories, setArticleCategories] = useState<
+    ApiArticleCategory[]
+  >([]);
+  const [points, setPoints] = useState(0);
 
   // Menu aktif mengikuti route saat ini. startsWith dipakai supaya halaman
   // detail (mis. /artikel/slug-nya) tetap menyorot menu "Blog" sebagai induknya.
@@ -69,6 +99,34 @@ export default function Navbar() {
       })
       .catch((err) => console.error("Failed to load company profile", err));
   }, []);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/product-categories").then((res) => res.json()),
+      fetch("/api/article-categories").then((res) => res.json()),
+    ])
+      .then(([products, articles]) => {
+        setProductCategories(Array.isArray(products) ? products : []);
+        setArticleCategories(Array.isArray(articles) ? articles : []);
+      })
+      .catch(() => {
+        setProductCategories([]);
+        setArticleCategories([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    fetch("/api/points", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) =>
+        setPoints(typeof data?.balance === "number" ? data.balance : 0),
+      )
+      .catch(() => setPoints(0));
+  }, [isLoggedIn]);
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -103,6 +161,152 @@ export default function Navbar() {
   // tutup menu — navigasinya sendiri ditangani default <a href>.
   const handleMobileNavClick = () => {
     setIsOpen(false);
+    setOpenMenu(null);
+  };
+
+  const menuItems = (menu: NavMenu) => {
+    if (menu === "shop") {
+      return (
+        <div className="grid min-w-132.5 grid-cols-[180px_1fr] gap-6 p-5">
+          <div>
+            <p className="mb-3 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-marica-ink-soft/70">
+              Belanja
+            </p>
+            <Link
+              href="/belanja"
+              className="group flex items-center gap-3 rounded-xl bg-marica-cream/70 p-3"
+              onClick={() => setOpenMenu(null)}
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-marica-amber/25 text-marica-amber-text">
+                <ShoppingCart className="h-4 w-4" />
+              </span>
+              <span>
+                <span className="block font-body text-sm font-bold text-marica-ink">
+                  Semua produk
+                </span>
+                <span className="block font-body text-xs text-marica-ink-soft">
+                  Mainan, buku, dan lainnya
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/belanja"
+              className="mt-3 inline-flex items-center gap-1 font-body text-xs font-bold text-marica-amber-text"
+              onClick={() => setOpenMenu(null)}
+            >
+              Lihat semua <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          <div>
+            <p className="mb-3 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-marica-ink-soft/70">
+              Kategori
+            </p>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+              {productCategories.length ? (
+                productCategories.map((category) => (
+                  <div key={category.id}>
+                    <Link
+                      href={`/belanja?category=${category.slug}`}
+                      onClick={() => setOpenMenu(null)}
+                      className="font-body text-sm font-bold text-marica-ink hover:text-marica-amber-text"
+                    >
+                      {category.name}
+                    </Link>
+                    {category.children.length > 0 && (
+                      <div className="mt-1 space-y-1">
+                        {category.children.map((child) => (
+                          <Link
+                            key={child.id}
+                            href={`/belanja?category=${child.slug}`}
+                            onClick={() => setOpenMenu(null)}
+                            className="block font-body text-xs text-marica-ink-soft hover:text-marica-ink"
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="font-body text-sm text-marica-ink-soft">
+                  Kategori sedang dimuat...
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (menu === "blog") {
+      return (
+        <div className="w-70 p-5">
+          <p className="mb-3 font-body text-[11px] font-bold uppercase tracking-[0.16em] text-marica-ink-soft/70">
+            Topik artikel
+          </p>
+          <Link
+            href="/artikel"
+            onClick={() => setOpenMenu(null)}
+            className="mb-2 flex items-center gap-2 rounded-lg px-2 py-2 font-body text-sm font-semibold text-marica-ink hover:bg-marica-cream"
+          >
+            Semua artikel <ArrowRight className="ml-auto h-3.5 w-3.5" />
+          </Link>
+          {articleCategories.length ? (
+            articleCategories.map((category) => (
+              <Link
+                key={category.id}
+                href={`/artikel?category=${category.slug}`}
+                onClick={() => setOpenMenu(null)}
+                className="block rounded-lg px-2 py-2 font-body text-sm text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
+              >
+                {category.name}
+              </Link>
+            ))
+          ) : (
+            <p className="px-2 font-body text-sm text-marica-ink-soft">
+              Kategori sedang dimuat...
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    const simpleMenus = {
+      activity: [
+        { label: "Semua aktivitas", href: "/aktivitas" },
+        { label: "Printable gratis", href: "/aktivitas/printables-download" },
+      ],
+      edugames: [
+        { label: "Jelajahi edugames", href: "/edugames" },
+        { label: "Main bersama keluarga", href: "/aktivitas" },
+      ],
+      event: [
+        { label: "Kalender event", href: "/event" },
+        { label: "Event saya", href: "/event-saya" },
+      ],
+    } as const;
+    return (
+      <div className="w-62.5 p-4">
+        {simpleMenus[menu as keyof typeof simpleMenus]?.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={() => setOpenMenu(null)}
+            className="flex items-center gap-3 rounded-xl px-3 py-3 font-body text-sm font-semibold text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
+          >
+            {menu === "activity" ? (
+              <Sparkles className="h-4 w-4 text-marica-rose-deep" />
+            ) : menu === "event" ? (
+              <CalendarDays className="h-4 w-4 text-marica-blue" />
+            ) : (
+              <BookOpen className="h-4 w-4 text-marica-violet-deep" />
+            )}
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -112,7 +316,7 @@ export default function Navbar() {
         aria-hidden
         animate={{ opacity: scrolled ? 0 : 1 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-marica-cream via-marica-cream/70 to-transparent"
+        className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-b from-marica-cream via-marica-cream/70 to-transparent"
       />
 
       {/* layer 2: solid, blurred, with shadow — fades in once the page is scrolled so the header stays readable over any section */}
@@ -138,41 +342,107 @@ export default function Navbar() {
           </span> */}
         </Link>
 
-        {/* Nav links — absolutely centered relative to the whole navbar, not just the space left after the logo */}
+        {/* Desktop navigation */}
         <div
-          className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 font-body text-[15px] font-medium text-marica-ink-soft lg:flex"
-          onMouseLeave={() => setHoveredIndex(null)}
+          className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 font-body text-[13px] font-medium text-marica-ink-soft lg:flex xl:gap-1"
+          onMouseLeave={() => {
+            setHoveredIndex(null);
+            setOpenMenu(null);
+          }}
         >
           {navLinks.map((link, i) => {
             const isHighlighted =
               hoveredIndex === i ||
               (hoveredIndex === null && link.href === activeHref);
+            const hasMenu = Boolean(link.menu);
             return (
-              <a
+              <div
                 key={link.label}
-                href={link.href}
-                onMouseEnter={() => setHoveredIndex(i)}
-                className={`relative rounded-full px-3 py-1.5 transition-colors ${
-                  isHighlighted
-                    ? "text-marica-amber-text"
-                    : "hover:text-marica-ink"
-                }`}
+                className="relative"
+                onMouseEnter={() => {
+                  setHoveredIndex(i);
+                  if (link.menu) setOpenMenu(link.menu);
+                }}
               >
-                {isHighlighted && (
-                  <motion.span
-                    layoutId="nav-hover-pill"
-                    className="absolute inset-0 -z-10 rounded-full bg-marica-amber/15"
-                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                  />
+                <Link
+                  href={link.href}
+                  onClick={() => setOpenMenu(null)}
+                  className={`relative flex items-center gap-1 rounded-full px-2.5 py-1.5 transition-colors xl:px-3 ${
+                    isHighlighted
+                      ? "text-marica-amber-text"
+                      : "hover:text-marica-ink"
+                  }`}
+                >
+                  {isHighlighted && (
+                    <motion.span
+                      layoutId="nav-hover-pill"
+                      className="absolute inset-0 -z-10 rounded-full bg-marica-amber/15"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 32,
+                      }}
+                    />
+                  )}
+                  <span className="relative z-10">{link.label}</span>
+                  {hasMenu && (
+                    <ChevronDown
+                      className={`relative z-10 h-3 w-3 transition-transform ${openMenu === link.menu ? "rotate-180" : ""}`}
+                    />
+                  )}
+                </Link>
+                {link.menu && openMenu === link.menu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className="absolute left-1/2 top-full z-50 -translate-x-1/2 overflow-hidden rounded-2xl border border-marica-ink/5 bg-white shadow-[0_18px_45px_rgba(120,60,10,0.16)]"
+                    onMouseEnter={() => setOpenMenu(link.menu ?? null)}
+                  >
+                    {menuItems(link.menu)}
+                  </motion.div>
                 )}
-                <span className="relative z-10">{link.label}</span>
-              </a>
+              </div>
             );
           })}
         </div>
 
         {/* Right side: auth pills (desktop) + mobile menu button */}
         <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            aria-label="Cari"
+            className="hidden h-9 w-9 items-center justify-center rounded-full bg-marica-ink/5 text-marica-ink-soft transition hover:bg-marica-cream lg:flex"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+          {isLoggedIn && (
+            <Link
+              href="/poin"
+              aria-label={`${points.toLocaleString("id-ID")} Marica Points`}
+              className="hidden items-center gap-1.5 rounded-full border border-marica-amber/60 bg-marica-amber/15 px-3 py-2 font-body text-xs font-bold text-marica-amber-text lg:flex"
+            >
+              <Star className="h-3.5 w-3.5 fill-marica-amber text-marica-amber-dark" />
+              {points.toLocaleString("id-ID")}
+            </Link>
+          )}
+          {isLoggedIn ? (
+            <Link
+              href="/belanja/keranjang"
+              aria-label="Keranjang"
+              className="hidden text-marica-ink-soft transition hover:text-marica-ink lg:block"
+            >
+              <ShoppingCart className="h-5 w-5" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              aria-label="Buka keranjang"
+              onClick={() => setAuthPromptOpen(true)}
+              className="hidden text-marica-ink-soft transition hover:text-marica-ink lg:block"
+            >
+              <ShoppingCart className="h-5 w-5" />
+            </button>
+          )}
           {status === "loading" ? (
             // Skeleton kecil biar tidak "flash" antara logged-out -> logged-in saat sesi masih dicek
             <div className="hidden h-9 w-24 animate-pulse rounded-full bg-marica-ink/5 lg:block" />
@@ -187,7 +457,7 @@ export default function Navbar() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-marica-amber/20 text-marica-amber-dark">
                   <User className="h-4 w-4" />
                 </span>
-                <span className="max-w-[120px] truncate font-body text-sm font-semibold text-marica-ink">
+                <span className="max-w-30 truncate font-body text-sm font-semibold text-marica-ink">
                   {session?.user?.name?.split(" ")[0] || "Akun"}
                 </span>
                 <ChevronDown
@@ -224,22 +494,6 @@ export default function Navbar() {
                     >
                       <ClipboardList className="h-4 w-4" />
                       Pesanan Saya
-                    </Link>
-                    <Link
-                      href="/belanja/keranjang"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                      Keranjang
-                    </Link>
-                    <Link
-                      href="/poin"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
-                    >
-                      <Coins className="h-4 w-4" />
-                      Marica Points
                     </Link>
                     {isAdmin && (
                       <a
@@ -388,22 +642,6 @@ export default function Navbar() {
                       <ClipboardList className="h-4 w-4" />
                       Pesanan Saya
                     </Link>
-                    <Link
-                      href="/belanja/keranjang"
-                      onClick={() => setIsOpen(false)}
-                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                      Keranjang
-                    </Link>
-                    <Link
-                      href="/poin"
-                      onClick={() => setIsOpen(false)}
-                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
-                    >
-                      <Coins className="h-4 w-4" />
-                      Marica Points
-                    </Link>
                     {isAdmin && (
                       <a
                         href="/admin"
@@ -454,6 +692,47 @@ export default function Navbar() {
                     </motion.a>
                   </>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {authPromptOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-marica-ink/35 px-4 backdrop-blur-sm"
+            onClick={() => setAuthPromptOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.97 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cart-auth-title"
+              onClick={(event) => event.stopPropagation()}
+              className="relative w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-[0_24px_80px_rgba(28,27,27,0.22)]"
+            >
+              <button
+                type="button"
+                onClick={() => setAuthPromptOpen(false)}
+                aria-label="Tutup"
+                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-marica-ink-soft transition hover:bg-marica-cream"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-marica-amber/15 text-marica-amber-dark">
+                <ShoppingCart className="h-6 w-6" />
+              </span>
+              <h2 id="cart-auth-title" className="mt-4 font-display text-xl font-semibold text-marica-ink">Masuk untuk melihat keranjang</h2>
+              <p className="mt-2 font-body text-sm leading-relaxed text-marica-ink-soft">Silakan masuk atau daftar terlebih dahulu untuk menyimpan dan melanjutkan belanja.</p>
+              <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                <Link href="/login" onClick={() => setAuthPromptOpen(false)} className="rounded-xl border border-black/10 px-4 py-3 font-body text-sm font-bold text-marica-ink transition hover:bg-marica-cream">Masuk</Link>
+                <Link href="/daftar" onClick={() => setAuthPromptOpen(false)} className="rounded-xl bg-marica-amber-dark px-4 py-3 font-body text-sm font-bold text-white transition hover:brightness-105">Daftar</Link>
               </div>
             </motion.div>
           </motion.div>
