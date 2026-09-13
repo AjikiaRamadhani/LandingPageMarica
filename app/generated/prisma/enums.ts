@@ -78,6 +78,23 @@ export const PlaypassTicketStatus = {
 export type PlaypassTicketStatus = (typeof PlaypassTicketStatus)[keyof typeof PlaypassTicketStatus]
 
 
+export const PosShiftStatus = {
+  OPEN: 'OPEN',
+  CLOSED: 'CLOSED'
+} as const
+
+export type PosShiftStatus = (typeof PosShiftStatus)[keyof typeof PosShiftStatus]
+
+
+export const CashierTransactionItemType = {
+  PRODUCT: 'PRODUCT',
+  PLAYPASS: 'PLAYPASS',
+  TABLE_FEE: 'TABLE_FEE'
+} as const
+
+export type CashierTransactionItemType = (typeof CashierTransactionItemType)[keyof typeof CashierTransactionItemType]
+
+
 export const TableFeeSessionStatus = {
   ACTIVE: 'ACTIVE',
   COMPLETED: 'COMPLETED',

@@ -23,6 +23,8 @@ export async function POST(request: Request) {
     const paidAmount = typeof body.paidAmount === "number" ? body.paidAmount : -1;
     if (!body.tableNumber?.trim() || !body.packageId || !paymentMethods.includes(body.paymentMethod as (typeof paymentMethods)[number]) || !Number.isInteger(paidAmount) || paidAmount < 0) return NextResponse.json({ error: "Data sesi table fee tidak valid" }, { status: 400 });
     const result = await prisma.$transaction(async (tx) => {
+      const shift = await tx.posShift.findFirst({ where: { cashierId: session.user.id, status: "OPEN" } });
+      if (!shift) throw new Error("SHIFT_REQUIRED");
       const active = await tx.tableFeeSession.findFirst({ where: { tableNumber: body.tableNumber!.trim(), status: "ACTIVE" } });
       if (active) throw new Error("TABLE_OCCUPIED");
       const packageData = await tx.tableFeePackage.findFirst({ where: { id: body.packageId, isActive: true } });
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
       if (body.paymentMethod !== "CASH" && paidAmount !== packageData.price) throw new Error("PAYMENT_MISMATCH");
       const startedAt = new Date();
       const endsAt = new Date(startedAt.getTime() + packageData.durationMinutes * 60_000);
-      const created = await tx.tableFeeSession.create({ data: { sessionNumber: sessionNumber(), tableNumber: body.tableNumber!.trim(), packageId: packageData.id, customerId: body.customerId || null, cashierId: session.user.id, total: packageData.price, paymentMethod: body.paymentMethod!, paidAmount, changeAmount: paidAmount - packageData.price, startedAt, endsAt }, include: { package: true, customer: { select: { id: true, name: true, whatsapp: true } } } });
+      const created = await tx.tableFeeSession.create({ data: { sessionNumber: sessionNumber(), shiftId: shift.id, tableNumber: body.tableNumber!.trim(), packageId: packageData.id, customerId: body.customerId || null, cashierId: session.user.id, total: packageData.price, paymentMethod: body.paymentMethod!, paidAmount, changeAmount: paidAmount - packageData.price, startedAt, endsAt }, include: { package: true, customer: { select: { id: true, name: true, whatsapp: true } } } });
       const earnedPoints = body.customerId ? calculateEarnedPoints(packageData.price) : 0;
       if (body.customerId) await awardPointsInTransaction(tx, { userId: body.customerId, points: earnedPoints, reason: `Poin Table Fee ${created.sessionNumber}`, referenceType: "TABLE_FEE", referenceId: created.id, idempotencyKey: `table-fee-points:${created.id}` });
       return { ...created, earnedPoints };
@@ -48,6 +50,7 @@ export async function POST(request: Request) {
       if (error.message === "CUSTOMER_NOT_FOUND") return NextResponse.json({ error: "Member tidak ditemukan" }, { status: 404 });
       if (error.message === "PAYMENT_SHORTAGE") return NextResponse.json({ error: "Nominal pembayaran kurang" }, { status: 400 });
       if (error.message === "PAYMENT_MISMATCH") return NextResponse.json({ error: "Pembayaran non-tunai harus sama dengan total" }, { status: 400 });
+      if (error.message === "SHIFT_REQUIRED") return NextResponse.json({ error: "Buka shift kasir terlebih dahulu" }, { status: 409 });
     }
     console.error("[POST /api/cashier/table-fees]", error);
     return NextResponse.json({ error: "Gagal membuka sesi table fee" }, { status: 500 });

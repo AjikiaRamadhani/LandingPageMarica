@@ -88,6 +88,8 @@ export async function POST(request: Request) {
     const transactionNumber = generateTransactionNumber();
 
     const transaction = await prisma.$transaction(async (tx) => {
+      const shift = await tx.posShift.findFirst({ where: { cashierId: session.user.id, status: "OPEN" } });
+      if (!shift) throw new Error("SHIFT_REQUIRED");
       if (customerCheck.value) {
         const customer = await tx.user.findFirst({ where: { id: customerCheck.value, role: "USER" }, select: { id: true } });
         if (!customer) throw new Error("CUSTOMER_NOT_FOUND");
@@ -129,6 +131,7 @@ export async function POST(request: Request) {
         data: {
           transactionNumber,
           cashierId: session.user.id,
+          shiftId: shift.id,
           customerId: customerCheck.value,
           subtotal,
           discountAmount,
@@ -179,6 +182,7 @@ export async function POST(request: Request) {
       if (error.message === "PAYMENT_MISMATCH") return NextResponse.json({ error: "Pembayaran non-tunai harus sama dengan total" }, { status: 400 });
       if (error.message === "CUSTOMER_REQUIRED_FOR_VOUCHER") return NextResponse.json({ error: "Member wajib dipilih untuk menggunakan voucher" }, { status: 400 });
       if (error.message === "VOUCHER_UNAVAILABLE") return NextResponse.json({ error: "Voucher member tidak tersedia atau sudah digunakan" }, { status: 409 });
+      if (error.message === "SHIFT_REQUIRED") return NextResponse.json({ error: "Buka shift kasir terlebih dahulu" }, { status: 409 });
     }
     console.error("[POST /api/cashier/transactions]", error);
     return NextResponse.json({ error: "Gagal membuat transaksi POS" }, { status: 500 });

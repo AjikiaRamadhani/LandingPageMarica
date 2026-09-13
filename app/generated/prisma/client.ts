@@ -177,6 +177,21 @@ export type Order = Prisma.OrderModel
  */
 export type InventoryMovement = Prisma.InventoryMovementModel
 /**
+ * Model PosShift
+ * 
+ */
+export type PosShift = Prisma.PosShiftModel
+/**
+ * Model CashierTransaction
+ * 
+ */
+export type CashierTransaction = Prisma.CashierTransactionModel
+/**
+ * Model CashierTransactionItem
+ * 
+ */
+export type CashierTransactionItem = Prisma.CashierTransactionItemModel
+/**
  * Model PlaypassPackage
  * 
  */

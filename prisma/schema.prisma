@@ -14,34 +14,37 @@ datasource db {
 // AUTH (Auth.js / NextAuth) - login & register
 
 model User {
-  id                      String              @id @default(cuid())
-  name                    String?
-  email                   String?             @unique
-  whatsapp                String?
-  emailVerified           DateTime?
-  image                   String?
-  password                String? // hash bcrypt, buat login credentials (email/password)
-  cart                    Cart?
-  orders                  Order[]
-  accounts                Account[]
-  sessions                Session[]
-  role                    Role                @default(USER)
-  articles                Article[]
-  comments                Comment[]
-  eventBookings           EventBooking[]
-  printableLeads          PrintableLead[]
-  inventoryMovements      InventoryMovement[] @relation("InventoryMovementCreatedBy")
-  pointAccount            PointAccount?
-  pointTransactions       PointTransaction[]
-  vouchers                UserVoucher[]
-  posTransactions         PosTransaction[]    @relation("PosCashier")
-  posCustomerTransactions PosTransaction[]    @relation("PosCustomer")
-  playpassTickets         PlaypassTicket[]    @relation("PlaypassCustomer")
-  issuedPlaypassTickets   PlaypassTicket[]    @relation("PlaypassCashier")
-  tableFeeSessions        TableFeeSession[]   @relation("TableFeeCustomer")
-  openedTableFeeSessions  TableFeeSession[]   @relation("TableFeeCashier")
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
+  id                          String               @id @default(cuid())
+  name                        String?
+  email                       String?              @unique
+  whatsapp                    String?
+  emailVerified               DateTime?
+  image                       String?
+  password                    String? // hash bcrypt, buat login credentials (email/password)
+  cart                        Cart?
+  orders                      Order[]
+  accounts                    Account[]
+  sessions                    Session[]
+  role                        Role                 @default(USER)
+  articles                    Article[]
+  comments                    Comment[]
+  eventBookings               EventBooking[]
+  printableLeads              PrintableLead[]
+  inventoryMovements          InventoryMovement[]  @relation("InventoryMovementCreatedBy")
+  pointAccount                PointAccount?
+  pointTransactions           PointTransaction[]
+  vouchers                    UserVoucher[]
+  posTransactions             PosTransaction[]     @relation("PosCashier")
+  posCustomerTransactions     PosTransaction[]     @relation("PosCustomer")
+  playpassTickets             PlaypassTicket[]     @relation("PlaypassCustomer")
+  issuedPlaypassTickets       PlaypassTicket[]     @relation("PlaypassCashier")
+  tableFeeSessions            TableFeeSession[]    @relation("TableFeeCustomer")
+  openedTableFeeSessions      TableFeeSession[]    @relation("TableFeeCashier")
+  posShifts                   PosShift[]           @relation("PosShiftCashier")
+  cashierTransactions         CashierTransaction[] @relation("CashierTransactionCashier")
+  cashierCustomerTransactions CashierTransaction[] @relation("CashierTransactionCustomer")
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
 
   @@map("users")
 }
@@ -365,11 +368,12 @@ model Product {
   price          Int // dalam Rupiah, tanpa desimal
   compareAtPrice Int? // harga coret sebelum diskon, null kalau gak ada diskon
 
-  stock               Int                  @default(0)
-  sku                 String?              @unique
-  cartItems           CartItem[]
-  orderItems          OrderItem[]
-  posTransactionItems PosTransactionItem[]
+  stock                   Int                      @default(0)
+  sku                     String?                  @unique
+  cartItems               CartItem[]
+  orderItems              OrderItem[]
+  posTransactionItems     PosTransactionItem[]
+  cashierTransactionItems CashierTransactionItem[]
 
   // Atribut buat Smart Filter
   ageMin      Int?
@@ -573,42 +577,132 @@ enum PlaypassTicketStatus {
   CANCELLED
 }
 
+enum PosShiftStatus {
+  OPEN
+  CLOSED
+}
+
+model PosShift {
+  id                  String               @id @default(cuid())
+  cashierId           String
+  cashier             User                 @relation("PosShiftCashier", fields: [cashierId], references: [id])
+  openingCash         Int
+  closingCash         Int?
+  expectedCash        Int?
+  status              PosShiftStatus       @default(OPEN)
+  notes               String?              @db.Text
+  openedAt            DateTime             @default(now())
+  closedAt            DateTime?
+  transactions        PosTransaction[]
+  playpasses          PlaypassTicket[]
+  tableFees           TableFeeSession[]
+  cashierTransactions CashierTransaction[]
+
+  @@index([cashierId, status])
+  @@index([status, openedAt])
+  @@map("pos_shifts")
+}
+
+enum CashierTransactionItemType {
+  PRODUCT
+  PLAYPASS
+  TABLE_FEE
+}
+
+model CashierTransaction {
+  id                String                   @id @default(cuid())
+  transactionNumber String                   @unique
+  cashierId         String
+  cashier           User                     @relation("CashierTransactionCashier", fields: [cashierId], references: [id])
+  customerId        String?
+  customer          User?                    @relation("CashierTransactionCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  shiftId           String?
+  shift             PosShift?                @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  subtotal          Int
+  discountAmount    Int                      @default(0)
+  total             Int
+  paymentMethod     PosPaymentMethod
+  paidAmount        Int
+  changeAmount      Int                      @default(0)
+  paymentReference  String?
+  status            PosTransactionStatus     @default(COMPLETED)
+  notes             String?                  @db.Text
+  items             CashierTransactionItem[]
+  playpassTickets   PlaypassTicket[]
+  tableFeeSessions  TableFeeSession[]
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([cashierId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([shiftId, createdAt])
+  @@index([status, createdAt])
+  @@map("cashier_transactions")
+}
+
+model CashierTransactionItem {
+  id                String                     @id @default(cuid())
+  transactionId     String
+  transaction       CashierTransaction         @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  type              CashierTransactionItemType
+  productId         String?
+  product           Product?                   @relation(fields: [productId], references: [id])
+  playpassPackageId String?
+  playpassPackage   PlaypassPackage?           @relation(fields: [playpassPackageId], references: [id])
+  tableFeePackageId String?
+  tableFeePackage   TableFeePackage?           @relation(fields: [tableFeePackageId], references: [id])
+  itemName          String
+  tableNumber       String?
+  unitPrice         Int
+  quantity          Int
+  subtotal          Int
+
+  @@index([transactionId])
+  @@index([productId])
+  @@map("cashier_transaction_items")
+}
+
 model PlaypassPackage {
-  id              String           @id @default(cuid())
-  name            String
-  durationMinutes Int
-  price           Int
-  maxParticipants Int              @default(1)
-  isActive        Boolean          @default(true)
-  tickets         PlaypassTicket[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                      String                   @id @default(cuid())
+  name                    String
+  durationMinutes         Int
+  price                   Int
+  maxParticipants         Int                      @default(1)
+  isActive                Boolean                  @default(true)
+  tickets                 PlaypassTicket[]
+  cashierTransactionItems CashierTransactionItem[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@index([isActive])
   @@map("playpass_packages")
 }
 
 model PlaypassTicket {
-  id            String               @id @default(cuid())
-  ticketNumber  String               @unique
-  qrToken       String               @unique @default(cuid())
-  packageId     String
-  package       PlaypassPackage      @relation(fields: [packageId], references: [id])
-  customerId    String?
-  customer      User?                @relation("PlaypassCustomer", fields: [customerId], references: [id], onDelete: SetNull)
-  cashierId     String
-  cashier       User                 @relation("PlaypassCashier", fields: [cashierId], references: [id])
-  quantity      Int                  @default(1)
-  total         Int
-  paymentMethod String
-  paidAmount    Int
-  changeAmount  Int                  @default(0)
-  validFrom     DateTime             @default(now())
-  expiresAt     DateTime
-  status        PlaypassTicketStatus @default(ACTIVE)
-  checkedInAt   DateTime?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  id                   String               @id @default(cuid())
+  ticketNumber         String               @unique
+  qrToken              String               @unique @default(cuid())
+  packageId            String
+  package              PlaypassPackage      @relation(fields: [packageId], references: [id])
+  customerId           String?
+  customer             User?                @relation("PlaypassCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  cashierId            String
+  cashier              User                 @relation("PlaypassCashier", fields: [cashierId], references: [id])
+  shiftId              String?
+  shift                PosShift?            @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  cashierTransactionId String?
+  cashierTransaction   CashierTransaction?  @relation(fields: [cashierTransactionId], references: [id], onDelete: SetNull)
+  quantity             Int                  @default(1)
+  total                Int
+  paymentMethod        String
+  paidAmount           Int
+  changeAmount         Int                  @default(0)
+  validFrom            DateTime             @default(now())
+  expiresAt            DateTime
+  status               PlaypassTicketStatus @default(ACTIVE)
+  checkedInAt          DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
   @@index([customerId, createdAt])
   @@index([status, expiresAt])
@@ -622,39 +716,44 @@ enum TableFeeSessionStatus {
 }
 
 model TableFeePackage {
-  id              String            @id @default(cuid())
-  name            String
-  durationMinutes Int
-  price           Int
-  maxPlayers      Int               @default(4)
-  isActive        Boolean           @default(true)
-  sessions        TableFeeSession[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                      String                   @id @default(cuid())
+  name                    String
+  durationMinutes         Int
+  price                   Int
+  maxPlayers              Int                      @default(4)
+  isActive                Boolean                  @default(true)
+  sessions                TableFeeSession[]
+  cashierTransactionItems CashierTransactionItem[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@index([isActive])
   @@map("table_fee_packages")
 }
 
 model TableFeeSession {
-  id            String                @id @default(cuid())
-  sessionNumber String                @unique
-  tableNumber   String
-  packageId     String
-  package       TableFeePackage       @relation(fields: [packageId], references: [id])
-  customerId    String?
-  customer      User?                 @relation("TableFeeCustomer", fields: [customerId], references: [id], onDelete: SetNull)
-  cashierId     String
-  cashier       User                  @relation("TableFeeCashier", fields: [cashierId], references: [id])
-  total         Int
-  paymentMethod String
-  paidAmount    Int
-  changeAmount  Int                   @default(0)
-  startedAt     DateTime              @default(now())
-  endsAt        DateTime
-  status        TableFeeSessionStatus @default(ACTIVE)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  id                   String                @id @default(cuid())
+  sessionNumber        String                @unique
+  tableNumber          String
+  packageId            String
+  package              TableFeePackage       @relation(fields: [packageId], references: [id])
+  customerId           String?
+  customer             User?                 @relation("TableFeeCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  cashierId            String
+  cashier              User                  @relation("TableFeeCashier", fields: [cashierId], references: [id])
+  shiftId              String?
+  shift                PosShift?             @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  cashierTransactionId String?
+  cashierTransaction   CashierTransaction?   @relation(fields: [cashierTransactionId], references: [id], onDelete: SetNull)
+  total                Int
+  paymentMethod        String
+  paidAmount           Int
+  changeAmount         Int                   @default(0)
+  startedAt            DateTime              @default(now())
+  endsAt               DateTime
+  status               TableFeeSessionStatus @default(ACTIVE)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@index([tableNumber, status])
   @@index([customerId, createdAt])
@@ -666,6 +765,8 @@ model PosTransaction {
   transactionNumber  String               @unique
   cashierId          String
   cashier            User                 @relation("PosCashier", fields: [cashierId], references: [id])
+  shiftId            String?
+  shift              PosShift?            @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   customerId         String?
   customer           User?                @relation("PosCustomer", fields: [customerId], references: [id])
   subtotal           Int

@@ -26,6 +26,8 @@ export async function POST(request: Request) {
     if (packageId.error || customerId.error || quantity.error || paidAmount.error || typeof packageId.value !== "string" || typeof quantity.value !== "number" || typeof paidAmount.value !== "number" || !paymentMethods.includes(body.paymentMethod as (typeof paymentMethods)[number])) return NextResponse.json({ error: "Data penerbitan Playpass tidak valid" }, { status: 400 });
 
     const result = await prisma.$transaction(async (tx) => {
+      const shift = await tx.posShift.findFirst({ where: { cashierId: session.user.id, status: "OPEN" } });
+      if (!shift) throw new Error("SHIFT_REQUIRED");
       const packageData = await tx.playpassPackage.findFirst({ where: { id: packageId.value, isActive: true } });
       if (!packageData) throw new Error("PACKAGE_NOT_FOUND");
       if (quantity.value > packageData.maxParticipants) throw new Error("QUANTITY_EXCEEDED");
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
       if (body.paymentMethod !== "CASH" && paidAmount.value !== total) throw new Error("PAYMENT_MISMATCH");
       const validFrom = new Date();
       const expiresAt = new Date(validFrom.getTime() + packageData.durationMinutes * 60_000);
-      const ticket = await tx.playpassTicket.create({ data: { ticketNumber: ticketNumber(), packageId: packageData.id, customerId: customerId.value, cashierId: session.user.id, quantity: quantity.value, total, paymentMethod: body.paymentMethod!, paidAmount: paidAmount.value, changeAmount: paidAmount.value - total, validFrom, expiresAt }, include: { package: true, customer: { select: { id: true, name: true, email: true, whatsapp: true } } } });
+      const ticket = await tx.playpassTicket.create({ data: { ticketNumber: ticketNumber(), shiftId: shift.id, packageId: packageData.id, customerId: customerId.value, cashierId: session.user.id, quantity: quantity.value, total, paymentMethod: body.paymentMethod!, paidAmount: paidAmount.value, changeAmount: paidAmount.value - total, validFrom, expiresAt }, include: { package: true, customer: { select: { id: true, name: true, email: true, whatsapp: true } } } });
       const earnedPoints = customerId.value ? calculateEarnedPoints(total) : 0;
       if (customerId.value) await awardPointsInTransaction(tx, { userId: customerId.value, points: earnedPoints, reason: `Poin Playpass ${ticket.ticketNumber}`, referenceType: "PLAYPASS", referenceId: ticket.id, idempotencyKey: `playpass-points:${ticket.id}` });
       return { ...ticket, earnedPoints };
@@ -51,6 +53,7 @@ export async function POST(request: Request) {
       if (error.message === "QUANTITY_EXCEEDED") return NextResponse.json({ error: "Jumlah peserta melebihi kapasitas paket" }, { status: 400 });
       if (error.message === "PAYMENT_SHORTAGE") return NextResponse.json({ error: "Nominal pembayaran kurang" }, { status: 400 });
       if (error.message === "PAYMENT_MISMATCH") return NextResponse.json({ error: "Pembayaran non-tunai harus sama dengan total" }, { status: 400 });
+      if (error.message === "SHIFT_REQUIRED") return NextResponse.json({ error: "Buka shift kasir terlebih dahulu" }, { status: 409 });
     }
     console.error("[POST /api/cashier/playpasses]", error);
     return NextResponse.json({ error: "Gagal menerbitkan Playpass" }, { status: 500 });
