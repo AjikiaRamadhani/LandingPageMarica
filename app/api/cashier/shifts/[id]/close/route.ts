@@ -13,12 +13,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const result = await prisma.$transaction(async (tx) => {
       const shift = await tx.posShift.findFirst({ where: { id, cashierId: session.user.id, status: "OPEN" } });
       if (!shift) throw new Error("SHIFT_NOT_FOUND");
-      const [products, playpasses, tableFees] = await Promise.all([
+      const [products, cashierSales, playpasses, tableFees] = await Promise.all([
         tx.posTransaction.aggregate({ where: { shiftId: id, status: "COMPLETED", paymentMethod: "CASH" }, _sum: { total: true } }),
-        tx.playpassTicket.aggregate({ where: { shiftId: id, status: { in: ["ACTIVE", "CHECKED_IN"] }, paymentMethod: "CASH" }, _sum: { total: true } }),
-        tx.tableFeeSession.aggregate({ where: { shiftId: id, status: { in: ["ACTIVE", "COMPLETED"] }, paymentMethod: "CASH" }, _sum: { total: true } }),
+        tx.cashierTransaction.aggregate({ where: { shiftId: id, status: "COMPLETED", paymentMethod: "CASH" }, _sum: { total: true } }),
+        tx.playpassTicket.aggregate({ where: { shiftId: id, cashierTransactionId: null, status: { in: ["ACTIVE", "CHECKED_IN"] }, paymentMethod: "CASH" }, _sum: { total: true } }),
+        tx.tableFeeSession.aggregate({ where: { shiftId: id, cashierTransactionId: null, status: { in: ["ACTIVE", "COMPLETED"] }, paymentMethod: "CASH" }, _sum: { total: true } }),
       ]);
-      const cashSales = (products._sum.total ?? 0) + (playpasses._sum.total ?? 0) + (tableFees._sum.total ?? 0);
+      const cashSales = (products._sum.total ?? 0) + (cashierSales._sum.total ?? 0) + (playpasses._sum.total ?? 0) + (tableFees._sum.total ?? 0);
       const expectedCash = shift.openingCash + cashSales;
       const closed = await tx.posShift.update({ where: { id }, data: { closingCash, expectedCash, status: "CLOSED", closedAt: new Date(), notes: body.notes?.trim() || shift.notes } });
       return { shift: closed, cashSales, difference: closingCash - expectedCash };

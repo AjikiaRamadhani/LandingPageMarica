@@ -26,6 +26,12 @@ import {
 // Struktur daftar navigasi utama
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, enabled: true },
+  {
+    label: "Kasir",
+    href: "/kasir",
+    icon: ShoppingBag,
+    enabled: true,
+  },
   // Group Artikel dan submenu utilitas ditangani secara khusus di komponen Nav
   {
     label: "Produk",
@@ -56,10 +62,12 @@ const navItems = [
 function AccountMenu({
   name,
   email,
+  role,
   onNavigate,
 }: {
   name?: string | null;
   email?: string | null;
+  role?: string;
   onNavigate?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -154,10 +162,12 @@ function AccountMenu({
 function SidebarContent({
   name,
   email,
+  role,
   onNavigate,
 }: {
   name?: string | null;
   email?: string | null;
+  role?: string;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -189,13 +199,13 @@ function SidebarContent({
           }}
         />
         <span className="rounded-full bg-marica-ink px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-white">
-          Admin
+          {role === "KASIR" ? "Kasir" : "Admin"}
         </span>
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-1">
         {/* Dashboard */}
-        <Link href="/admin" onClick={onNavigate} className="relative">
+        {role !== "KASIR" && <Link href="/admin" onClick={onNavigate} className="relative">
           {pathname === "/admin" && (
             <motion.span
               layoutId="admin-nav-active"
@@ -213,10 +223,10 @@ function SidebarContent({
             <LayoutDashboard className="h-4.5 w-4.5" />
             Dashboard
           </span>
-        </Link>
+        </Link>}
 
         {/* --- GROUP MENU ARTIKEL + SUBMENU KATEGORI --- */}
-        <div className="flex flex-col gap-1">
+        {role !== "KASIR" && <div className="flex flex-col gap-1">
           <div className="relative flex items-center">
             {/* Link ke Halaman Artikel */}
             <Link
@@ -332,10 +342,10 @@ function SidebarContent({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </div>}
 
         {/* Sisa Menu Navigasi */}
-        {navItems.slice(1).map((item) => {
+        {navItems.slice(1).filter((item) => role === "KASIR" ? item.href === "/kasir" : item.href !== "/kasir").map((item) => {
           const isActive =
             item.enabled &&
             pathname.startsWith(item.href) &&
@@ -390,7 +400,7 @@ function SidebarContent({
         })}
       </nav>
 
-      <AccountMenu name={name} email={email} onNavigate={onNavigate} />
+      <AccountMenu name={name} email={email} role={role} onNavigate={onNavigate} />
     </>
   );
 }
@@ -398,9 +408,11 @@ function SidebarContent({
 export default function AdminSidebar({
   name,
   email,
+  role,
 }: {
   name?: string | null;
   email?: string | null;
+  role?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -419,7 +431,7 @@ export default function AdminSidebar({
             }}
           />
           <span className="rounded-full bg-marica-ink px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-white">
-            Admin
+            {role === "KASIR" ? "Kasir" : "Admin"}
           </span>
         </div>
         <button
@@ -465,6 +477,7 @@ export default function AdminSidebar({
               <SidebarContent
                 name={name}
                 email={email}
+                role={role}
                 onNavigate={() => setIsOpen(false)}
               />
             </motion.aside>
@@ -472,8 +485,8 @@ export default function AdminSidebar({
         )}
       </AnimatePresence>
 
-      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
-        <SidebarContent name={name} email={email} />
+      <aside className="fixed inset-y-0 left-0 z-30 hidden h-dvh w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
+        <SidebarContent name={name} email={email} role={role} />
       </aside>
     </>
   );

@@ -59,7 +59,7 @@ const strengthMeta = [
 // Setelah login berhasil, tentukan mau diarahkan ke mana:
 // 1. Kalau ada ?callbackUrl=... di URL (di-set oleh proxy.ts saat user
 //    non-login mencoba akses /admin/*), balik ke sana.
-// 2. Kalau tidak ada, dan role user ADMIN, langsung ke dashboard admin.
+// 2. Kalau tidak ada, arahkan ADMIN ke dashboard dan KASIR ke halaman kasir.
 // 3. Selain itu, ke beranda seperti biasa.
 // getSession() dipanggil manual (bukan pakai hook useSession) karena kita
 // butuh data TERBARU segera setelah signIn, bukan nunggu context re-render.
@@ -78,7 +78,9 @@ async function resolvePostLoginDestination(): Promise<string> {
 
     const session = await getSession();
     const role = (session?.user as { role?: string } | undefined)?.role;
-    return role === "ADMIN" ? "/admin/artikel" : "/";
+    if (role === "ADMIN") return "/admin/artikel";
+    if (role === "KASIR") return "/kasir";
+    return "/";
   } catch {
     return "/";
   }
