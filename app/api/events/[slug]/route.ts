@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { expireStalePendingBookings } from "@/lib/event-booking";
 
 type EventRecord = {
   slug: string;
@@ -22,6 +23,8 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    await expireStalePendingBookings();
+
     const event = await prisma.event.findFirst({
       where: { slug, isActive: true },
       include: {

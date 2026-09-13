@@ -77,9 +77,44 @@ export async function POST(
       return NextResponse.json({ error: "File printable belum tersedia" }, { status: 503 });
     }
 
-    await prisma.printable.update({
-      where: { id: printable.id },
-      data: { downloadCount: { increment: 1 } },
+    await prisma.$transaction(async (tx) => {
+      await tx.printable.update({
+        where: { id: printable.id },
+        data: { downloadCount: { increment: 1 } },
+      });
+
+      if (session?.user?.id && printable.points > 0) {
+        const idempotencyKey = `printable-download:${session.user.id}:${printable.id}`;
+        const existingPointTransaction = await tx.pointTransaction.findUnique({
+          where: { idempotencyKey },
+        });
+
+        if (!existingPointTransaction) {
+          const account = await tx.pointAccount.upsert({
+            where: { userId: session.user.id },
+            update: {},
+            create: { userId: session.user.id },
+          });
+
+          await tx.pointAccount.update({
+            where: { id: account.id },
+            data: { balance: { increment: printable.points } },
+          });
+
+          await tx.pointTransaction.create({
+            data: {
+              accountId: account.id,
+              userId: session.user.id,
+              type: "EARN",
+              pointsDelta: printable.points,
+              reason: `Download printable: ${printable.title}`,
+              referenceType: "PRINTABLE_DOWNLOAD",
+              referenceId: printable.id,
+              idempotencyKey,
+            },
+          });
+        }
+      }
     });
 
     try {

@@ -16,6 +16,11 @@ export async function GET(request: Request) {
 
     const where = status ? { status: status as "PENDING_PAYMENT" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "EXPIRED" } : {};
 
+    await prisma.order.updateMany({
+      where: { status: "PENDING_PAYMENT", createdAt: { lt: new Date(Date.now() - 30 * 60 * 1000) } },
+      data: { status: "EXPIRED" },
+    });
+
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,

@@ -2,11 +2,23 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
 import { ArrowLeft, Star, Play, Download } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { CATEGORY_STYLES, EDUGAMES, PRINTABLES, type Activity, type CategoryKey, type Printable } from "./activities-data";
+import {
+  CATEGORY_STYLES,
+  EDUGAMES,
+  PRINTABLES,
+  type Activity,
+  type CategoryKey,
+  type Printable,
+} from "./activities-data";
 
 const TABS = [
   { key: "edugames", label: "Edugames" },
@@ -33,24 +45,46 @@ export default function AktivitasPage() {
 
   useEffect(() => {
     fetch("/api/printables")
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Gagal memuat printable"))))
-      .then((data: Array<{ slug: string; title: string; description: string; subject: string; ageMin: number | null; ageMax: number | null }>) => {
-        setPrintables(data.map((item) => {
-          const category = toCategoryKey(item.subject);
-          const age = item.ageMin !== null && item.ageMax !== null ? `${item.ageMin}-${item.ageMax} Thn` : "Semua usia";
-          return {
-            ...PRINTABLES[0],
-            id: item.slug,
-            title: item.title,
-            description: item.description,
-            longDescription: item.description,
-            category,
-            categoryLabel: item.subject,
-            age,
-            href: `/aktivitas/printables-download?item=${encodeURIComponent(item.slug)}`,
-          };
-        }));
-      })
+      .then((response) =>
+        response.ok
+          ? response.json()
+          : Promise.reject(new Error("Gagal memuat printable")),
+      )
+      .then(
+        (
+          data: Array<{
+            slug: string;
+            title: string;
+            description: string;
+            subject: string;
+            ageMin: number | null;
+            ageMax: number | null;
+            thumbnailUrl: string | null;
+          }>,
+        ) => {
+          setPrintables(
+            data.map((item) => {
+              const category = toCategoryKey(item.subject);
+              const age =
+                item.ageMin !== null && item.ageMax !== null
+                  ? `${item.ageMin}-${item.ageMax} Thn`
+                  : "Semua usia";
+              return {
+                ...PRINTABLES[0],
+                id: item.slug,
+                title: item.title,
+                description: item.description,
+                longDescription: item.description,
+                category,
+                categoryLabel: item.subject,
+                age,
+                thumbnailUrl: item.thumbnailUrl,
+                href: `/aktivitas/printables-download?item=${encodeURIComponent(item.slug)}`,
+              };
+            }),
+          );
+        },
+      )
       .catch((error) => console.error("[AktivitasPage]", error));
   }, []);
 
@@ -70,68 +104,80 @@ export default function AktivitasPage() {
         <section className="mx-auto max-w-7xl px-6 pb-16 pt-8 lg:px-10 lg:pb-24 lg:pt-10">
           {/* Header — single entrance moment on page load */}
           <motion.div
-          initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="mx-auto max-w-2xl text-center"
-        >
-          <h1 className="font-display text-3xl font-semibold text-marica-ink sm:text-4xl">
-            Temukan Aktivitas Seru & Edukatif
-          </h1>
-          <p className="mt-3 font-body text-marica-ink-soft">
-            Jelajahi berbagai permainan interaktif dan materi cetak yang dirancang untuk
-            mendukung tumbuh kembang anak Anda dengan cara yang menyenangkan.
-          </p>
-        </motion.div>
+            initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mx-auto max-w-2xl text-center"
+          >
+            <h1 className="font-display text-3xl font-semibold text-marica-ink sm:text-4xl">
+              Temukan Aktivitas Seru & Edukatif
+            </h1>
+            <p className="mt-3 font-body text-marica-ink-soft">
+              Jelajahi berbagai permainan interaktif dan materi cetak yang
+              dirancang untuk mendukung tumbuh kembang anak Anda dengan cara
+              yang menyenangkan.
+            </p>
+          </motion.div>
 
-        {/* Segmented toggle — same sliding-pill pattern as the Navbar's hover state */}
-        <div className="mt-8 flex justify-center">
-          <div className="inline-flex items-center gap-1 rounded-full border border-marica-ink/10 bg-white p-1 shadow-sm">
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  aria-pressed={isActive}
-                  className={`relative isolate min-w-[112px] rounded-full px-5 py-2 text-center font-body text-sm font-semibold transition-colors ${
-                    isActive ? "text-white" : "text-marica-ink-soft hover:text-marica-ink"
-                  }`}
-                >
-                  {isActive && (
-                    <motion.span
-                      layoutId="aktivitas-tab-pill"
-                      className="absolute inset-0 z-0 rounded-full"
-                      style={{ backgroundColor: "#de8f0c" }}
-                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative z-10">{tab.label}</span>
-                </button>
-              );
-            })}
+          {/* Segmented toggle — same sliding-pill pattern as the Navbar's hover state */}
+          <div className="mt-8 flex justify-center">
+            <div className="inline-flex items-center gap-1 rounded-full border border-marica-ink/10 bg-white p-1 shadow-sm">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    aria-pressed={isActive}
+                    className={`relative isolate min-w-28 rounded-full px-5 py-2 text-center font-body text-sm font-semibold transition-colors ${
+                      isActive
+                        ? "text-white"
+                        : "text-marica-ink-soft hover:text-marica-ink"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="aktivitas-tab-pill"
+                        className="absolute inset-0 z-0 rounded-full"
+                        style={{ backgroundColor: "#de8f0c" }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 380,
+                          damping: 32,
+                        }}
+                      />
+                    )}
+                    <span className="relative z-10">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Activity grid — cross-fades and re-staggers in whenever the tab changes */}
-        <div className="mt-10">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              variants={reduceMotion ? undefined : gridVariants}
-              initial="hidden"
-              animate="show"
-              exit={reduceMotion ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-            >
-              {items.map((activity) => (
-                <ActivityCard key={activity.id} activity={activity} kind={activeTab} reduceMotion={!!reduceMotion} />
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+          {/* Activity grid — cross-fades and re-staggers in whenever the tab changes */}
+          <div className="mt-10">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                variants={reduceMotion ? undefined : gridVariants}
+                initial="hidden"
+                animate="show"
+                exit={reduceMotion ? undefined : { opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {items.map((activity) => (
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    kind={activeTab}
+                    reduceMotion={!!reduceMotion}
+                  />
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </section>
       </main>
       <Footer />
@@ -160,9 +206,14 @@ function ActivityCard({
       {/* Illustration area — faux browser chrome + a category icon standing in for artwork */}
       <div
         className="relative h-40 shrink-0"
-        style={{ backgroundImage: `linear-gradient(135deg, ${style.from}, ${style.to})` }}
+        style={{
+          backgroundImage: `linear-gradient(135deg, ${style.from}, ${style.to})`,
+        }}
       >
-        <div className="absolute left-3 top-3 flex gap-1.5 opacity-50" aria-hidden>
+        <div
+          className="absolute left-3 top-3 flex gap-1.5 opacity-50"
+          aria-hidden
+        >
           <span className="h-2 w-2 rounded-full bg-marica-ink/40" />
           <span className="h-2 w-2 rounded-full bg-marica-ink/40" />
           <span className="h-2 w-2 rounded-full bg-marica-ink/40" />
@@ -175,11 +226,20 @@ function ActivityCard({
           </div>
         )}
 
-        <div className="flex h-full items-center justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/70 shadow-inner">
-            <Icon className="h-7 w-7" style={{ color: style.iconColor }} />
+        {kind === "printables" && activity.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={activity.thumbnailUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/70 shadow-inner">
+              <Icon className="h-7 w-7" style={{ color: style.iconColor }} />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-marica-ink-soft shadow-sm">
           {activity.age}
@@ -194,7 +254,9 @@ function ActivityCard({
         >
           {activity.categoryLabel}
         </span>
-        <h3 className="mt-3 font-display text-lg font-semibold text-marica-ink">{activity.title}</h3>
+        <h3 className="mt-3 font-display text-lg font-semibold text-marica-ink">
+          {activity.title}
+        </h3>
         <p className="mt-1 flex-1 font-body text-sm text-marica-ink-soft line-clamp-2">
           {activity.description}
         </p>

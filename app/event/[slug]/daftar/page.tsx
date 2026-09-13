@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Ticket } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import FeedbackPopup from "@/app/components/FeedbackPopup";
 import type { EventItem } from "../../events-data";
 
 export default function EventRegistrationPage() {
@@ -149,11 +150,6 @@ export default function EventRegistrationPage() {
                   />
                 </label>
               ))}
-              {error && (
-                <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
-                </p>
-              )}
               <button
                 type="submit"
                 disabled={submitting || !event}
@@ -173,6 +169,7 @@ export default function EventRegistrationPage() {
         </div>
       </main>
       <Footer />
+      <FeedbackPopup message={error} onClose={() => setError(null)} />
     </div>
   );
 }

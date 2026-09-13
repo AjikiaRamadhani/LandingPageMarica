@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
+import FeedbackPopup from "@/app/components/FeedbackPopup";
 
 type TicketItem = {
   ticketCode: string;
@@ -60,11 +61,6 @@ export default function TicketPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Kembali ke Event Saya
         </Link>
-        {error && (
-          <p className="mt-6 rounded-xl bg-marica-rose-deep/10 px-4 py-3 text-sm text-marica-rose-deep">
-            {error}
-          </p>
-        )}
         {booking && (
           <>
             <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
@@ -123,6 +119,7 @@ export default function TicketPage() {
         )}
       </main>
       <Footer />
+      <FeedbackPopup message={error} onClose={() => setError(null)} />
     </div>
   );
 }

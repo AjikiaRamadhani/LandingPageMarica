@@ -97,6 +97,8 @@ export type ApiCart = {
   id?: string;
   items: ApiCartItem[];
   subtotal: number;
+  originalSubtotal?: number;
+  bundleDiscount?: number;
 };
 
 /* -------------------------------------------------------------------------- */

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/require-admin";
+import { requireRole } from "@/lib/access-control";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ ticketCode: string }> }
 ) {
-  const session = await requireAdmin();
+  const session = await requireRole("ADMIN", "KASIR");
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -20,12 +20,11 @@ export async function POST(
       return NextResponse.json({ error: "QR token wajib diisi" }, { status: 400 });
     }
 
+    const where = ticketCode === "scan"
+      ? { qrToken, status: "ACTIVE" as const }
+      : { ticketCode, qrToken, status: "ACTIVE" as const };
     const updated = await prisma.eventTicket.updateMany({
-      where: {
-        ticketCode,
-        qrToken,
-        status: "ACTIVE",
-      },
+      where,
       data: {
         status: "CHECKED_IN",
         checkedInAt: new Date(),
@@ -33,8 +32,8 @@ export async function POST(
     });
 
     if (updated.count === 0) {
-      const ticket = await prisma.eventTicket.findUnique({
-        where: { ticketCode },
+      const ticket = await prisma.eventTicket.findFirst({
+        where: ticketCode === "scan" ? { qrToken } : { ticketCode },
         select: { status: true },
       });
 
@@ -46,8 +45,8 @@ export async function POST(
       );
     }
 
-    const ticket = await prisma.eventTicket.findUnique({
-      where: { ticketCode },
+    const ticket = await prisma.eventTicket.findFirst({
+      where: ticketCode === "scan" ? { qrToken } : { ticketCode },
       include: { booking: { include: { event: true } } },
     });
 

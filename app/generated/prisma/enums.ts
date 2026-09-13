@@ -11,7 +11,8 @@
 
 export const Role = {
   USER: 'USER',
-  ADMIN: 'ADMIN'
+  ADMIN: 'ADMIN',
+  KASIR: 'KASIR'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
@@ -38,6 +39,71 @@ export const OrderStatus = {
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
 
 
+export const InventoryMovementType = {
+  PURCHASE: 'PURCHASE',
+  SALE: 'SALE',
+  ADJUSTMENT: 'ADJUSTMENT',
+  RETURN: 'RETURN',
+  RESERVATION: 'RESERVATION',
+  RELEASE: 'RELEASE'
+} as const
+
+export type InventoryMovementType = (typeof InventoryMovementType)[keyof typeof InventoryMovementType]
+
+
+export const PosPaymentMethod = {
+  CASH: 'CASH',
+  CARD: 'CARD',
+  QRIS: 'QRIS'
+} as const
+
+export type PosPaymentMethod = (typeof PosPaymentMethod)[keyof typeof PosPaymentMethod]
+
+
+export const PosTransactionStatus = {
+  COMPLETED: 'COMPLETED',
+  VOIDED: 'VOIDED'
+} as const
+
+export type PosTransactionStatus = (typeof PosTransactionStatus)[keyof typeof PosTransactionStatus]
+
+
+export const PlaypassTicketStatus = {
+  ACTIVE: 'ACTIVE',
+  CHECKED_IN: 'CHECKED_IN',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type PlaypassTicketStatus = (typeof PlaypassTicketStatus)[keyof typeof PlaypassTicketStatus]
+
+
+export const PosShiftStatus = {
+  OPEN: 'OPEN',
+  CLOSED: 'CLOSED'
+} as const
+
+export type PosShiftStatus = (typeof PosShiftStatus)[keyof typeof PosShiftStatus]
+
+
+export const CashierTransactionItemType = {
+  PRODUCT: 'PRODUCT',
+  PLAYPASS: 'PLAYPASS',
+  TABLE_FEE: 'TABLE_FEE'
+} as const
+
+export type CashierTransactionItemType = (typeof CashierTransactionItemType)[keyof typeof CashierTransactionItemType]
+
+
+export const TableFeeSessionStatus = {
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type TableFeeSessionStatus = (typeof TableFeeSessionStatus)[keyof typeof TableFeeSessionStatus]
+
+
 export const EventBookingStatus = {
   PENDING_PAYMENT: 'PENDING_PAYMENT',
   PAID: 'PAID',
@@ -55,3 +121,22 @@ export const TicketStatus = {
 } as const
 
 export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus]
+
+
+export const PointTransactionType = {
+  EARN: 'EARN',
+  REDEEM: 'REDEEM',
+  ADJUSTMENT: 'ADJUSTMENT',
+  REVERSAL: 'REVERSAL'
+} as const
+
+export type PointTransactionType = (typeof PointTransactionType)[keyof typeof PointTransactionType]
+
+
+export const UserVoucherStatus = {
+  AVAILABLE: 'AVAILABLE',
+  USED: 'USED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type UserVoucherStatus = (typeof UserVoucherStatus)[keyof typeof UserVoucherStatus]

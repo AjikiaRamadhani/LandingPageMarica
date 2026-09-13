@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plus, Search, Pencil, Trash2, ImageOff } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ImageOff, Tags } from "lucide-react";
 import DeleteArticleModal from "../../components/admin/DeleteArticleModal";
 import { categoryBadgeStyle } from "@/lib/category-color";
 
@@ -147,13 +147,22 @@ export default function AdminArtikelPage() {
             Kelola semua artikel blog Marica di sini.
           </p>
         </div>
-        <Link
-          href="/admin/artikel/baru"
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah Artikel
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/kategori"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-marica-amber-dark px-4 py-2.5 font-body text-sm font-semibold text-marica-amber-text transition hover:bg-marica-amber/10 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25"
+          >
+            <Tags className="h-4 w-4" />
+            Kategori
+          </Link>
+          <Link
+            href="/admin/artikel/baru"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/25"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah Artikel
+          </Link>
+        </div>
       </motion.div>
 
       <motion.div

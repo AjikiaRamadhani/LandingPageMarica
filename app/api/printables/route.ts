@@ -16,6 +16,7 @@ export async function GET() {
         ageMax: true,
         thumbnailUrl: true,
         price: true,
+        points: true,
         isFeatured: true,
         downloadCount: true,
       },

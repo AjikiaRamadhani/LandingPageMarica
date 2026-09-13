@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { refundRedeemedPointsInTransaction } from "@/lib/points";
 
 export async function GET(
   request: Request,
@@ -56,10 +57,27 @@ export async function PATCH(
       );
     }
 
-    const updated = await prisma.order.update({
-      where: { id: order.id },
-      data: { status: "CANCELLED" },
-      include: { items: true },
+    const updated = await prisma.$transaction(async (transaction) => {
+      const updatedOrder = await transaction.order.update({
+        where: { id: order.id, status: "PENDING_PAYMENT" },
+        data: { status: "CANCELLED" },
+        include: { items: true },
+      });
+
+      await refundRedeemedPointsInTransaction(transaction, {
+        userId: updatedOrder.userId,
+        points: updatedOrder.pointsUsed,
+        referenceId: updatedOrder.id,
+        idempotencyKey: `order-points-reversal:${updatedOrder.id}`,
+      });
+      if (updatedOrder.userVoucherId) {
+        await transaction.userVoucher.updateMany({
+          where: { id: updatedOrder.userVoucherId, status: "USED" },
+          data: { status: "AVAILABLE", usedAt: null },
+        });
+      }
+
+      return updatedOrder;
     });
 
     return NextResponse.json(updated);

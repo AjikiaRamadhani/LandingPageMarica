@@ -7,6 +7,8 @@ import { ArrowLeft, Loader2, Package, Store, XCircle } from "lucide-react";
 
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
+import FeedbackPopup from "../../../components/FeedbackPopup";
+import CancelOrderModal from "../../../components/belanja/CancelOrderModal";
 import { payWithSnap } from "../../../components/belanja/snap";
 import {
   ORDER_STATUS_LABEL,
@@ -35,6 +37,8 @@ export default function OrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadOrder = async () => {
@@ -89,16 +93,19 @@ export default function OrderDetailPage() {
     }
   };
 
+  const openCancelModal = () => {
+    setCancelError(null);
+    setCancelModalOpen(true);
+  };
+
+  const closeCancelModal = () => {
+    if (!isCancelling) setCancelModalOpen(false);
+  };
+
   const handleCancel = async () => {
-    if (
-      !order ||
-      !window.confirm(
-        "Batalkan pesanan ini? Pesanan yang dibatalkan tidak dapat dibayar lagi.",
-      )
-    )
-      return;
+    if (!order) return;
     setIsCancelling(true);
-    setError(null);
+    setCancelError(null);
     try {
       const response = await fetch(`/api/orders/${order.id}`, {
         method: "PATCH",
@@ -109,8 +116,9 @@ export default function OrderDetailPage() {
       if (!response.ok)
         throw new Error(json?.error ?? "Gagal membatalkan pesanan");
       setOrder(json as ApiOrder);
+      setCancelModalOpen(false);
     } catch (err) {
-      setError(
+      setCancelError(
         err instanceof Error ? err.message : "Gagal membatalkan pesanan",
       );
     } finally {
@@ -133,11 +141,7 @@ export default function OrderDetailPage() {
           {isLoading && (
             <div className="h-72 animate-pulse rounded-2xl bg-marica-ink/5" />
           )}
-          {!isLoading && error && !order && (
-            <div className="rounded-2xl bg-marica-rose-deep/5 p-6 font-body text-sm text-marica-rose-deep">
-              {error}
-            </div>
-          )}
+          {!isLoading && error && !order && <div className="h-24" />}
 
           {!isLoading && order && (
             <>
@@ -160,12 +164,6 @@ export default function OrderDetailPage() {
                   {ORDER_STATUS_LABEL[order.status]}
                 </span>
               </div>
-
-              {error && (
-                <p className="mt-4 rounded-xl bg-marica-rose-deep/5 p-3 font-body text-sm text-marica-rose-deep">
-                  {error}
-                </p>
-              )}
 
               <section className="mt-6 rounded-2xl border border-marica-ink/5 bg-white p-5 shadow-sm sm:p-6">
                 <h2 className="font-display text-lg font-bold text-marica-ink">
@@ -253,7 +251,7 @@ export default function OrderDetailPage() {
                   <>
                     <button
                       type="button"
-                      onClick={handleCancel}
+                      onClick={openCancelModal}
                       disabled={isCancelling || isPaying}
                       className="inline-flex items-center gap-1.5 rounded-full border-2 border-marica-rose-deep/30 px-5 py-2.5 font-body text-sm font-semibold text-marica-rose-deep disabled:opacity-50"
                     >
@@ -280,6 +278,14 @@ export default function OrderDetailPage() {
         </div>
       </main>
       <Footer />
+      <FeedbackPopup message={error} onClose={() => setError(null)} />
+      <CancelOrderModal
+        orderNumber={cancelModalOpen ? (order?.orderNumber ?? null) : null}
+        isCancelling={isCancelling}
+        error={cancelError}
+        onCancel={closeCancelModal}
+        onConfirm={handleCancel}
+      />
     </div>
   );
 }

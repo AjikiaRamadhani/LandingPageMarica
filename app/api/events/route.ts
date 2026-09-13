@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { expireStalePendingBookings } from "@/lib/event-booking";
 
 type EventRecord = {
   slug: string;
@@ -18,6 +19,8 @@ type EventRecord = {
 
 export async function GET() {
   try {
+    await expireStalePendingBookings();
+
     const events = await prisma.event.findMany({
       where: { isActive: true },
       orderBy: { eventDate: "asc" },

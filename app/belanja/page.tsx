@@ -14,8 +14,11 @@ import {
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import FeedbackPopup from "../components/FeedbackPopup";
 import ProductCard from "../components/belanja/ProductCard";
-import FilterPanel, { type FilterState } from "../components/belanja/FilterPanel";
+import FilterPanel, {
+  type FilterState,
+} from "../components/belanja/FilterPanel";
 import {
   AGE_OPTIONS,
   PRICE_RANGES,
@@ -102,7 +105,8 @@ export default function BelanjaPage() {
         setTotalPages(json.pagination?.totalPages ?? 1);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Gagal memuat produk");
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : "Gagal memuat produk");
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -133,7 +137,10 @@ export default function BelanjaPage() {
     return count;
   }, [filters]);
 
-  const pageNumbers = useMemo(() => buildPageNumbers(page, totalPages), [page, totalPages]);
+  const pageNumbers = useMemo(
+    () => buildPageNumbers(page, totalPages),
+    [page, totalPages],
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -142,9 +149,12 @@ export default function BelanjaPage() {
       <main className="section-soft-bg flex-1">
         {/* Page heading */}
         <div className="mx-auto max-w-7xl px-5 pb-4 pt-8 sm:px-6 lg:px-10 lg:pt-12">
-          <h1 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">Belanja</h1>
+          <h1 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">
+            Belanja
+          </h1>
           <p className="mt-1.5 max-w-xl font-body text-sm text-marica-ink-soft sm:text-base">
-            Mainan, buku, dan perlengkapan edukatif pilihan untuk tumbuh kembang si kecil.
+            Mainan, buku, dan perlengkapan edukatif pilihan untuk tumbuh kembang
+            si kecil.
           </p>
         </div>
 
@@ -217,11 +227,7 @@ export default function BelanjaPage() {
                   : `Menampilkan ${products.length} dari ${total} produk`}
               </p>
 
-              {error && (
-                <div className="rounded-2xl border border-marica-rose-deep/20 bg-marica-rose-deep/5 p-6 text-center font-body text-sm text-marica-rose-deep">
-                  {error}
-                </div>
-              )}
+              <FeedbackPopup message={error} onClose={() => setError(null)} />
 
               {!error && isLoading && (
                 <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
@@ -296,7 +302,7 @@ export default function BelanjaPage() {
                       >
                         {n}
                       </button>
-                    )
+                    ),
                   )}
 
                   <button
@@ -377,7 +383,15 @@ export default function BelanjaPage() {
 function buildPageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
-  const pages = new Set<number>([1, 2, total - 1, total, current - 1, current, current + 1]);
+  const pages = new Set<number>([
+    1,
+    2,
+    total - 1,
+    total,
+    current - 1,
+    current,
+    current + 1,
+  ]);
   const sorted = Array.from(pages)
     .filter((n) => n >= 1 && n <= total)
     .sort((a, b) => a - b);

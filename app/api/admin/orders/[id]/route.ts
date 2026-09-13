@@ -23,7 +23,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { status } = (await request.json()) as { status?: string };
+    const { status, trackingNumber, shippingCourier, fulfillmentNote } = (await request.json()) as { status?: string; trackingNumber?: string | null; shippingCourier?: string | null; fulfillmentNote?: string | null };
 
     if (!status || !VALID_STATUSES.includes(status)) {
       return NextResponse.json({ error: "Status tidak valid" }, { status: 400 });
@@ -36,7 +36,12 @@ export async function PUT(
 
     const order = await prisma.order.update({
       where: { id },
-      data: { status: status as typeof VALID_STATUSES[number] as never },
+      data: {
+        status: status as typeof VALID_STATUSES[number] as never,
+        ...(trackingNumber !== undefined ? { trackingNumber } : {}),
+        ...(shippingCourier !== undefined ? { shippingCourier } : {}),
+        ...(fulfillmentNote !== undefined ? { fulfillmentNote } : {}),
+      },
       include: { items: true },
     });
 
