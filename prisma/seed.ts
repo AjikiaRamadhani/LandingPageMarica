@@ -251,6 +251,216 @@ async function main() {
     ],
   });
 
+  // 15. Users (Bunda Rani, Admin, Kasir)
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@marica.id' },
+    update: {},
+    create: {
+      name: 'Admin Marica',
+      email: 'admin@marica.id',
+      role: 'ADMIN',
+    }
+  });
+
+  const kasirUser = await prisma.user.upsert({
+    where: { email: 'kasir@marica.id' },
+    update: {},
+    create: {
+      name: 'Kasir Marica',
+      email: 'kasir@marica.id',
+      role: 'KASIR',
+    }
+  });
+
+  const customerUser = await prisma.user.upsert({
+    where: { email: 'bunda.rani@gmail.com' },
+    update: {},
+    create: {
+      name: 'Bunda Rani',
+      email: 'bunda.rani@gmail.com',
+      role: 'USER',
+    }
+  });
+
+  // 16. Point Account for Customer
+  await prisma.pointAccount.upsert({
+    where: { userId: customerUser.id },
+    update: { balance: 2500 },
+    create: {
+      userId: customerUser.id,
+      balance: 2500,
+    }
+  });
+
+  // 17. Vouchers (Katalog)
+  await prisma.userVoucher.deleteMany();
+  await prisma.voucher.deleteMany();
+  const v1 = await prisma.voucher.create({
+    data: {
+      code: 'POTONGAN10K',
+      title: 'Voucher Belanja Rp10.000',
+      description: 'Potongan harga belanja online dan offline',
+      pointsCost: 500,
+      discountAmount: 10000,
+      isActive: true,
+    }
+  });
+  const v2 = await prisma.voucher.create({
+    data: {
+      code: 'POTONGAN25K',
+      title: 'Voucher Belanja Rp25.000',
+      description: 'Potongan harga belanja online dan offline minimal belanja 200rb',
+      pointsCost: 1000,
+      discountAmount: 25000,
+      isActive: true,
+    }
+  });
+  const v3 = await prisma.voucher.create({
+    data: {
+      code: 'POTONGAN30K',
+      title: 'Voucher Belanja Rp30.000',
+      description: 'Potongan harga khusus Marica Store',
+      pointsCost: 1200,
+      discountAmount: 30000,
+      isActive: true,
+    }
+  });
+  const v4 = await prisma.voucher.create({
+    data: {
+      code: 'ONGKIR15K',
+      title: 'Gratis Ongkir Rp15.000',
+      description: 'Potongan ongkos kirim online',
+      pointsCost: 800,
+      discountAmount: 15000,
+      isActive: true,
+    }
+  });
+
+  // 18. User Vouchers
+  await prisma.userVoucher.create({
+    data: {
+      userId: customerUser.id,
+      voucherId: v1.id,
+      status: 'AVAILABLE',
+    }
+  });
+  await prisma.userVoucher.create({
+    data: {
+      userId: customerUser.id,
+      voucherId: v4.id,
+      status: 'AVAILABLE',
+    }
+  });
+  await prisma.userVoucher.create({
+    data: {
+      userId: customerUser.id,
+      voucherId: v2.id,
+      status: 'USED',
+      usedAt: new Date(),
+    }
+  });
+
+  // 19. Products & Categories
+  await prisma.productBundleItem.deleteMany();
+  await prisma.productBundle.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.productImage.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.productCategory.deleteMany();
+  
+  const cat1 = await prisma.productCategory.create({
+    data: { name: 'Board Games', slug: 'board-games', colorTag: 'blue' }
+  });
+  const cat2 = await prisma.productCategory.create({
+    data: { name: 'Edu Kit', slug: 'edu-kit', colorTag: 'orange' }
+  });
+
+  await prisma.product.create({
+    data: {
+      name: 'Marica Smart Board',
+      slug: 'marica-smart-board',
+      description: 'Papan pintar edukatif untuk anak',
+      price: 150000,
+      stock: 50,
+      categoryId: cat1.id,
+      highlights: ['Meningkatkan motorik', 'Warna cerah'],
+      images: { create: [{ url: '/images/product1.png' }] }
+    }
+  });
+  await prisma.product.create({
+    data: {
+      name: 'Puzzle Logika Anak',
+      slug: 'puzzle-logika-anak',
+      description: 'Puzzle kayu melatih problem solving',
+      price: 75000,
+      stock: 100,
+      categoryId: cat1.id,
+      highlights: ['Bahan kayu aman', 'Melatih fokus'],
+      images: { create: [{ url: '/images/product2.png' }] }
+    }
+  });
+  await prisma.product.create({
+    data: {
+      name: 'Sensory Play Kit',
+      slug: 'sensory-play-kit',
+      description: 'Paket bermain sensori untuk balita',
+      price: 120000,
+      stock: 30,
+      categoryId: cat2.id,
+      highlights: ['Tekstur beragam', 'Aman jika tertelan sedikit'],
+      images: { create: [{ url: '/images/product3.png' }] }
+    }
+  });
+
+  // 20. Articles & Categories
+  await prisma.comment.deleteMany();
+  await prisma.article.deleteMany();
+  await prisma.articleCategory.deleteMany();
+
+  const blogCat1 = await prisma.articleCategory.create({
+    data: { name: 'Parenting', slug: 'parenting', colorTag: 'purple' }
+  });
+  const blogCat2 = await prisma.articleCategory.create({
+    data: { name: 'Edukatif', slug: 'edukatif', colorTag: 'green' }
+  });
+
+  await prisma.article.create({
+    data: {
+      title: '5 Cara Menumbuhkan Minat Baca Anak',
+      slug: '5-cara-menumbuhkan-minat-baca',
+      excerpt: 'Tips praktis bagi orang tua untuk membuat anak gemar membaca.',
+      content: '<p>Membaca adalah jendela dunia...</p>',
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      categoryId: blogCat1.id,
+      authorId: adminUser.id,
+    }
+  });
+  await prisma.article.create({
+    data: {
+      title: 'Pentingnya Bermain Sensori',
+      slug: 'pentingnya-bermain-sensori',
+      excerpt: 'Mengapa balita butuh bermain sensori?',
+      content: '<p>Bermain sensori sangat penting untuk saraf motorik...</p>',
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      categoryId: blogCat2.id,
+      authorId: adminUser.id,
+    }
+  });
+  await prisma.article.create({
+    data: {
+      title: 'Mengenal Konsep STEM Sejak Dini',
+      slug: 'mengenal-konsep-stem',
+      excerpt: 'Sains dan Matematika yang menyenangkan.',
+      content: '<p>STEM (Science, Technology, Engineering, Math) bisa diajarkan dengan cara seru...</p>',
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      categoryId: blogCat2.id,
+      authorId: adminUser.id,
+    }
+  });
+
   console.log("Seed selesai ✅");
 }
 

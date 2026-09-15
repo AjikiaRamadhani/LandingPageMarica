@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   SlidersHorizontal,
@@ -37,11 +38,15 @@ const DEFAULT_FILTERS: FilterState = {
 const PAGE_SIZE = 12;
 
 export default function BelanjaPage() {
+  const searchParams = useSearchParams();
   const [categories, setCategories] = useState<ApiCategory[]>([]);
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<FilterState>(() => ({
+    ...DEFAULT_FILTERS,
+    categorySlug: searchParams.get("category"),
+  }));
   const [sort, setSort] = useState<SortValue>("newest");
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -51,6 +56,19 @@ export default function BelanjaPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const categorySlug = searchParams.get("category");
+    const timer = window.setTimeout(() => {
+      setFilters((current) =>
+        current.categorySlug === categorySlug
+          ? current
+          : { ...current, categorySlug },
+      );
+      setPage(1);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
 
   // Debounce the free-text search so we don't hit the API on every keystroke.
   useEffect(() => {
