@@ -4,7 +4,8 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB, sesuai batas di desain form
-const BUCKET = "articles";
+const DEFAULT_BUCKET = "articles";
+const ALLOWED_BUCKETS = ["articles", "products"] as const;
 
 export async function POST(request: Request) {
   const session = await requireAdmin();
@@ -15,6 +16,12 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const requestedBucket = formData.get("bucket");
+    const bucket =
+      typeof requestedBucket === "string" &&
+      ALLOWED_BUCKETS.includes(requestedBucket as (typeof ALLOWED_BUCKETS)[number])
+        ? requestedBucket
+        : DEFAULT_BUCKET;
 
     if (!file) {
       return NextResponse.json({ error: "File tidak ditemukan" }, { status: 400 });
@@ -38,19 +45,37 @@ export async function POST(request: Request) {
       .replace(/[^a-zA-Z0-9._-]/g, ""); // buang semua karakter selain huruf/angka/titik/strip/underscore
     const filename = `${Date.now()}-${sanitizedName}`;
 
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from(BUCKET)
+    let { error: uploadError } = await supabaseAdmin.storage
+      .from(bucket)
       .upload(filename, buffer, {
         contentType: file.type,
         upsert: false,
       });
+
+    const isMissingBucket = uploadError
+      ? String(uploadError).toLowerCase().includes("bucket not found")
+      : false;
+    if (isMissingBucket) {
+      const { error: createBucketError } = await supabaseAdmin.storage.createBucket(bucket, {
+        public: true,
+      });
+
+      if (!createBucketError || createBucketError.message.toLowerCase().includes("already exists")) {
+        ({ error: uploadError } = await supabaseAdmin.storage
+          .from(bucket)
+          .upload(filename, buffer, {
+            contentType: file.type,
+            upsert: false,
+          }));
+      }
+    }
 
     if (uploadError) {
       console.error("[Supabase upload error]", uploadError);
       return NextResponse.json({ error: "Gagal upload gambar" }, { status: 500 });
     }
 
-    const { data: publicUrlData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(filename);
+    const { data: publicUrlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(filename);
 
     return NextResponse.json({ url: publicUrlData.publicUrl }, { status: 201 });
   } catch (error) {

@@ -14,6 +14,7 @@ import {
   ClipboardList,
   CalendarDays,
   BarChart3,
+  TicketPercent,
   Settings,
   Lock,
   Menu,
@@ -49,6 +50,12 @@ const navItems = [
     label: "Analytics",
     href: "/admin/analytics",
     icon: BarChart3,
+    enabled: true,
+  },
+  {
+    label: "Voucher",
+    href: "/admin/vouchers",
+    icon: TicketPercent,
     enabled: true,
   },
   {
