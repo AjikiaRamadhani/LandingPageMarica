@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import {
@@ -37,7 +37,7 @@ const DEFAULT_FILTERS: FilterState = {
 
 const PAGE_SIZE = 12;
 
-export default function BelanjaPage() {
+function BelanjaPageContent() {
   const searchParams = useSearchParams();
   const [categories, setCategories] = useState<ApiCategory[]>([]);
 
@@ -422,4 +422,29 @@ function buildPageNumbers(current: number, total: number): (number | "...")[] {
     prev = n;
   }
   return result;
+}
+
+export default function BelanjaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-white">
+          <Navbar />
+          <main className="section-soft-bg flex-1">
+            <div className="mx-auto max-w-7xl px-5 pt-8 sm:px-6 lg:px-10 lg:pt-12">
+              <h1 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">
+                Belanja
+              </h1>
+              <p className="mt-4 font-body text-sm text-marica-ink-soft">
+                Memuat produk...
+              </p>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <BelanjaPageContent />
+    </Suspense>
+  );
 }
