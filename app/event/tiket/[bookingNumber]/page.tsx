@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
@@ -56,10 +56,13 @@ export default function TicketPage() {
       <Navbar />
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
         <Link
-          href="/event-saya"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-marica-ink-soft"
+          href="/profil"
+          className="group inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-marica-amber to-marica-amber-dark px-4 py-2.5 font-body text-xs font-semibold text-white shadow-[0_6px_16px_rgba(222,143,12,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(222,143,12,0.45)] active:translate-y-0"
         >
-          <ArrowLeft className="h-4 w-4" /> Kembali ke Event Saya
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 transition-transform duration-200 group-hover:-translate-x-0.5">
+            <ArrowLeft className="h-3 w-3" />
+          </span>
+          Kembali ke Profil
         </Link>
         {booking && (
           <>
@@ -99,6 +102,15 @@ export default function TicketPage() {
                       className="h-full w-full"
                     />
                   </div>
+                  <a
+                    href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(ticket.qrToken)}`}
+                    download={`qr-${ticket.ticketCode}.png`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex items-center justify-center rounded-lg bg-marica-amber-dark px-4 py-2 font-body text-xs font-semibold text-white"
+                  >
+                    Unduh QR untuk scan
+                  </a>
                   <h2 className="mt-4 font-display text-xl font-bold text-marica-ink">
                     {ticket.participantName}
                   </h2>

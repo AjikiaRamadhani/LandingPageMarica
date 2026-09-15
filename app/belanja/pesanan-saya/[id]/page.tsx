@@ -49,7 +49,7 @@ export default function OrderDetailPage() {
       const json = await response.json().catch(() => null);
       if (response.status === 401) {
         router.push(
-          `/login?callbackUrl=${encodeURIComponent(`/belanja/pesanan-saya/${params.id}`)}`,
+          `/login?callbackUrl=${encodeURIComponent(`/profil/pesanan-saya/${params.id}`)}`,
         );
         return;
       }
@@ -132,7 +132,7 @@ export default function OrderDetailPage() {
       <main className="section-soft-bg flex-1">
         <div className="mx-auto max-w-4xl px-5 py-8 sm:px-6 lg:px-10">
           <Link
-            href="/belanja/pesanan-saya"
+            href="/profil/pesanan-saya"
             className="mb-6 inline-flex items-center gap-1.5 font-body text-sm font-medium text-marica-ink-soft hover:text-marica-ink"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Kembali ke Pesanan Saya

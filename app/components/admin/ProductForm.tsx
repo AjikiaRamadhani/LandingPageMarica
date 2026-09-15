@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -15,7 +21,12 @@ import {
   Wand2,
 } from "lucide-react";
 
-type ApiCategory = { id: string; name: string; slug: string; colorTag: string | null };
+type ApiCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  colorTag: string | null;
+};
 
 export type ProductFormImage = {
   id: string;
@@ -56,28 +67,52 @@ function toNumberOrNull(value: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export default function ProductForm({ initialData }: { initialData?: ProductFormInitialData }) {
+export default function ProductForm({
+  initialData,
+}: {
+  initialData?: ProductFormInitialData;
+}) {
   const router = useRouter();
   const isEdit = !!initialData;
 
   const [name, setName] = useState(initialData?.name ?? "");
   const [slug, setSlug] = useState(initialData?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(isEdit);
-  const [description, setDescription] = useState(initialData?.description ?? "");
-  const [price, setPrice] = useState(initialData ? String(initialData.price) : "");
-  const [compareAtPrice, setCompareAtPrice] = useState(
-    initialData?.compareAtPrice != null ? String(initialData.compareAtPrice) : ""
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
   );
-  const [stock, setStock] = useState(initialData ? String(initialData.stock) : "0");
+  const [price, setPrice] = useState(
+    initialData ? String(initialData.price) : "",
+  );
+  const [compareAtPrice, setCompareAtPrice] = useState(
+    initialData?.compareAtPrice != null
+      ? String(initialData.compareAtPrice)
+      : "",
+  );
+  const [stock, setStock] = useState(
+    initialData ? String(initialData.stock) : "0",
+  );
   const [categoryId, setCategoryId] = useState(initialData?.categoryId ?? "");
-  const [ageMin, setAgeMin] = useState(initialData?.ageMin != null ? String(initialData.ageMin) : "");
-  const [ageMax, setAgeMax] = useState(initialData?.ageMax != null ? String(initialData.ageMax) : "");
-  const [playerCount, setPlayerCount] = useState(initialData?.playerCount ?? "");
-  const [skillFocus, setSkillFocus] = useState<string[]>(initialData?.skillFocus ?? []);
+  const [ageMin, setAgeMin] = useState(
+    initialData?.ageMin != null ? String(initialData.ageMin) : "",
+  );
+  const [ageMax, setAgeMax] = useState(
+    initialData?.ageMax != null ? String(initialData.ageMax) : "",
+  );
+  const [playerCount, setPlayerCount] = useState(
+    initialData?.playerCount ?? "",
+  );
+  const [skillFocus, setSkillFocus] = useState<string[]>(
+    initialData?.skillFocus ?? [],
+  );
   const [skillInput, setSkillInput] = useState("");
-  const [isBestSeller, setIsBestSeller] = useState(initialData?.isBestSeller ?? false);
+  const [isBestSeller, setIsBestSeller] = useState(
+    initialData?.isBestSeller ?? false,
+  );
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
-  const [images, setImages] = useState<ProductFormImage[]>(initialData?.images ?? []);
+  const [images, setImages] = useState<ProductFormImage[]>(
+    initialData?.images ?? [],
+  );
 
   const [categories, setCategories] = useState<ApiCategory[]>([]);
 
@@ -92,7 +127,9 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
   useEffect(() => {
     fetch("/api/product-categories")
       .then((res) => res.json())
-      .then((json: ApiCategory[]) => setCategories(Array.isArray(json) ? json : []))
+      .then((json: ApiCategory[]) =>
+        setCategories(Array.isArray(json) ? json : []),
+      )
       .catch(() => setCategories([]));
   }, []);
 
@@ -104,7 +141,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      body: formData,
+    });
     const json = await res.json();
     if (!res.ok) throw new Error(json?.error ?? "Gagal mengunggah file");
     return json.url as string;
@@ -122,11 +162,17 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
         const url = await uploadFile(file);
         setImages((prev) => [
           ...prev,
-          { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url, isVideo: file.type.startsWith("video/") },
+          {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            url,
+            isVideo: file.type.startsWith("video/"),
+          },
         ]);
       }
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Gagal mengunggah file");
+      setUploadError(
+        err instanceof Error ? err.message : "Gagal mengunggah file",
+      );
     } finally {
       setIsUploadingImage(false);
     }
@@ -180,7 +226,11 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
     skillFocus,
     isBestSeller,
     isActive,
-    images: images.map((img, i) => ({ url: img.url, isVideo: img.isVideo, order: i })),
+    images: images.map((img, i) => ({
+      url: img.url,
+      isVideo: img.isVideo,
+      order: i,
+    })),
   });
 
   const handleSubmit = async () => {
@@ -201,18 +251,25 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
 
     setSubmitting(true);
     try {
-      const res = await fetch(isEdit ? `/api/admin/products/${initialData!.id}` : "/api/admin/products", {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload()),
-      });
+      const res = await fetch(
+        isEdit
+          ? `/api/admin/products/${initialData!.id}`
+          : "/api/admin/products",
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildPayload()),
+        },
+      );
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error ?? "Gagal menyimpan produk");
 
       router.push("/admin/belanja");
       router.refresh();
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Gagal menyimpan produk");
+      setSubmitError(
+        err instanceof Error ? err.message : "Gagal menyimpan produk",
+      );
       setSubmitting(false);
     }
   };
@@ -235,7 +292,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
       <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-7">
         <div className="flex flex-col gap-5">
           <div>
-            <label htmlFor="p-name" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+            <label
+              htmlFor="p-name"
+              className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+            >
               Nama Produk
             </label>
             <input
@@ -249,7 +309,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
           </div>
 
           <div>
-            <label htmlFor="p-slug" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+            <label
+              htmlFor="p-slug"
+              className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+            >
               Slug (URL)
             </label>
             <div className="flex gap-2">
@@ -282,7 +345,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
           </div>
 
           <div>
-            <label htmlFor="p-desc" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+            <label
+              htmlFor="p-desc"
+              className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+            >
               Deskripsi
             </label>
             <textarea
@@ -297,7 +363,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label htmlFor="p-price" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+              <label
+                htmlFor="p-price"
+                className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+              >
                 Harga (Rp)
               </label>
               <input
@@ -311,7 +380,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
               />
             </div>
             <div>
-              <label htmlFor="p-compare" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+              <label
+                htmlFor="p-compare"
+                className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+              >
                 Harga Coret (opsional)
               </label>
               <input
@@ -325,7 +397,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
               />
             </div>
             <div>
-              <label htmlFor="p-stock" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+              <label
+                htmlFor="p-stock"
+                className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+              >
                 Stok
               </label>
               <input
@@ -340,7 +415,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
           </div>
 
           <div>
-            <label htmlFor="p-category" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+            <label
+              htmlFor="p-category"
+              className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+            >
               Kategori
             </label>
             <select
@@ -360,7 +438,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label htmlFor="p-agemin" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+              <label
+                htmlFor="p-agemin"
+                className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+              >
                 Usia Minimal (thn)
               </label>
               <input
@@ -374,7 +455,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
               />
             </div>
             <div>
-              <label htmlFor="p-agemax" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+              <label
+                htmlFor="p-agemax"
+                className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+              >
                 Usia Maksimal (thn)
               </label>
               <input
@@ -388,7 +472,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
               />
             </div>
             <div>
-              <label htmlFor="p-players" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+              <label
+                htmlFor="p-players"
+                className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+              >
                 Jumlah Pemain
               </label>
               <input
@@ -403,7 +490,10 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
           </div>
 
           <div>
-            <label htmlFor="p-skill" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+            <label
+              htmlFor="p-skill"
+              className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
+            >
               Fokus Skill
             </label>
             <div className="flex gap-2">
@@ -464,13 +554,17 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={`flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition ${
-                isDragging ? "border-marica-amber bg-marica-amber/5" : "border-black/15 bg-marica-sky-light/20"
+                isDragging
+                  ? "border-marica-amber bg-marica-amber/5"
+                  : "border-black/15 bg-marica-sky-light/20"
               }`}
             >
               {isUploadingImage ? (
                 <>
                   <Loader2 className="h-6 w-6 animate-spin text-marica-amber-dark" />
-                  <span className="font-body text-sm text-marica-ink-soft">Mengunggah...</span>
+                  <span className="font-body text-sm text-marica-ink-soft">
+                    Mengunggah...
+                  </span>
                 </>
               ) : (
                 <>
@@ -486,7 +580,8 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
                     pilih file
                   </button>
                   <span className="font-body text-xs text-marica-ink-soft/50">
-                    Bisa pilih beberapa sekaligus. Gambar tampil pertama sebagai cover.
+                    Bisa pilih beberapa sekaligus. Gambar tampil pertama sebagai
+                    cover.
                   </span>
                 </>
               )}
@@ -502,7 +597,11 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
                 }}
               />
             </div>
-            {uploadError && <p className="mt-1.5 font-body text-xs text-marica-rose-deep">{uploadError}</p>}
+            {uploadError && (
+              <p className="mt-1.5 font-body text-xs text-marica-rose-deep">
+                {uploadError}
+              </p>
+            )}
 
             {images.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-3">
@@ -518,7 +617,11 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
                         </span>
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={img.url} alt="" className="h-full w-full object-cover" />
+                        <img
+                          src={img.url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
                       )}
                       {i === 0 && (
                         <span className="absolute left-1 top-1 rounded bg-marica-amber-dark px-1.5 py-0.5 font-body text-[9px] font-semibold text-white">
@@ -574,7 +677,9 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
               />
             </label>
             <label className="flex cursor-pointer items-center justify-between rounded-xl border border-black/10 bg-marica-sky-light/20 px-4 py-3">
-              <span className="font-body text-sm font-medium text-marica-ink">Tandai sebagai Best Seller</span>
+              <span className="font-body text-sm font-medium text-marica-ink">
+                Tandai sebagai Best Seller
+              </span>
               <input
                 type="checkbox"
                 checked={isBestSeller}
@@ -584,7 +689,11 @@ export default function ProductForm({ initialData }: { initialData?: ProductForm
             </label>
           </div>
 
-          {submitError && <p className="font-body text-sm text-marica-rose-deep">{submitError}</p>}
+          {submitError && (
+            <p className="font-body text-sm text-marica-rose-deep">
+              {submitError}
+            </p>
+          )}
 
           <div className="flex flex-col-reverse gap-3 border-t border-black/5 pt-5 sm:flex-row sm:justify-end">
             <button

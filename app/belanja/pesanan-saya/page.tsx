@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, ArrowLeft, Store, PackageSearch, Loader2 } from "lucide-react";
 
@@ -43,6 +43,7 @@ function formatDate(iso: string): string {
 
 export default function PesananSayaPage() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,7 +61,7 @@ export default function PesananSayaPage() {
       .then(async (res) => {
         if (res.status === 401) {
           router.push(
-            `/login?callbackUrl=${encodeURIComponent("/belanja/pesanan-saya")}`,
+            `/login?callbackUrl=${encodeURIComponent("/profil/pesanan-saya")}`,
           );
           return null;
         }
@@ -78,9 +79,16 @@ export default function PesananSayaPage() {
   };
 
   useEffect(() => {
+    if (pathname === "/belanja/pesanan-saya") {
+      router.replace("/profil");
+      return;
+    }
+
+    // Muat pesanan setelah halaman akun terpasang.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname]);
 
   const filteredOrders = useMemo(() => {
     const q = searchInput.trim().toLowerCase();
@@ -300,7 +308,7 @@ function OrderCard({
 
         <div className="flex flex-wrap justify-end gap-2.5">
           <Link
-            href={`/belanja/pesanan-saya/${order.id}`}
+            href={`/profil/pesanan-saya/${order.id}`}
             className="rounded-full border-2 border-marica-amber-dark/40 px-5 py-2 font-body text-sm font-semibold text-marica-amber-text transition hover:bg-marica-amber/10"
           >
             Detail Pesanan
@@ -330,7 +338,7 @@ function OrderCard({
 
           {order.status === "SHIPPED" && (
             <Link
-              href={`/belanja/pesanan-saya/${order.id}/lacak`}
+              href={`/profil/pesanan-saya/${order.id}/lacak`}
               className="rounded-full bg-marica-amber-dark px-5 py-2 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
             >
               Lacak Pesanan

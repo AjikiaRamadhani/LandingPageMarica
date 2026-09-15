@@ -18,7 +18,6 @@ import {
   CalendarDays,
   ArrowRight,
   LayoutDashboard,
-  ClipboardList,
   ShoppingCart,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
@@ -56,12 +55,28 @@ type ApiArticleCategory = {
   slug: string;
 };
 
+const simpleMenus = {
+  activity: [
+    { label: "Semua aktivitas", href: "/aktivitas" },
+    { label: "Printable gratis", href: "/aktivitas/printables-download" },
+  ],
+  edugames: [
+    { label: "Jelajahi edugames", href: "/edugames" },
+    { label: "Main bersama keluarga", href: "/aktivitas" },
+  ],
+  event: [
+    { label: "Kalender event", href: "/event" },
+  ],
+} as const;
+
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
   const isAdmin =
     (session?.user as { role?: string } | undefined)?.role === "ADMIN";
+  const isKasir =
+    (session?.user as { role?: string } | undefined)?.role === "KASIR";
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -272,20 +287,6 @@ export default function Navbar() {
       );
     }
 
-    const simpleMenus = {
-      activity: [
-        { label: "Semua aktivitas", href: "/aktivitas" },
-        { label: "Printable gratis", href: "/aktivitas/printables-download" },
-      ],
-      edugames: [
-        { label: "Jelajahi edugames", href: "/edugames" },
-        { label: "Main bersama keluarga", href: "/aktivitas" },
-      ],
-      event: [
-        { label: "Kalender event", href: "/event" },
-        { label: "Event saya", href: "/event-saya" },
-      ],
-    } as const;
     return (
       <div className="w-62.5 p-4">
         {simpleMenus[menu as keyof typeof simpleMenus]?.map((item) => (
@@ -301,6 +302,92 @@ export default function Navbar() {
               <CalendarDays className="h-4 w-4 text-marica-blue" />
             ) : (
               <BookOpen className="h-4 w-4 text-marica-violet-deep" />
+            )}
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    );
+  };
+
+  // Versi mobile dari menuItems() di atas: bukan panel hover, tapi daftar
+  // link datar yang ditaruh di bawah tombol induknya saat accordion dibuka.
+  const mobileMenuItems = (menu: NavMenu) => {
+    if (menu === "shop") {
+      return (
+        <div className="mt-1 space-y-0.5 border-l-2 border-marica-amber/20 pl-3">
+          <Link
+            href="/belanja"
+            onClick={handleMobileNavClick}
+            className="block rounded-lg px-3 py-2 font-body text-sm font-semibold text-marica-ink hover:bg-marica-cream"
+          >
+            Semua produk
+          </Link>
+          {productCategories.length ? (
+            productCategories.map((category) => (
+              <Link
+                key={category.id}
+                href={`/belanja?category=${category.slug}`}
+                onClick={handleMobileNavClick}
+                className="block rounded-lg px-3 py-2 font-body text-sm text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
+              >
+                {category.name}
+              </Link>
+            ))
+          ) : (
+            <p className="px-3 py-2 font-body text-xs text-marica-ink-soft">
+              Kategori sedang dimuat...
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    if (menu === "blog") {
+      return (
+        <div className="mt-1 space-y-0.5 border-l-2 border-marica-amber/20 pl-3">
+          <Link
+            href="/artikel"
+            onClick={handleMobileNavClick}
+            className="block rounded-lg px-3 py-2 font-body text-sm font-semibold text-marica-ink hover:bg-marica-cream"
+          >
+            Semua artikel
+          </Link>
+          {articleCategories.length ? (
+            articleCategories.map((category) => (
+              <Link
+                key={category.id}
+                href={`/artikel?category=${category.slug}`}
+                onClick={handleMobileNavClick}
+                className="block rounded-lg px-3 py-2 font-body text-sm text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
+              >
+                {category.name}
+              </Link>
+            ))
+          ) : (
+            <p className="px-3 py-2 font-body text-xs text-marica-ink-soft">
+              Kategori sedang dimuat...
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-1 space-y-0.5 border-l-2 border-marica-amber/20 pl-3">
+        {simpleMenus[menu as keyof typeof simpleMenus]?.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={handleMobileNavClick}
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 font-body text-sm text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
+          >
+            {menu === "activity" ? (
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-marica-rose-deep" />
+            ) : menu === "event" ? (
+              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-marica-blue" />
+            ) : (
+              <BookOpen className="h-3.5 w-3.5 shrink-0 text-marica-violet-deep" />
             )}
             {item.label}
           </Link>
@@ -417,7 +504,7 @@ export default function Navbar() {
           </button>
           {isLoggedIn && (
             <Link
-              href="/poin"
+              href="/profil/poin"
               aria-label={`${points.toLocaleString("id-ID")} Marica Points`}
               className="hidden items-center gap-1.5 rounded-full border border-marica-amber/60 bg-marica-amber/15 px-3 py-2 font-body text-xs font-bold text-marica-amber-text lg:flex"
             >
@@ -488,13 +575,23 @@ export default function Navbar() {
                       </div>
                     </div>
                     <Link
-                      href="/belanja/pesanan-saya"
+                      href="/profil"
                       onClick={() => setProfileOpen(false)}
                       className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-medium text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
                     >
-                      <ClipboardList className="h-4 w-4" />
-                      Pesanan Saya
+                      <User className="h-4 w-4" />
+                      Profil &amp; Keluarga
                     </Link>
+                    {isKasir && (
+                      <Link
+                        href="/kasir"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex w-full items-center gap-2.5 border-b border-black/5 px-4 py-3 font-body text-sm font-semibold text-marica-amber-text transition hover:bg-marica-cream"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Kasir
+                      </Link>
+                    )}
                     {isAdmin && (
                       <a
                         href="/admin"
@@ -592,23 +689,64 @@ export default function Navbar() {
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="mx-6 mb-5 flex flex-col gap-1 rounded-2xl bg-white p-3 shadow-[0_14px_35px_rgba(120,60,10,0.15)]"
             >
-              {navLinks.map((link, i) => (
-                <motion.a
-                  key={link.label}
-                  href={link.href}
-                  onClick={handleMobileNavClick}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.25, delay: i * 0.05 }}
-                  className={
-                    link.href === activeHref
-                      ? "rounded-xl bg-marica-amber/15 px-4 py-2.5 font-body text-[15px] font-medium text-marica-amber-text"
-                      : "rounded-xl px-4 py-2.5 font-body text-[15px] font-medium text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-ink"
-                  }
-                >
-                  {link.label}
-                </motion.a>
-              ))}
+              {navLinks.map((link, i) =>
+                link.menu ? (
+                  <motion.div
+                    key={link.label}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, delay: i * 0.05 }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenMenu((prev) =>
+                          prev === link.menu ? null : (link.menu ?? null),
+                        )
+                      }
+                      className={
+                        link.href === activeHref
+                          ? "flex w-full items-center justify-between rounded-xl bg-marica-amber/15 px-4 py-2.5 font-body text-[15px] font-medium text-marica-amber-text"
+                          : "flex w-full items-center justify-between rounded-xl px-4 py-2.5 font-body text-[15px] font-medium text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-ink"
+                      }
+                    >
+                      {link.label}
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${openMenu === link.menu ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {openMenu === link.menu && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          className="overflow-hidden px-1"
+                        >
+                          {mobileMenuItems(link.menu)}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ) : (
+                  <motion.a
+                    key={link.label}
+                    href={link.href}
+                    onClick={handleMobileNavClick}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.25, delay: i * 0.05 }}
+                    className={
+                      link.href === activeHref
+                        ? "rounded-xl bg-marica-amber/15 px-4 py-2.5 font-body text-[15px] font-medium text-marica-amber-text"
+                        : "rounded-xl px-4 py-2.5 font-body text-[15px] font-medium text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-ink"
+                    }
+                  >
+                    {link.label}
+                  </motion.a>
+                ),
+              )}
 
               <div className="mt-2 flex flex-col gap-2">
                 {isLoggedIn ? (
@@ -635,13 +773,23 @@ export default function Navbar() {
                       </div>
                     </div>
                     <Link
-                      href="/belanja/pesanan-saya"
+                      href="/profil"
                       onClick={() => setIsOpen(false)}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-ink/10 bg-white py-2 font-body text-sm font-semibold text-marica-ink-soft"
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-amber/30 bg-marica-amber/10 py-2 font-body text-sm font-semibold text-marica-amber-text"
                     >
-                      <ClipboardList className="h-4 w-4" />
-                      Pesanan Saya
+                      <User className="h-4 w-4" />
+                      Profil &amp; Keluarga
                     </Link>
+                    {isKasir && (
+                      <Link
+                        href="/kasir"
+                        onClick={() => setIsOpen(false)}
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-marica-amber/30 bg-marica-amber/10 py-2 font-body text-sm font-semibold text-marica-amber-text"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Kasir
+                      </Link>
+                    )}
                     {isAdmin && (
                       <a
                         href="/admin"
