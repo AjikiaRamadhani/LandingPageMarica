@@ -11,7 +11,6 @@ import {
   User,
   LogOut,
   ChevronDown,
-  Search,
   Star,
   BookOpen,
   Sparkles,
@@ -41,6 +40,33 @@ type ApiCompany = {
   name: string;
   logoUrl: string | null;
 };
+
+type ApiUserProfile = {
+  name: string | null;
+  email: string | null;
+  image: string | null;
+};
+
+function ProfileAvatar({
+  src,
+  className,
+  iconClassName,
+}: {
+  src: string | null | undefined;
+  className: string;
+  iconClassName: string;
+}) {
+  return (
+    <span className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-marica-amber/20 text-marica-amber-dark ${className}`}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <User className={iconClassName} />
+      )}
+    </span>
+  );
+}
 
 type ApiProductCategory = {
   id: string;
@@ -92,6 +118,7 @@ export default function Navbar() {
     ApiArticleCategory[]
   >([]);
   const [points, setPoints] = useState(0);
+  const [profile, setProfile] = useState<ApiUserProfile | null>(null);
 
   // Menu aktif mengikuti route saat ini. startsWith dipakai supaya halaman
   // detail (mis. /artikel/slug-nya) tetap menyorot menu "Blog" sebagai induknya.
@@ -132,15 +159,33 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isLoggedIn) {
+      setProfile(null);
       return;
     }
 
-    fetch("/api/points", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) =>
-        setPoints(typeof data?.balance === "number" ? data.balance : 0),
-      )
-      .catch(() => setPoints(0));
+    Promise.all([
+      fetch("/api/points", { cache: "no-store" }),
+      fetch("/api/user/profile", { cache: "no-store" }),
+    ])
+      .then(async ([pointsResponse, profileResponse]) => {
+        const pointsData = pointsResponse.ok
+          ? await pointsResponse.json().catch(() => null)
+          : null;
+        const profileData = profileResponse.ok
+          ? await profileResponse.json().catch(() => null)
+          : null;
+
+        setPoints(
+          typeof pointsData?.balance === "number" ? pointsData.balance : 0,
+        );
+        if (profileData && !profileData.error) {
+          setProfile(profileData as ApiUserProfile);
+        }
+      })
+      .catch(() => {
+        setPoints(0);
+        setProfile(null);
+      });
   }, [isLoggedIn]);
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
@@ -495,13 +540,6 @@ export default function Navbar() {
 
         {/* Right side: auth pills (desktop) + mobile menu button */}
         <div className="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            aria-label="Cari"
-            className="hidden h-9 w-9 items-center justify-center rounded-full bg-marica-ink/5 text-marica-ink-soft transition hover:bg-marica-cream lg:flex"
-          >
-            <Search className="h-4 w-4" />
-          </button>
           {isLoggedIn && (
             <Link
               href="/profil/poin"
@@ -541,11 +579,13 @@ export default function Navbar() {
                 aria-expanded={profileOpen}
                 className="flex items-center gap-2 rounded-full border border-marica-ink/10 bg-white py-1.5 pl-1.5 pr-3.5 shadow-sm transition hover:bg-marica-cream"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-marica-amber/20 text-marica-amber-dark">
-                  <User className="h-4 w-4" />
-                </span>
+                <ProfileAvatar
+                  src={profile?.image}
+                  className="h-7 w-7"
+                  iconClassName="h-4 w-4"
+                />
                 <span className="max-w-30 truncate font-body text-sm font-semibold text-marica-ink">
-                  {session?.user?.name?.split(" ")[0] || "Akun"}
+                  {(profile?.name ?? session?.user?.name)?.split(" ")[0] || "Akun"}
                 </span>
                 <ChevronDown
                   className={`h-3.5 w-3.5 text-marica-ink-soft transition-transform ${profileOpen ? "rotate-180" : ""}`}
@@ -562,15 +602,17 @@ export default function Navbar() {
                     className="absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-2xl bg-white shadow-[0_14px_35px_rgba(120,60,10,0.15)]"
                   >
                     <div className="flex items-center gap-3 border-b border-black/5 px-4 py-3.5">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-marica-amber/20 text-marica-amber-dark">
-                        <User className="h-5 w-5" />
-                      </span>
+                      <ProfileAvatar
+                        src={profile?.image}
+                        className="h-10 w-10"
+                        iconClassName="h-5 w-5"
+                      />
                       <div className="min-w-0">
                         <p className="truncate font-body text-sm font-semibold text-marica-ink">
-                          {session?.user?.name || "Pengguna"}
+                          {profile?.name ?? session?.user?.name ?? "Pengguna"}
                         </p>
                         <p className="truncate font-body text-xs text-marica-ink-soft">
-                          {session?.user?.email}
+                          {profile?.email ?? session?.user?.email}
                         </p>
                       </div>
                     </div>
@@ -760,15 +802,17 @@ export default function Navbar() {
                     className="rounded-xl bg-marica-cream/60 px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-marica-amber/20 text-marica-amber-dark">
-                        <User className="h-4 w-4" />
-                      </span>
+                      <ProfileAvatar
+                        src={profile?.image}
+                        className="h-9 w-9"
+                        iconClassName="h-4 w-4"
+                      />
                       <div className="min-w-0">
                         <p className="truncate font-body text-sm font-semibold text-marica-ink">
-                          {session?.user?.name || "Pengguna"}
+                          {profile?.name ?? session?.user?.name ?? "Pengguna"}
                         </p>
                         <p className="truncate font-body text-xs text-marica-ink-soft">
-                          {session?.user?.email}
+                          {profile?.email ?? session?.user?.email}
                         </p>
                       </div>
                     </div>

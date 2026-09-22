@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import localFont from "next/font/local";
+
 import "@fontsource/fredoka/400.css";
 import "@fontsource/fredoka/500.css";
 import "@fontsource/fredoka/600.css";
 import "@fontsource/fredoka/700.css";
+
 import "./globals.css";
 import Providers from "./components/Providers";
 
-
-// Self-hosted Plus Jakarta Sans (variable font) via next/font/local.
-// Covers all weights 200-800 through the single variable file, plus italics.
+// Self-hosted Plus Jakarta Sans
 const plusJakartaSans = localFont({
   src: [
     {
@@ -25,16 +26,20 @@ const plusJakartaSans = localFont({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.marica.id";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.marica.id";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+
   title: {
     default: "Marica - Platform Edukasi Calistung untuk Anak Indonesia",
     template: "%s | Marica",
   },
+
   description:
     "Marica menghadirkan pengalaman belajar keluarga berbasis phygital - area bermain edukatif, workshop akhir pekan, dan Edu-Kit bulanan untuk anak usia 2-12 tahun.",
+
   keywords: [
     "Marica",
     "edukasi anak",
@@ -45,19 +50,24 @@ export const metadata: Metadata = {
     "workshop anak",
     "phygital learning",
   ],
-  authors: [{ name: "PT Sebangku Jaya Abadi" }],
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
+
+  authors: [
+    {
+      name: "PT Sebangku Jaya Abadi",
+    },
+  ],
+
   openGraph: {
     type: "website",
     locale: "id_ID",
     url: siteUrl,
     siteName: "Marica",
+
     title: "Marica - Platform Edukasi Calistung untuk Anak Indonesia",
+
     description:
       "Ciptakan momen belajar ceria dan bermakna bersama si kecil setiap hari, bersama Marica.",
+
     images: [
       {
         url: "/images/og-image.png",
@@ -67,22 +77,36 @@ export const metadata: Metadata = {
       },
     ],
   },
+
   twitter: {
     card: "summary_large_image",
+
     title: "Marica - Platform Edukasi Calistung untuk Anak Indonesia",
+
     description:
       "Ciptakan momen belajar ceria dan bermakna bersama si kecil setiap hari, bersama Marica.",
+
     images: ["/images/og-image.png"],
   },
+
   robots: {
     index: true,
     follow: true,
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+type RootLayoutProps = {
+  children: ReactNode;
+};
+
+export default function RootLayout({
+  children,
+}: RootLayoutProps) {
   return (
-    <html lang="id" className={`h-full antialiased ${plusJakartaSans.variable}`}>
+    <html
+      lang="id"
+      className={`h-full antialiased ${plusJakartaSans.variable}`}
+    >
       <body className="min-h-full flex flex-col font-body">
         <Providers>{children}</Providers>
       </body>

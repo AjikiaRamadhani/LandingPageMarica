@@ -48,8 +48,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
+        // Auth.js does not always copy the provider user's id into `sub`
+        // when a custom credentials provider is used. Keep it explicit so
+        // server routes can reliably identify the current user.
+        if (user.id) token.sub = user.id;
         token.role = (user as { role?: string }).role ?? "USER";
       }
 
@@ -61,24 +65,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!dbUser) return {};
 
-        // User updates, including password resets, invalidate older JWTs.
-        const tokenTime = token.userUpdatedAt
-          ? new Date(String(token.userUpdatedAt)).getTime()
-          : typeof token.iat === "number"
-            ? token.iat * 1000
-            : 0;
-        if (tokenTime && dbUser.updatedAt.getTime() > tokenTime) {
-          return {};
+        // Profile edits update `updatedAt`, but must not log the user out on
+        // the next navigation. Keep the session valid while the user exists.
+        // An explicit session update still refreshes the timestamp stored in
+        // the token for future session synchronization.
+        if (trigger === "update") {
+          token.userUpdatedAt = dbUser.updatedAt.toISOString();
         }
-
         token.role = dbUser.role;
         token.userUpdatedAt ??= dbUser.updatedAt.toISOString();
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
+      if (session.user) {
+        if (token.sub) session.user.id = token.sub;
         (session.user as { role?: string }).role = token.role as string;
       }
       return session;
