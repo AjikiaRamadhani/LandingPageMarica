@@ -27,6 +27,9 @@ jobs:
 
       - name: Build
         run: npm run build --webpack
+        env: 
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Prepare deployment
         run: |
