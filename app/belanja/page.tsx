@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import {
@@ -38,17 +43,19 @@ const DEFAULT_FILTERS: FilterState = {
 
 const PAGE_SIZE = 12;
 
-export default function BelanjaPage() {
 function BelanjaPageContent() {
   const searchParams = useSearchParams();
+
   const [categories, setCategories] = useState<ApiCategory[]>([]);
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...DEFAULT_FILTERS,
     categorySlug: searchParams.get("category"),
   }));
+
   const [sort, setSort] = useState<SortValue>("newest");
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -56,19 +63,23 @@ function BelanjaPageContent() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const categorySlug = searchParams.get("category");
+
     const timer = window.setTimeout(() => {
       setFilters((current) =>
         current.categorySlug === categorySlug
           ? current
           : { ...current, categorySlug },
       );
+
       setPage(1);
     }, 0);
+
     return () => window.clearTimeout(timer);
   }, [searchParams]);
 
@@ -78,6 +89,7 @@ function BelanjaPageContent() {
       setSearch(searchInput.trim());
       setPage(1);
     }, 400);
+
     return () => clearTimeout(timer);
   }, [searchInput]);
 
@@ -85,51 +97,92 @@ function BelanjaPageContent() {
     fetch("/api/product-categories")
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) setCategories(data);
+        if (Array.isArray(data)) {
+          setCategories(data);
+        }
       })
-      .catch((err) => console.error("Failed to load product categories", err));
+      .catch((err) =>
+        console.error("Failed to load product categories", err),
+      );
   }, []);
 
   const buildQuery = useCallback(() => {
     const params = new URLSearchParams();
+
     params.set("page", String(page));
     params.set("limit", String(PAGE_SIZE));
     params.set("sort", sort);
-    if (search) params.set("search", search);
-    if (filters.categorySlug) params.set("category", filters.categorySlug);
+
+    if (search) {
+      params.set("search", search);
+    }
+
+    if (filters.categorySlug) {
+      params.set("category", filters.categorySlug);
+    }
+
     if (filters.ageKey) {
       const age = AGE_OPTIONS.find((a) => a.key === filters.ageKey);
-      if (age) params.set("age", age.value);
+
+      if (age) {
+        params.set("age", age.value);
+      }
     }
-    const priceRange = PRICE_RANGES.find((p) => p.key === filters.priceKey);
-    if (priceRange?.min != null) params.set("minPrice", String(priceRange.min));
-    if (priceRange?.max != null) params.set("maxPrice", String(priceRange.max));
+
+    const priceRange = PRICE_RANGES.find(
+      (p) => p.key === filters.priceKey,
+    );
+
+    if (priceRange?.min != null) {
+      params.set("minPrice", String(priceRange.min));
+    }
+
+    if (priceRange?.max != null) {
+      params.set("maxPrice", String(priceRange.max));
+    }
+
     return params.toString();
   }, [page, sort, search, filters]);
 
   useEffect(() => {
     let cancelled = false;
+
     setIsLoading(true);
     setError(null);
 
     fetch(`/api/products?${buildQuery()}`)
       .then(async (res) => {
         const json = await res.json().catch(() => null);
-        if (!res.ok) throw new Error(json?.error ?? "Gagal memuat produk");
+
+        if (!res.ok) {
+          throw new Error(json?.error ?? "Gagal memuat produk");
+        }
+
         return json;
       })
       .then((json) => {
         if (cancelled) return;
-        setProducts(Array.isArray(json.products) ? json.products : []);
+
+        setProducts(
+          Array.isArray(json.products) ? json.products : [],
+        );
+
         setTotal(json.pagination?.total ?? 0);
         setTotalPages(json.pagination?.totalPages ?? 1);
       })
       .catch((err) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : "Gagal memuat produk");
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Gagal memuat produk",
+          );
+        }
       })
       .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       });
 
     return () => {
@@ -151,9 +204,19 @@ function BelanjaPageContent() {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (filters.categorySlug) count += 1;
-    if (filters.ageKey) count += 1;
-    if (filters.priceKey !== "all") count += 1;
+
+    if (filters.categorySlug) {
+      count += 1;
+    }
+
+    if (filters.ageKey) {
+      count += 1;
+    }
+
+    if (filters.priceKey !== "all") {
+      count += 1;
+    }
+
     return count;
   }, [filters]);
 
@@ -172,17 +235,19 @@ function BelanjaPageContent() {
           <h1 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">
             Belanja
           </h1>
+
           <p className="mt-1.5 max-w-xl font-body text-sm text-marica-ink-soft sm:text-base">
-            Mainan, buku, dan perlengkapan edukatif pilihan untuk tumbuh kembang
-            si kecil.
+            Mainan, buku, dan perlengkapan edukatif pilihan untuk
+            tumbuh kembang si kecil.
           </p>
         </div>
 
         <div className="mx-auto max-w-7xl px-5 pb-16 sm:px-6 lg:px-10">
-          {/* Search + sort (all breakpoints) */}
+          {/* Search + sort */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-marica-ink-soft/60" />
+
               <input
                 type="text"
                 value={searchInput}
@@ -193,7 +258,7 @@ function BelanjaPageContent() {
             </div>
 
             <div className="flex items-center gap-2.5">
-              {/* Sort — dropdown on all sizes, kept compact */}
+              {/* Sort */}
               <div className="relative">
                 <select
                   value={sort}
@@ -209,17 +274,20 @@ function BelanjaPageContent() {
                     </option>
                   ))}
                 </select>
+
                 <ChevronRight className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 rotate-90 text-marica-ink-soft/60" />
               </div>
 
-              {/* Filter button — mobile/tablet only, sidebar covers desktop */}
+              {/* Filter button — mobile/tablet only */}
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(true)}
                 className="relative flex shrink-0 items-center gap-2 rounded-full border border-marica-ink/10 bg-white px-4 py-2.5 font-body text-sm font-medium text-marica-ink shadow-sm transition hover:bg-marica-cream lg:hidden"
               >
                 <SlidersHorizontal className="h-4 w-4" />
+
                 Filter
+
                 {activeFilterCount > 0 && (
                   <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-marica-amber-dark px-1 font-body text-[10px] font-bold text-white">
                     {activeFilterCount}
@@ -229,7 +297,7 @@ function BelanjaPageContent() {
             </div>
           </div>
 
-          {/* Content: sidebar (desktop) + grid */}
+          {/* Content: sidebar + grid */}
           <div className="mt-6 flex items-start gap-8">
             <aside className="sticky top-24 hidden w-64 shrink-0 rounded-2xl border border-marica-ink/5 bg-white p-5 shadow-[0_10px_28px_rgba(120,60,10,0.08)] lg:block">
               <FilterPanel
@@ -247,8 +315,12 @@ function BelanjaPageContent() {
                   : `Menampilkan ${products.length} dari ${total} produk`}
               </p>
 
-              <FeedbackPopup message={error} onClose={() => setError(null)} />
+              <FeedbackPopup
+                message={error}
+                onClose={() => setError(null)}
+              />
 
+              {/* Loading skeleton */}
               {!error && isLoading && (
                 <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -260,15 +332,20 @@ function BelanjaPageContent() {
                 </div>
               )}
 
+              {/* Empty state */}
               {!error && !isLoading && products.length === 0 && (
                 <div className="flex flex-col items-center gap-3 rounded-2xl border border-marica-ink/5 bg-white py-16 text-center shadow-sm">
                   <PackageSearch className="h-10 w-10 text-marica-ink-soft/40" />
+
                   <p className="font-display text-base font-semibold text-marica-ink">
                     Produk tidak ditemukan
                   </p>
+
                   <p className="max-w-xs font-body text-sm text-marica-ink-soft">
-                    Coba ubah kata kunci atau atur ulang filter pencarianmu.
+                    Coba ubah kata kunci atau atur ulang filter
+                    pencarianmu.
                   </p>
+
                   <button
                     type="button"
                     onClick={handleReset}
@@ -280,10 +357,14 @@ function BelanjaPageContent() {
                 </div>
               )}
 
+              {/* Product grid */}
               {!error && !isLoading && products.length > 0 && (
                 <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
                   {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                    />
                   ))}
                 </div>
               )}
@@ -294,7 +375,9 @@ function BelanjaPageContent() {
                   <button
                     type="button"
                     disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() =>
+                      setPage((p) => Math.max(1, p - 1))
+                    }
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-marica-ink/10 bg-white text-marica-ink-soft transition hover:bg-marica-cream disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Halaman sebelumnya"
                   >
@@ -328,7 +411,11 @@ function BelanjaPageContent() {
                   <button
                     type="button"
                     disabled={page >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setPage((p) =>
+                        Math.min(totalPages, p + 1),
+                      )
+                    }
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-marica-ink/10 bg-white text-marica-ink-soft transition hover:bg-marica-cream disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Halaman berikutnya"
                   >
@@ -355,6 +442,7 @@ function BelanjaPageContent() {
               onClick={() => setMobileFilterOpen(false)}
               className="fixed inset-0 z-40 bg-marica-ink/40 lg:hidden"
             />
+
             <motion.div
               key="drawer"
               initial={{ y: "100%" }}
@@ -366,6 +454,7 @@ function BelanjaPageContent() {
               <div className="mb-1 flex items-center justify-between">
                 <span className="mx-auto h-1.5 w-12 rounded-full bg-marica-ink/10" />
               </div>
+
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(false)}
@@ -400,8 +489,16 @@ function BelanjaPageContent() {
 }
 
 // Builds a compact page-number list with ellipses, e.g. [1, 2, 3, "...", 9]
-function buildPageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+function buildPageNumbers(
+  current: number,
+  total: number,
+): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from(
+      { length: total },
+      (_, i) => i + 1,
+    );
+  }
 
   const pages = new Set<number>([
     1,
@@ -412,34 +509,49 @@ function buildPageNumbers(current: number, total: number): (number | "...")[] {
     current,
     current + 1,
   ]);
+
   const sorted = Array.from(pages)
     .filter((n) => n >= 1 && n <= total)
     .sort((a, b) => a - b);
 
   const result: (number | "...")[] = [];
   let prev = 0;
+
   for (const n of sorted) {
-    if (prev && n - prev > 1) result.push("...");
+    if (prev && n - prev > 1) {
+      result.push("...");
+    }
+
     result.push(n);
     prev = n;
   }
+
   return result;
 }
 
 export default function BelanjaPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen flex-col bg-white">
-        <Navbar />
-        <main className="section-soft-bg flex-1">
-          <div className="mx-auto max-w-7xl px-5 pt-8 sm:px-6 lg:px-10 lg:pt-12">
-            <h1 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">Belanja</h1>
-            <p className="mt-4 font-body text-sm text-marica-ink-soft">Memuat produk...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-white">
+          <Navbar />
+
+          <main className="section-soft-bg flex-1">
+            <div className="mx-auto max-w-7xl px-5 pt-8 sm:px-6 lg:px-10 lg:pt-12">
+              <h1 className="font-display text-2xl font-bold text-marica-ink sm:text-3xl">
+                Belanja
+              </h1>
+
+              <p className="mt-4 font-body text-sm text-marica-ink-soft">
+                Memuat produk...
+              </p>
+            </div>
+          </main>
+
+          <Footer />
+        </div>
+      }
+    >
       <BelanjaPageContent />
     </Suspense>
   );
