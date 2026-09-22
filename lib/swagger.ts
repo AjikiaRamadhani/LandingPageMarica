@@ -167,6 +167,13 @@ export const getApiDocs = () => {
   add("/api/auth/{nextauth}", "get", "NextAuth handler", "Authentication", { parameters: [pathParam("nextauth", "NextAuth action such as csrf, session, or providers.")], success: objectSchema, errorCodes: ["400", "500"] });
   add("/api/auth/{nextauth}", "post", "NextAuth callback handler", "Authentication", { parameters: [pathParam("nextauth", "NextAuth action.")], success: objectSchema, errorCodes: ["400", "401", "500"] });
 
+  // User profile and account management.
+  add("/api/user/profile", "get", "Get current user profile and stats", "Profile", { auth: true, success: objectSchema, errorCodes: ["401", "404", "500"] });
+  add("/api/user/profile", "patch", "Update user profile details", "Profile", { auth: true, requestBody: { type: "object", properties: { name: { type: "string" }, whatsapp: { type: "string" } } }, success: objectSchema, errorCodes: ["400", "401", "500"] });
+  add("/api/user/profile/avatar", "post", "Upload user profile avatar image", "Profile", { auth: true, requestBody: { type: "object", description: "multipart/form-data with 'avatar' file" }, success: objectSchema, errorCodes: ["400", "401", "500"] });
+  add("/api/user/profile/avatar", "delete", "Delete user profile avatar image", "Profile", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
+  add("/api/user/profile/change-password", "post", "Change password for logged-in user", "Profile", { auth: true, requestBody: { type: "object", required: ["currentPassword", "newPassword", "confirmPassword"], properties: { currentPassword: { type: "string", format: "password" }, newPassword: { type: "string", format: "password" }, confirmPassword: { type: "string", format: "password" } } }, success: objectSchema, errorCodes: ["400", "401", "404", "500"] });
+
   // Shipping and external service adapters.
   add("/api/shipping/destinations", "get", "Search shipping destinations", "Shipping", { parameters: [queryParam("search", "Destination search query.")], success: arraySchema(), errorCodes: ["400", "500"] });
   add("/api/shipping/cost", "post", "Calculate shipping cost", "Shipping", { requestBody: { type: "object", required: ["destinationId", "weightGrams", "courier"], properties: { destinationId: { type: "string" }, weightGrams: { type: "integer", minimum: 1 }, courier: { type: "string" } } }, success: objectSchema, errorCodes: ["400", "500"] });
@@ -239,6 +246,7 @@ export const getApiDocs = () => {
     ],
     tags: [
       { name: "Authentication", description: "Registrasi dan pemulihan akun." },
+      { name: "Profile", description: "Profil, foto profil, dan kata sandi user yang sedang login." },
       { name: "Content", description: "Konten landing page." },
       { name: "Catalog", description: "Produk dan kategori produk." },
       { name: "Cart", description: "Keranjang user yang sedang login." },
