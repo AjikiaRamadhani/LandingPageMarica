@@ -2,10 +2,30 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { findSessionUser } from "@/lib/session-user";
 
 const BUCKET = "avatars";
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+async function ensureAvatarBucket() {
+  const { error: updateError } = await supabaseAdmin.storage
+    .updateBucket(BUCKET, { public: true });
+
+  if (!updateError) return null;
+
+  const missingBucket = updateError.message.toLowerCase().includes("bucket not found");
+  if (!missingBucket) return updateError;
+
+  const { error: createError } = await supabaseAdmin.storage.createBucket(BUCKET, {
+    public: true,
+  });
+  if (createError && !createError.message.toLowerCase().includes("already exists")) {
+    return createError;
+  }
+
+  return null;
+}
 
 // POST /api/user/profile/avatar
 // Upload atau ganti foto profil user.
@@ -17,6 +37,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const user = await findSessionUser(session);
+    if (!user) {
+      return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("avatar") as File | null;
 
@@ -33,16 +58,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ukuran foto maksimal 2MB" }, { status: 400 });
     }
 
-    // Hapus avatar lama dari Supabase jika ada
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { image: true },
-    });
+    const bucketError = await ensureAvatarBucket();
+    if (bucketError) {
+      console.error("[POST /api/user/profile/avatar] bucket error:", bucketError);
+      return NextResponse.json({ error: "Penyimpanan foto belum siap" }, { status: 500 });
+    }
 
-    if (currentUser?.image) {
+    // Hapus avatar lama dari Supabase jika ada
+    if (user.image) {
       // Ekstrak path dari URL Supabase untuk dihapus
       // URL format: https://<project>.supabase.co/storage/v1/object/public/avatars/<path>
-      const url = new URL(currentUser.image);
+      const url = new URL(user.image);
       const pathParts = url.pathname.split(`/object/public/${BUCKET}/`);
       if (pathParts.length === 2) {
         await supabaseAdmin.storage.from(BUCKET).remove([pathParts[1]]);
@@ -51,7 +77,7 @@ export async function POST(request: Request) {
 
     // Tentukan extension file & buat path yang unik per user
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-    const storagePath = `${session.user.id}/avatar-${Date.now()}.${ext}`;
+    const storagePath = `${user.id}/avatar-${Date.now()}.${ext}`;
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
@@ -71,7 +97,7 @@ export async function POST(request: Request) {
 
     // Simpan URL baru ke database
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data: { image: imageUrl },
       select: { id: true, image: true },
     });
@@ -92,13 +118,13 @@ export async function DELETE() {
   }
 
   try {
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { image: true },
-    });
+    const user = await findSessionUser(session);
+    if (!user) {
+      return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+    }
 
-    if (currentUser?.image) {
-      const url = new URL(currentUser.image);
+    if (user.image) {
+      const url = new URL(user.image);
       const pathParts = url.pathname.split(`/object/public/${BUCKET}/`);
       if (pathParts.length === 2) {
         await supabaseAdmin.storage.from(BUCKET).remove([pathParts[1]]);
@@ -106,7 +132,7 @@ export async function DELETE() {
     }
 
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data: { image: null },
     });
 

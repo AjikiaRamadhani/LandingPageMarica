@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { findSessionUser } from "@/lib/session-user";
 
 // GET /api/user/profile
 // Mengambil data profil user yang sedang login beserta statistik akun
@@ -11,34 +12,23 @@ export async function GET() {
   }
 
   try {
-    const [user, pointAccount, activeVouchersCount, totalOrders] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          whatsapp: true,
-          image: true,
-          role: true,
-          createdAt: true,
-        },
-      }),
-      prisma.pointAccount.findUnique({
-        where: { userId: session.user.id },
-        select: { balance: true },
-      }),
-      prisma.userVoucher.count({
-        where: { userId: session.user.id, status: "AVAILABLE" },
-      }),
-      prisma.order.count({
-        where: { userId: session.user.id },
-      }),
-    ]);
-
+    const user = await findSessionUser(session);
     if (!user) {
       return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
     }
+
+    const [pointAccount, activeVouchersCount, totalOrders] = await Promise.all([
+      prisma.pointAccount.findUnique({
+        where: { userId: user.id },
+        select: { balance: true },
+      }),
+      prisma.userVoucher.count({
+        where: { userId: user.id, status: "AVAILABLE" },
+      }),
+      prisma.order.count({
+        where: { userId: user.id },
+      }),
+    ]);
 
     return NextResponse.json({
       ...user,
@@ -102,8 +92,13 @@ export async function PATCH(request: Request) {
     if (name !== undefined) data.name = name.trim();
     if (whatsapp !== undefined) data.whatsapp = whatsapp.trim() || null;
 
+    const user = await findSessionUser(session);
+    if (!user) {
+      return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+    }
+
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data,
       select: {
         id: true,

@@ -61,7 +61,7 @@ function Stat({ icon: Icon, label, value, color }: { icon: typeof Coins; label: 
 }
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const [data, setData] = useState<ProfileData>({ balance: 0, catalog: [], owned: [], orderCount: 0, orders: [], bookings: [] });
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>("profile");
@@ -144,6 +144,7 @@ export default function ProfilePage() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? "Gagal memperbarui profil.");
       setProfileUser((prev) => (prev ? { ...prev, name: result.name, whatsapp: result.whatsapp } : prev));
+      await updateSession({ name: result.name, image: result.image });
       setNotice("Profil berhasil diperbarui.");
       setIsEditingProfile(false);
     } catch (saveError) {
@@ -170,6 +171,7 @@ export default function ProfilePage() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? "Gagal mengupload foto.");
       setProfileUser((prev) => (prev ? { ...prev, image: result.image } : prev));
+      await updateSession({ image: result.image });
       setNotice("Foto profil berhasil diperbarui.");
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Gagal mengupload foto.");
@@ -186,6 +188,7 @@ export default function ProfilePage() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? "Gagal menghapus foto.");
       setProfileUser((prev) => (prev ? { ...prev, image: null } : prev));
+      await updateSession({ image: null });
       setNotice("Foto profil berhasil dihapus.");
     } catch (removeError) {
       setError(removeError instanceof Error ? removeError.message : "Gagal menghapus foto.");
