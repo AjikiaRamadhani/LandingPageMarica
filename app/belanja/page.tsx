@@ -150,7 +150,7 @@ function BelanjaPageContent() {
     setIsLoading(true);
     setError(null);
 
-    fetch(`/api/products?${buildQuery()}`)
+    fetch(`/api/products?${buildQuery()}`, { cache: "no-store" })
       .then(async (res) => {
         const json = await res.json().catch(() => null);
 
@@ -187,6 +187,31 @@ function BelanjaPageContent() {
 
     return () => {
       cancelled = true;
+    };
+  }, [buildQuery]);
+
+  // Refresh stok ketika user kembali ke tab Belanja setelah menyelesaikan
+  // pembayaran di halaman lain atau tab Midtrans.
+  useEffect(() => {
+    const refreshStock = () => {
+      if (document.visibilityState !== "visible") return;
+
+      fetch(`/api/products?${buildQuery()}`, { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (!json) return;
+          setProducts(Array.isArray(json.products) ? json.products : []);
+          setTotal(json.pagination?.total ?? 0);
+          setTotalPages(json.pagination?.totalPages ?? 1);
+        })
+        .catch(() => undefined);
+    };
+
+    window.addEventListener("focus", refreshStock);
+    document.addEventListener("visibilitychange", refreshStock);
+    return () => {
+      window.removeEventListener("focus", refreshStock);
+      document.removeEventListener("visibilitychange", refreshStock);
     };
   }, [buildQuery]);
 

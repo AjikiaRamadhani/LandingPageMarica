@@ -69,10 +69,13 @@ export async function GET(request: Request) {
       prisma.product.count({ where }),
     ]);
 
-    return NextResponse.json({
-      products,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
+    return NextResponse.json(
+      {
+        products,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     console.error("[GET /api/products]", error);
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });

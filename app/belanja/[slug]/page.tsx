@@ -100,7 +100,7 @@ export default function ProductDetailPage() {
     setIsLoading(true);
     setError(null);
 
-    fetch(`/api/products/${params.slug}`)
+    fetch(`/api/products/${params.slug}`, { cache: "no-store" })
       .then(async (res) => {
         const json = await res.json().catch(() => null);
         if (!res.ok) throw new Error(json?.error ?? "Produk tidak ditemukan");
