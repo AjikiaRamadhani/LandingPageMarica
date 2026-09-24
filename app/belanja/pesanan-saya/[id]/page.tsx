@@ -80,11 +80,19 @@ export default function OrderDetailPage() {
     setError(null);
     try {
       await payWithSnap(order.midtransSnapToken, {
-        onSuccess: () => void loadOrder(),
+        onSuccess: () => {
+          void fetch(`/api/orders/${order.id}`, { method: "POST" })
+            .catch(() => undefined)
+            .finally(() => loadOrder());
+        },
         onPending: () => void loadOrder(),
         onError: () =>
           setError("Pembayaran gagal diproses. Silakan coba lagi."),
-        onClose: () => void loadOrder(),
+        onClose: () => {
+          void fetch(`/api/orders/${order.id}`, { method: "POST" })
+            .catch(() => undefined)
+            .finally(() => loadOrder());
+        },
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal membuka pembayaran");

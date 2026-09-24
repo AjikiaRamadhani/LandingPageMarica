@@ -110,8 +110,8 @@ export default function CartPage() {
     }
   };
 
-  const loadCart = async () => {
-    setIsLoading(true);
+  const loadCart = async (showInitialLoading = false) => {
+    if (showInitialLoading) setIsLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/cart");
@@ -130,12 +130,12 @@ export default function CartPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat keranjang");
     } finally {
-      setIsLoading(false);
+      if (showInitialLoading) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadCart(); // eslint-disable-line react-hooks/set-state-in-effect
+    void loadCart(true); // eslint-disable-line react-hooks/set-state-in-effect
     fetch("/api/points")
       .then((response) => (response.ok ? response.json() : null))
       .then((data: { balance?: number } | null) =>
@@ -326,9 +326,6 @@ export default function CartPage() {
                       Harga terbaik untukmu
                     </span>
                   </div>
-                )}
-                {isLoading && (
-                  <div className="h-40 animate-pulse rounded-2xl bg-marica-ink/5" />
                 )}
                 {cart.items.map((item) => (
                   <CartItemRow

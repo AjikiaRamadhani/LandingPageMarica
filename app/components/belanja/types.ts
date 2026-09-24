@@ -116,7 +116,7 @@ export type ApiOrderStatus =
 
 export const ORDER_STATUS_LABEL: Record<ApiOrderStatus, string> = {
   PENDING_PAYMENT: "Menunggu Pembayaran",
-  PAID: "Dibayar",
+  PAID: "Paid",
   PROCESSING: "Diproses",
   SHIPPED: "Dikirim",
   DELIVERED: "Selesai",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
+import { settleOrderPayment } from "@/lib/settle-order-payment";
 import {
   awardPointsInTransaction,
   calculateEarnedPoints,
@@ -148,77 +149,7 @@ export async function POST(request: Request) {
     }
 
     if (transaction_status === "capture" || transaction_status === "settlement") {
-      await prisma.$transaction(async (transaction) => {
-        const lockedOrders = await transaction.$queryRaw<Array<{ id: string; status: string }>>`
-          SELECT id, status
-          FROM "orders"
-          WHERE id = ${order.id}
-          FOR UPDATE
-        `;
-
-        // Midtrans dapat mengirim notifikasi yang sama lebih dari sekali.
-        // Setelah order bukan PENDING_PAYMENT, notifikasi tidak boleh menyentuh stok lagi.
-        if (lockedOrders.length === 0 || lockedOrders[0].status !== "PENDING_PAYMENT") return;
-
-        const productIds = order.items.map((item) => item.productId);
-        const lockedProducts = await transaction.$queryRaw<Array<{ id: string; stock: number }>>`
-          SELECT id, stock
-          FROM "products"
-          WHERE id = ANY (${productIds})
-          FOR UPDATE
-        `;
-
-        const stockMap = new Map(lockedProducts.map((product) => [product.id, product.stock]));
-        const shortage = order.items.find((item) => (stockMap.get(item.productId) ?? 0) < item.quantity);
-
-        if (shortage) {
-          throw Object.assign(new Error("STOCK_SHORTAGE"), {
-            statusCode: 409,
-            detail: `Stok produk tidak cukup untuk pesanan ${order.orderNumber}`,
-          });
-        }
-
-        const paidOrder = await transaction.order.updateMany({
-          where: { id: order.id, status: "PENDING_PAYMENT" },
-          data: {
-            status: "PAID",
-            midtransTransactionId: transaction_id,
-            paidAt: new Date(),
-          },
-        });
-
-        if (paidOrder.count === 0) return;
-
-        await Promise.all(order.items.map((item) =>
-          transaction.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: { decrement: item.quantity },
-              soldCount: { increment: item.quantity },
-            },
-          })
-        ));
-
-        await transaction.inventoryMovement.createMany({
-          data: order.items.map((item) => ({
-            productId: item.productId,
-            orderId: order.id,
-            type: "SALE" as const,
-            quantityDelta: -item.quantity,
-            reason: "Midtrans payment settled",
-            referenceId: transaction_id,
-          })),
-        });
-
-        await awardPointsInTransaction(transaction, {
-          userId: order.userId,
-          points: calculateEarnedPoints(order.total),
-          reason: `Pembayaran pesanan: ${order.orderNumber}`,
-          referenceType: "ORDER",
-          referenceId: order.id,
-          idempotencyKey: `order-paid:${order.id}`,
-        });
-      });
+      await settleOrderPayment(order, transaction_id);
     } else if (transaction_status === "pending") {
       await prisma.order.updateMany({
         where: { id: order.id, status: "PENDING_PAYMENT" },
