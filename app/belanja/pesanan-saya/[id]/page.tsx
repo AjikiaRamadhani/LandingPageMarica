@@ -80,11 +80,19 @@ export default function OrderDetailPage() {
     setError(null);
     try {
       await payWithSnap(order.midtransSnapToken, {
-        onSuccess: () => void loadOrder(),
+        onSuccess: () => {
+          void fetch(`/api/orders/${order.id}`, { method: "POST" })
+            .catch(() => undefined)
+            .finally(() => loadOrder());
+        },
         onPending: () => void loadOrder(),
         onError: () =>
           setError("Pembayaran gagal diproses. Silakan coba lagi."),
-        onClose: () => void loadOrder(),
+        onClose: () => {
+          void fetch(`/api/orders/${order.id}`, { method: "POST" })
+            .catch(() => undefined)
+            .finally(() => loadOrder());
+        },
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal membuka pembayaran");
@@ -238,6 +246,16 @@ export default function OrderDetailPage() {
                   <div className="mt-3 flex justify-between font-body text-sm text-marica-ink-soft">
                     <span>Subtotal</span>
                     <span>{formatRupiah(order.subtotal)}</span>
+                  </div>
+                  <div className="mt-2 flex justify-between font-body text-sm text-marica-ink-soft">
+                    <span>Potongan Marica Points</span>
+                    <span className="text-marica-green">
+                      -{formatRupiah(order.pointsDiscount)}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex justify-between font-body text-sm text-marica-ink-soft">
+                    <span>Jasa ongkir</span>
+                    <span>{formatRupiah(order.shippingCost)}</span>
                   </div>
                   <div className="mt-2 flex justify-between border-t border-marica-ink/10 pt-2 font-body font-bold text-marica-ink">
                     <span>Total</span>

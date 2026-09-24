@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { coreApi } from "@/lib/midtrans";
+import { settleOrderPayment } from "@/lib/settle-order-payment";
 import { refundRedeemedPointsInTransaction } from "@/lib/points";
+
+type MidtransStatus = {
+  transaction_status?: string;
+  transaction_id?: string;
+  gross_amount?: string;
+  fraud_status?: string;
+};
 
 export async function GET(
   request: Request,
@@ -84,5 +93,70 @@ export async function PATCH(
   } catch (error) {
     console.error("[PATCH /api/orders/[id]]", error);
     return NextResponse.json({ error: "Gagal membatalkan pesanan" }, { status: 500 });
+  }
+}
+
+// Memastikan status pembayaran langsung ke Midtrans. Ini menjadi fallback
+// untuk lingkungan lokal/Sandbox ketika webhook tidak dapat mengakses localhost.
+export async function POST(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 });
+  }
+
+  try {
+    const { id } = await params;
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!order || order.userId !== session.user.id) {
+      return NextResponse.json({ error: "Pesanan tidak ditemukan" }, { status: 404 });
+    }
+
+    if (order.status !== "PENDING_PAYMENT") {
+      return NextResponse.json(order);
+    }
+
+    if (!order.midtransOrderId) {
+      return NextResponse.json({ error: "Referensi pembayaran tidak ditemukan" }, { status: 400 });
+    }
+
+    const transactionApi = (
+      coreApi as unknown as {
+        transaction: { status: (transactionId: string) => Promise<unknown> };
+      }
+    ).transaction;
+    const payment = (await transactionApi.status(order.midtransOrderId)) as MidtransStatus;
+    const isPaid =
+      payment.transaction_status === "settlement" ||
+      (payment.transaction_status === "capture" && payment.fraud_status !== "deny");
+
+    if (isPaid) {
+      if (payment.gross_amount && Number(payment.gross_amount) !== order.total) {
+        return NextResponse.json({ error: "Nominal pembayaran tidak sesuai" }, { status: 400 });
+      }
+
+      await settleOrderPayment(
+        order,
+        payment.transaction_id ?? order.midtransOrderId,
+      );
+    }
+
+    const updated = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: { items: true },
+    });
+    return NextResponse.json(updated ?? order);
+  } catch (error) {
+    console.error("[POST /api/orders/[id]]", error);
+    return NextResponse.json(
+      { error: "Status pembayaran belum dapat diverifikasi" },
+      { status: 502 },
+    );
   }
 }

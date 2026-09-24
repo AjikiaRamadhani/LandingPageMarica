@@ -30,7 +30,7 @@ export async function GET(
     // Tambah view count - fire and forget, gak perlu nunggu biar response cepat
     prisma.article
       .update({ where: { id: article.id }, data: { views: { increment: 1 } } })
-      .catch((err) => console.error("Failed to increment views", err));
+      .catch((err: unknown) => console.error("Failed to increment views", err));
 
     return NextResponse.json(article);
   } catch (error) {

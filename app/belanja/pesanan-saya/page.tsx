@@ -107,11 +107,19 @@ export default function PesananSayaPage() {
     setPayingOrderId(order.id);
     try {
       await payWithSnap(order.midtransSnapToken, {
-        onSuccess: () => loadOrders(),
+        onSuccess: () => {
+          void fetch(`/api/orders/${order.id}`, { method: "POST" })
+            .catch(() => undefined)
+            .finally(() => loadOrders());
+        },
         onPending: () => loadOrders(),
         onError: () =>
           setPayError("Pembayaran gagal diproses. Silakan coba lagi."),
-        onClose: () => loadOrders(),
+        onClose: () => {
+          void fetch(`/api/orders/${order.id}`, { method: "POST" })
+            .catch(() => undefined)
+            .finally(() => loadOrders());
+        },
       });
     } catch (err) {
       setPayError(

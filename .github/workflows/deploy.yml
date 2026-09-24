@@ -1,4 +1,4 @@
-name: Deploy Next.js via FTP
+name: Deploy toko.marica.id
 
 on:
   push:
@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -22,14 +22,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js
-        run: npm run build
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      - name: Build
+        run: npm run build --webpack
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Prepare deployment
+        run: |
+          mkdir -p deploy/.next
+          mkdir -p deploy/tmp
+
+          cp -r .next/standalone/. deploy/
+          cp -r .next/static deploy/.next/static
+          cp -r public deploy/public
+
+          # Trigger Passenger restart after FTP upload
+          date -u +%s > deploy/tmp/restart.txt
+
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          local-dir: ./out/
+          local-dir: ./deploy/
+          protocol: ftp
+          port: 21

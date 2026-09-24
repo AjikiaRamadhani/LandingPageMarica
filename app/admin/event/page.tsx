@@ -134,29 +134,7 @@ export default function AdminEventPage() {
   }, []);
 
   useEffect(() => {
-    if (tab !== "scanner") return;
-
-    const scanner = new Html5Qrcode("event-ticket-qr-reader");
-    scannerRef.current = scanner;
-    queueMicrotask(() => setCameraError(null));
-    void scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          setIsCameraActive(false);
-          void scanner.stop().catch(() => undefined);
-          void checkInRef.current?.(decodedText);
-        },
-        () => undefined,
-      )
-      .then(() => setIsCameraActive(true))
-      .catch(() => {
-        setCameraError(
-          "Kamera tidak dapat diakses. Izinkan akses kamera untuk melakukan check-in.",
-        );
-      });
-
+    // Bersihkan scanner kalau pindah tab tanpa lewat stopScanner() (mis. klik tab lain).
     return () => {
       if (scannerRef.current) {
         void scannerRef.current.stop().catch(() => undefined);
@@ -166,6 +144,75 @@ export default function AdminEventPage() {
       setIsCameraActive(false);
     };
   }, [tab]);
+
+  // Sengaja TIDAK auto-start di useEffect. Safari iOS (dan beberapa browser
+  // mobile lain) menolak getUserMedia kalau tidak dipanggil langsung dari
+  // dalam call stack sinkron sebuah tap user — makanya kamera harus dipicu
+  // dari onClick tombol ini, bukan dari efek yang jalan setelah render.
+  async function startScanner() {
+    setCameraError(null);
+    if (scannerRef.current) return;
+    const scanner = new Html5Qrcode("event-ticket-qr-reader");
+    scannerRef.current = scanner;
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    const onDecoded = (decodedText: string) => {
+      setIsCameraActive(false);
+      void scanner.stop().catch(() => undefined);
+      scannerRef.current = null;
+      void checkInRef.current?.(decodedText);
+    };
+    try {
+      await scanner.start(
+        { facingMode: "environment" },
+        config,
+        onDecoded,
+        () => undefined,
+      );
+      setIsCameraActive(true);
+      return;
+    } catch (firstErr) {
+      console.error("QR camera error (facingMode):", firstErr);
+      // Sebagian HP Android tidak punya kamera berlabel "environment" yang
+      // cocok, jadi fallback: enumerasi kamera lalu pilih yang paling
+      // mungkin kamera belakang (biasanya kamera terakhir di daftar).
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (!cameras.length) throw firstErr;
+        const backCamera =
+          cameras.find((cam) => /back|rear|belakang/i.test(cam.label)) ??
+          cameras[cameras.length - 1];
+        await scanner.start(
+          backCamera.id,
+          config,
+          onDecoded,
+          () => undefined,
+        );
+        setIsCameraActive(true);
+        return;
+      } catch (fallbackErr) {
+        scannerRef.current = null;
+        setIsCameraActive(false);
+        const name = (fallbackErr as { name?: string } | undefined)?.name;
+        console.error("QR camera error (fallback):", fallbackErr);
+        setCameraError(
+          name === "NotAllowedError"
+            ? "Izin kamera ditolak. Aktifkan izin kamera untuk situs ini di pengaturan browser, lalu coba lagi."
+            : name === "NotFoundError" || name === "OverconstrainedError"
+              ? "Kamera tidak ditemukan di perangkat ini."
+              : "Kamera tidak dapat diakses. Pastikan tidak ada aplikasi lain yang sedang memakai kamera, lalu coba lagi.",
+        );
+      }
+    }
+  }
+
+  async function stopScanner() {
+    if (scannerRef.current) {
+      await scannerRef.current.stop().catch(() => undefined);
+      scannerRef.current.clear();
+      scannerRef.current = null;
+    }
+    setIsCameraActive(false);
+  }
 
   async function saveEvent(event: FormEvent) {
     event.preventDefault();
@@ -577,6 +624,24 @@ export default function AdminEventPage() {
             id="event-ticket-qr-reader"
             className="mt-5 min-h-64 overflow-hidden rounded-2xl border border-black/10 bg-marica-ink/5"
           />
+          {!isCameraActive && (
+            <button
+              type="button"
+              onClick={() => void startScanner()}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-marica-amber-dark px-4 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+            >
+              <QrCode className="h-4 w-4" /> Mulai scan
+            </button>
+          )}
+          {isCameraActive && (
+            <button
+              type="button"
+              onClick={() => void stopScanner()}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-black/10 px-4 py-3 text-sm font-semibold text-marica-ink transition hover:bg-marica-sky-light/40"
+            >
+              Hentikan scan
+            </button>
+          )}
           {cameraError && (
             <p className="mt-3 rounded-xl bg-marica-rose-deep/10 px-4 py-3 text-sm text-marica-rose-deep">
               {cameraError}

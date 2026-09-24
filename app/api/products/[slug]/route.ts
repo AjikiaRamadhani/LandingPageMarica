@@ -61,7 +61,10 @@ export async function GET(
     const { bundleItems, ...productData } = product;
     void bundleItems;
 
-    return NextResponse.json({ ...productData, bundles });
+    return NextResponse.json(
+      { ...productData, bundles },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     console.error("[GET /api/products/[slug]]", error);
     return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
