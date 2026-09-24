@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { getRecommendations } from "@/lib/recommendations";
 
 export async function GET(
@@ -7,8 +8,14 @@ export async function GET(
 ) {
   try {
     const { productId } = await params;
-    const requestedLimit = Number(new URL(request.url).searchParams.get("limit"));
+    const searchParams = new URL(request.url).searchParams;
+    const requestedLimit = Number(searchParams.get("limit"));
     const limit = Number.isFinite(requestedLimit) ? requestedLimit : 5;
+    const rawSessionId = searchParams.get("sessionId");
+    const sessionId =
+      rawSessionId && /^[A-Za-z0-9_-]{16,100}$/.test(rawSessionId)
+        ? rawSessionId
+        : null;
 
     if (!productId) {
       return NextResponse.json(
@@ -17,7 +24,11 @@ export async function GET(
       );
     }
 
-    const products = await getRecommendations(productId, limit);
+    const session = await auth();
+    const products = await getRecommendations(productId, limit, {
+      userId: session?.user?.id,
+      sessionId,
+    });
     return NextResponse.json({ products });
   } catch (error) {
     if (error instanceof Error && error.message === "Product not found") {

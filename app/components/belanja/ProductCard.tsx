@@ -11,6 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { ApiProduct } from "./types";
+import { trackRecommendationEvent } from "./recommendation-tracking";
 import AddressModal, {
   loadSavedAddresses,
   saveAddresses,
@@ -68,6 +69,7 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-marica-ink/5 bg-white shadow-[0_10px_28px_rgba(120,60,10,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(120,60,10,0.14)]">
       <Link
         href={`/belanja/${product.slug}`}
+        onClick={() => trackRecommendationEvent(product.id, "CLICK")}
         className="relative block aspect-square overflow-hidden bg-marica-cream"
       >
         {image ? (
@@ -126,7 +128,11 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
           )}
         </div>
 
-        <Link href={`/belanja/${product.slug}`} className="min-h-[2.6rem]">
+        <Link
+          href={`/belanja/${product.slug}`}
+          onClick={() => trackRecommendationEvent(product.id, "CLICK")}
+          className="min-h-[2.6rem]"
+        >
           <h3 className="line-clamp-2 font-display text-[15px] font-semibold leading-snug text-marica-ink transition group-hover:text-marica-amber-text sm:text-base">
             {product.name}
           </h3>

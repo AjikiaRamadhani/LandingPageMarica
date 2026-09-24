@@ -31,6 +31,7 @@ import AddressModal, {
 import { useBuyNow } from "../../components/belanja/useBuyNow";
 import FeedbackPopup from "../../components/FeedbackPopup";
 import RecommendedProducts from "../../components/belanja/RecommendedProducts";
+import { trackRecommendationEvent } from "../../components/belanja/recommendation-tracking";
 import type {
   ApiProduct,
   ApiProductImage,
@@ -127,6 +128,10 @@ export default function ProductDetailPage() {
       cancelled = true;
     };
   }, [params?.slug]);
+
+  useEffect(() => {
+    if (product?.id) trackRecommendationEvent(product.id, "VIEW");
+  }, [product?.id]);
 
   const inStock = (product?.stock ?? 0) > 0;
   const hasDiscount =

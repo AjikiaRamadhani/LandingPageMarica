@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import type { ApiProduct } from "./types";
+import { getRecommendationSessionId } from "./recommendation-tracking";
 
 type RecommendedProductsProps = {
   productId: string;
@@ -23,8 +24,11 @@ export default function RecommendedProducts({
 
   useEffect(() => {
     const controller = new AbortController();
+    const sessionId = getRecommendationSessionId();
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (sessionId) query.set("sessionId", sessionId);
 
-    fetch(`/api/recommendations/${productId}?limit=${limit}`, {
+    fetch(`/api/recommendations/${productId}?${query.toString()}`, {
       signal: controller.signal,
     })
       .then(async (response) => {

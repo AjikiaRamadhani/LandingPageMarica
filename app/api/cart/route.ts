@@ -138,6 +138,16 @@ export async function POST(request: Request) {
           },
         });
 
+    void prisma.recommendationEvent
+      .create({
+        data: {
+          userId: session.user.id,
+          productId: productIdValue,
+          type: "CART",
+        },
+      })
+      .catch((error) => console.error("[recommendation cart event]", error));
+
     return NextResponse.json(cartItem, { status: 201 });
   } catch (error) {
     console.error("[POST /api/cart]", error);

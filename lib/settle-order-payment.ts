@@ -87,6 +87,14 @@ export async function settleOrderPayment(
       })),
     });
 
+    await transaction.recommendationEvent.createMany({
+      data: order.items.map((item) => ({
+        userId: order.userId,
+        productId: item.productId,
+        type: "PURCHASE" as const,
+      })),
+    });
+
     await awardPointsInTransaction(transaction, {
       userId: order.userId,
       points: calculateEarnedPoints(order.total),
