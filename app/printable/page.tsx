@@ -4,28 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   motion,
-  AnimatePresence,
   useReducedMotion,
   type Variants,
 } from "framer-motion";
-import { ArrowLeft, Star, Play, Download } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import {
   CATEGORY_STYLES,
-  EDUGAMES,
   PRINTABLES,
   type Activity,
   type CategoryKey,
   type Printable,
 } from "./activities-data";
-
-const TABS = [
-  { key: "edugames", label: "Edugames" },
-  { key: "printables", label: "Printables" },
-] as const;
-
-type TabKey = (typeof TABS)[number]["key"];
 
 const gridVariants: Variants = {
   hidden: { opacity: 0 },
@@ -37,11 +28,9 @@ const cardVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
 };
 
-export default function AktivitasPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>("edugames");
+export default function PrintablePage() {
   const [printables, setPrintables] = useState<Printable[]>(PRINTABLES);
   const reduceMotion = useReducedMotion();
-  const items = activeTab === "edugames" ? EDUGAMES : printables;
 
   useEffect(() => {
     fetch("/api/printables")
@@ -79,13 +68,13 @@ export default function AktivitasPage() {
                 categoryLabel: item.subject,
                 age,
                 thumbnailUrl: item.thumbnailUrl,
-                href: `/aktivitas/printables-download?item=${encodeURIComponent(item.slug)}`,
+                href: `/printable/printables-download?item=${encodeURIComponent(item.slug)}`,
               };
             }),
           );
         },
       )
-      .catch((error) => console.error("[AktivitasPage]", error));
+      .catch((error) => console.error("[PrintablePage]", error));
   }, []);
 
   return (
@@ -110,73 +99,30 @@ export default function AktivitasPage() {
             className="mx-auto max-w-2xl text-center"
           >
             <h1 className="font-display text-3xl font-semibold text-marica-ink sm:text-4xl">
-              Temukan Aktivitas Seru & Edukatif
+              Printable Seru untuk Si Kecil
             </h1>
             <p className="mt-3 font-body text-marica-ink-soft">
-              Jelajahi berbagai permainan interaktif dan materi cetak yang
-              dirancang untuk mendukung tumbuh kembang anak Anda dengan cara
-              yang menyenangkan.
+              Pilih materi cetak edukatif yang dirancang untuk mendukung tumbuh
+              kembang anak dengan cara yang menyenangkan.
             </p>
           </motion.div>
 
-          {/* Segmented toggle — same sliding-pill pattern as the Navbar's hover state */}
-          <div className="mt-8 flex justify-center">
-            <div className="inline-flex items-center gap-1 rounded-full border border-marica-ink/10 bg-white p-1 shadow-sm">
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    aria-pressed={isActive}
-                    className={`relative isolate min-w-28 rounded-full px-5 py-2 text-center font-body text-sm font-semibold transition-colors ${
-                      isActive
-                        ? "text-white"
-                        : "text-marica-ink-soft hover:text-marica-ink"
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.span
-                        layoutId="aktivitas-tab-pill"
-                        className="absolute inset-0 z-0 rounded-full"
-                        style={{ backgroundColor: "#de8f0c" }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 380,
-                          damping: 32,
-                        }}
-                      />
-                    )}
-                    <span className="relative z-10">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Activity grid — cross-fades and re-staggers in whenever the tab changes */}
+          {/* Printable grid */}
           <div className="mt-10">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                variants={reduceMotion ? undefined : gridVariants}
-                initial="hidden"
-                animate="show"
-                exit={reduceMotion ? undefined : { opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-              >
-                {items.map((activity) => (
-                  <ActivityCard
-                    key={activity.id}
-                    activity={activity}
-                    kind={activeTab}
-                    reduceMotion={!!reduceMotion}
-                  />
-                ))}
-              </motion.div>
-            </AnimatePresence>
+            <motion.div
+              variants={reduceMotion ? undefined : gridVariants}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {printables.map((activity) => (
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  reduceMotion={!!reduceMotion}
+                />
+              ))}
+            </motion.div>
           </div>
         </section>
       </main>
@@ -187,11 +133,9 @@ export default function AktivitasPage() {
 
 function ActivityCard({
   activity,
-  kind,
   reduceMotion,
 }: {
   activity: Activity;
-  kind: TabKey;
   reduceMotion: boolean;
 }) {
   const style = CATEGORY_STYLES[activity.category];
@@ -219,14 +163,7 @@ function ActivityCard({
           <span className="h-2 w-2 rounded-full bg-marica-ink/40" />
         </div>
 
-        {kind === "edugames" && activity.rating && (
-          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-marica-ink shadow-sm">
-            <Star className="h-3 w-3 fill-marica-amber text-marica-amber" />
-            {activity.rating}
-          </div>
-        )}
-
-        {kind === "printables" && activity.thumbnailUrl ? (
+        {activity.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={activity.thumbnailUrl}
@@ -265,15 +202,7 @@ function ActivityCard({
           href={activity.href}
           className="mt-4 flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-2.5 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
         >
-          {kind === "edugames" ? (
-            <>
-              <Play className="h-4 w-4" /> Main Sekarang
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4" /> Download PDF
-            </>
-          )}
+          <Download className="h-4 w-4" /> Download PDF
         </Link>
       </div>
     </motion.div>

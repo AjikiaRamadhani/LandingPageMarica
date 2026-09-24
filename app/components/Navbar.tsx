@@ -21,19 +21,16 @@ import {
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
-// Catatan: /belanja, /aktivitas, /edugames, /event belum ada halamannya —
-// hrefnya sudah disiapkan lebih dulu supaya begitu halaman dibuat, tinggal
-// dipasang di App Router tanpa perlu balik ke sini. /artikel sudah live.
 type NavMenu = "shop" | "activity" | "edugames" | "event" | "blog";
 type NavLink = { label: string; href: string; menu?: NavMenu };
 
 const navLinks: NavLink[] = [
   { label: "Beranda", href: "/" },
   { label: "Belanja", href: "/belanja", menu: "shop" },
-  { label: "Aktivitas", href: "/aktivitas", menu: "activity" },
+  { label: "Aktivitas", href: "/event", menu: "activity" },
   { label: "Edugames", href: "/edugames", menu: "edugames" },
-  { label: "Event", href: "/event", menu: "event" },
   { label: "Blog", href: "/artikel", menu: "blog" },
+  { label: "Printable", href: "/printable" },
 ];
 
 type ApiCompany = {
@@ -83,15 +80,10 @@ type ApiArticleCategory = {
 
 const simpleMenus = {
   activity: [
-    { label: "Semua aktivitas", href: "/aktivitas" },
-    { label: "Printable gratis", href: "/aktivitas/printables-download" },
+    { label: "Event", href: "/event" },
   ],
   edugames: [
     { label: "Jelajahi edugames", href: "/edugames" },
-    { label: "Main bersama keluarga", href: "/aktivitas" },
-  ],
-  event: [
-    { label: "Kalender event", href: "/event" },
   ],
 } as const;
 
@@ -341,7 +333,9 @@ export default function Navbar() {
             onClick={() => setOpenMenu(null)}
             className="flex items-center gap-3 rounded-xl px-3 py-3 font-body text-sm font-semibold text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
           >
-            {menu === "activity" ? (
+            {item.href === "/event" ? (
+              <CalendarDays className="h-4 w-4 text-marica-blue" />
+            ) : menu === "activity" ? (
               <Sparkles className="h-4 w-4 text-marica-rose-deep" />
             ) : menu === "event" ? (
               <CalendarDays className="h-4 w-4 text-marica-blue" />
@@ -427,7 +421,9 @@ export default function Navbar() {
             onClick={handleMobileNavClick}
             className="flex items-center gap-2.5 rounded-lg px-3 py-2 font-body text-sm text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
           >
-            {menu === "activity" ? (
+            {item.href === "/event" ? (
+              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-marica-blue" />
+            ) : menu === "activity" ? (
               <Sparkles className="h-3.5 w-3.5 shrink-0 text-marica-rose-deep" />
             ) : menu === "event" ? (
               <CalendarDays className="h-3.5 w-3.5 shrink-0 text-marica-blue" />
@@ -476,7 +472,7 @@ export default function Navbar() {
 
         {/* Desktop navigation */}
         <div
-          className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 font-body text-[13px] font-medium text-marica-ink-soft lg:flex xl:gap-1"
+          className="hidden min-w-0 flex-1 items-center justify-center gap-1 font-body text-[13px] font-semibold text-marica-ink-soft lg:flex xl:gap-1.5"
           onMouseLeave={() => {
             setHoveredIndex(null);
             setOpenMenu(null);
@@ -499,20 +495,20 @@ export default function Navbar() {
                 <Link
                   href={link.href}
                   onClick={() => setOpenMenu(null)}
-                  className={`relative flex items-center gap-1 rounded-full px-2.5 py-1.5 transition-colors xl:px-3 ${
+                  className={`relative flex items-center gap-1 rounded-full px-3 py-2 transition-colors xl:px-3.5 ${
                     isHighlighted
-                      ? "text-marica-amber-text"
-                      : "hover:text-marica-ink"
+                      ? "text-white"
+                      : "hover:text-marica-amber-dark"
                   }`}
                 >
                   {isHighlighted && (
                     <motion.span
                       layoutId="nav-hover-pill"
-                      className="absolute inset-0 -z-10 rounded-full bg-marica-amber/15"
+                      className="absolute inset-0 -z-10 rounded-full bg-marica-amber-dark shadow-[0_6px_16px_rgba(222,143,12,0.28)]"
                       transition={{
                         type: "spring",
-                        stiffness: 380,
-                        damping: 32,
+                        stiffness: 460,
+                        damping: 30,
                       }}
                     />
                   )}
@@ -748,8 +744,8 @@ export default function Navbar() {
                       }
                       className={
                         link.href === activeHref
-                          ? "flex w-full items-center justify-between rounded-xl bg-marica-amber/15 px-4 py-2.5 font-body text-[15px] font-medium text-marica-amber-text"
-                          : "flex w-full items-center justify-between rounded-xl px-4 py-2.5 font-body text-[15px] font-medium text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-ink"
+                          ? "flex w-full items-center justify-between rounded-xl bg-marica-amber-dark px-4 py-2.5 font-body text-[15px] font-semibold text-white shadow-sm"
+                          : "flex w-full items-center justify-between rounded-xl px-4 py-2.5 font-body text-[15px] font-semibold text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-amber-dark"
                       }
                     >
                       {link.label}
@@ -781,8 +777,8 @@ export default function Navbar() {
                     transition={{ duration: 0.25, delay: i * 0.05 }}
                     className={
                       link.href === activeHref
-                        ? "rounded-xl bg-marica-amber/15 px-4 py-2.5 font-body text-[15px] font-medium text-marica-amber-text"
-                        : "rounded-xl px-4 py-2.5 font-body text-[15px] font-medium text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-ink"
+                        ? "rounded-xl bg-marica-amber-dark px-4 py-2.5 font-body text-[15px] font-semibold text-white shadow-sm"
+                        : "rounded-xl px-4 py-2.5 font-body text-[15px] font-semibold text-marica-ink-soft transition hover:bg-marica-amber/10 hover:text-marica-amber-dark"
                     }
                   >
                     {link.label}
