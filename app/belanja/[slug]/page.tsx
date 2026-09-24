@@ -30,6 +30,7 @@ import AddressModal, {
 } from "../../components/belanja/AddressModal";
 import { useBuyNow } from "../../components/belanja/useBuyNow";
 import FeedbackPopup from "../../components/FeedbackPopup";
+import RecommendedProducts from "../../components/belanja/RecommendedProducts";
 import type {
   ApiProduct,
   ApiProductImage,
@@ -582,6 +583,10 @@ export default function ProductDetailPage() {
                 ))}
               </div>
             </div>
+          )}
+
+          {!isLoading && !error && product && (
+            <RecommendedProducts productId={product.id} />
           )}
         </div>
       </main>
