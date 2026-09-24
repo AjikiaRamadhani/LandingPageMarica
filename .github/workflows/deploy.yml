@@ -36,9 +36,14 @@ jobs:
       - name: Prepare deployment
         run: |
           mkdir -p deploy/.next
+          mkdir -p deploy/tmp
+
           cp -r .next/standalone/. deploy/
           cp -r .next/static deploy/.next/static
           cp -r public deploy/public
+
+          # Trigger Passenger restart after FTP upload
+          date -u +%s > deploy/tmp/restart.txt
 
       - name: Deploy to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
