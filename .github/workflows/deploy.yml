@@ -27,7 +27,7 @@ jobs:
 
       - name: Build
         run: npm run build --webpack
-        env: 
+        env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -40,21 +40,13 @@ jobs:
           cp -r .next/static deploy/.next/static
           cp -r public deploy/public
 
-      - name: Deploy to cPanel
-        uses: appleboy/scp-action@v0.1.7
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          source: "deploy/*"
-          target: "/home/u1574764/public_html/toko.marica.id"
-          strip_components: 1
-
-      - name: Restart cPanel Node app
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          script: |
-            touch /home/u1574764/public_html/toko.marica.id/tmp/restart.txt
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./deploy/
+          protocol: ftp
+          port: 21
