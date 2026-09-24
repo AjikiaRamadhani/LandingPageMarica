@@ -52,7 +52,7 @@ function PrintablesDownloadContent() {
       <main className="hero-gradient-bg-v2 min-h-screen">
         <div className="mx-auto max-w-7xl px-6 pt-6 lg:px-10">
           <Link
-            href="/aktivitas"
+            href="/printable"
             className="inline-flex items-center gap-2 font-body text-sm font-medium text-marica-ink-soft transition hover:text-marica-ink"
           >
             <ArrowLeft className="h-4 w-4" /> Kembali

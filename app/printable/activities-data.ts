@@ -131,7 +131,7 @@ export const PRINTABLES: Printable[] = [
     format: "PDF (A4)",
     fileSizeMb: 2.4,
     points: 20,
-    href: "/aktivitas/printables-download?item=mewarnai-karakter-marica",
+    href: "/printable/printables-download?item=mewarnai-karakter-marica",
   },
   {
     id: "labirin-sederhana",
@@ -145,7 +145,7 @@ export const PRINTABLES: Printable[] = [
     format: "PDF (A4)",
     fileSizeMb: 1.8,
     points: 15,
-    href: "/aktivitas/printables-download?item=labirin-sederhana",
+    href: "/printable/printables-download?item=labirin-sederhana",
   },
   {
     id: "mencari-pasangan",
@@ -159,7 +159,7 @@ export const PRINTABLES: Printable[] = [
     format: "PDF (A4)",
     fileSizeMb: 2.1,
     points: 15,
-    href: "/aktivitas/printables-download?item=mencari-pasangan",
+    href: "/printable/printables-download?item=mencari-pasangan",
   },
   {
     id: "hubungkan-titik-dino",
@@ -173,7 +173,7 @@ export const PRINTABLES: Printable[] = [
     format: "PDF (A4)",
     fileSizeMb: 2.0,
     points: 15,
-    href: "/aktivitas/printables-download?item=hubungkan-titik-dino",
+    href: "/printable/printables-download?item=hubungkan-titik-dino",
   },
   {
     id: "mahkota-kertas",
@@ -187,7 +187,7 @@ export const PRINTABLES: Printable[] = [
     format: "PDF (A4)",
     fileSizeMb: 3.1,
     points: 25,
-    href: "/aktivitas/printables-download?item=mahkota-kertas",
+    href: "/printable/printables-download?item=mahkota-kertas",
   },
 ];
 
