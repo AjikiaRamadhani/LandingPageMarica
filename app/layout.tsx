@@ -1,30 +1,15 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import localFont from "next/font/local";
-
-import "@fontsource/fredoka/400.css";
-import "@fontsource/fredoka/500.css";
-import "@fontsource/fredoka/600.css";
-import "@fontsource/fredoka/700.css";
+import "@fontsource/poppins/300.css";
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
+import "@fontsource/poppins/800.css";
 
 import "./globals.css";
+import FontProvider from "./components/FontProvider";
 import Providers from "./components/Providers";
-
-// Self-hosted Plus Jakarta Sans
-const plusJakartaSans = localFont({
-  src: [
-    {
-      path: "./fonts/PlusJakartaSans-VariableFont_wght.ttf",
-      style: "normal",
-    },
-    {
-      path: "./fonts/PlusJakartaSans-Italic-VariableFont_wght.ttf",
-      style: "italic",
-    },
-  ],
-  variable: "--font-jakarta",
-  display: "swap",
-});
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.marica.id";
@@ -105,10 +90,12 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`h-full antialiased ${plusJakartaSans.variable}`}
+      className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col font-body">
-        <Providers>{children}</Providers>
+        <FontProvider>
+          <Providers>{children}</Providers>
+        </FontProvider>
       </body>
     </html>
   );

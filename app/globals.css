@@ -54,9 +54,11 @@
   --color-marica-tan: var(--marica-tan);
   --color-marica-sky: var(--marica-sky);
   --color-marica-sky-light: var(--marica-sky-light);
-  --font-display: "Fredoka", "Segoe UI Rounded", sans-serif;
-  /* --font-jakarta is injected by next/font/local in layout.tsx */
-  --font-body: var(--font-jakarta), "Segoe UI", sans-serif;
+  /* Font aplikasi dipusatkan di sini agar mudah diganti dalam satu tempat. */
+  --font-poppins: "Poppins", "Segoe UI", sans-serif;
+  --font-display: var(--font-poppins);
+  --font-body: var(--font-poppins);
+  --font-sans: var(--font-poppins);
 }
 html {
   scroll-behavior: smooth;
