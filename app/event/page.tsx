@@ -24,6 +24,7 @@ import {
   DAY_LABELS_ID,
   MONTH_LABELS_ID,
   formatLongDateID,
+  isEventExpired,
   type EventCategory,
   type EventItem,
 } from "./events-data";
@@ -403,12 +404,13 @@ export default function EventCalendarPage() {
                                 <div className="mt-1 flex flex-col gap-1">
                                   {dayEvents.slice(0, 2).map((ev) => {
                                     const style = CATEGORY_STYLE[ev.category];
+                                    const expired = isEventExpired(ev.date);
                                     return (
                                       <Link
                                         key={ev.slug}
                                         href={`/event/${ev.slug}`}
-                                        className={`truncate rounded-md px-1.5 py-1 font-body text-[11px] font-semibold leading-tight transition hover:brightness-95 ${style.bg} ${style.text}`}
-                                        title={ev.title}
+                                        className={`truncate rounded-md px-1.5 py-1 font-body text-[11px] font-semibold leading-tight transition hover:brightness-95 ${style.bg} ${style.text} ${expired ? "grayscale opacity-60 line-through" : ""}`}
+                                        title={expired ? `${ev.title} — Sudah Expired` : ev.title}
                                       >
                                         {ev.title}
                                       </Link>
@@ -592,16 +594,27 @@ function ViewToggleButton({
 
 function EventCard({ event, index }: { event: EventItem; index: number }) {
   const style = CATEGORY_STYLE[event.category];
+  const expired = isEventExpired(event.date);
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06, ease: "easeOut" }}
-      whileHover={{ y: -3 }}
-      className="rounded-2xl border border-marica-ink/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+      whileHover={expired ? undefined : { y: -3 }}
+      className={`relative overflow-hidden rounded-2xl border p-4 shadow-sm transition-shadow ${expired ? "border-marica-rose-deep/20 bg-marica-ink/5 grayscale-[0.25]" : "border-marica-ink/10 bg-white hover:shadow-md"}`}
     >
+      {expired && (
+        <motion.span
+          initial={{ opacity: 0, scale: 0.8, rotate: -4 }}
+          animate={{ opacity: [0.75, 1, 0.75], scale: [0.98, 1.03, 0.98] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute right-3 top-3 rounded-full border border-marica-rose-deep/20 bg-marica-rose-deep/10 px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-wide text-marica-rose-deep"
+        >
+          Sudah Expired
+        </motion.span>
+      )}
       <span
-        className={`inline-block rounded-full px-3 py-1 font-body text-xs font-semibold ${style.bg} ${style.text}`}
+        className={`inline-block rounded-full px-3 py-1 font-body text-xs font-semibold ${style.bg} ${style.text} ${expired ? "mr-28" : ""}`}
       >
         {CATEGORY_LABEL[event.category]}
       </span>

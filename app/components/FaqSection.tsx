@@ -64,7 +64,7 @@ type ApiFaq = {
 
 export default function FaqSection() {
   const [faqs, setFaqs] = useState(defaultFaqs);
-  const [openKey, setOpenKey] = useState<string | null>(defaultFaqs[0].key);
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/faqs")
@@ -82,7 +82,6 @@ export default function FaqSection() {
             };
           });
           setFaqs(mergedFaqs);
-          setOpenKey(mergedFaqs[0].key);
         }
       })
       .catch((err) => console.error("Failed to load faqs", err));

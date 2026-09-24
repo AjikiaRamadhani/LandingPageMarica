@@ -21,6 +21,7 @@ import {
   CATEGORY_LABEL,
   CATEGORY_STYLE,
   formatLongDateID,
+  isEventExpired,
   type EventItem,
 } from "../events-data";
 
@@ -73,6 +74,7 @@ export default function EventDetailPage() {
     );
 
   const style = CATEGORY_STYLE[event.category];
+  const expired = isEventExpired(event.date);
   const quotaFilled = event.quota - event.quotaLeft;
   const quotaPct = Math.round((quotaFilled / event.quota) * 100);
 
@@ -108,6 +110,16 @@ export default function EventDetailPage() {
             >
               {CATEGORY_LABEL[event.category]}
             </span>
+            {expired && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: [0.75, 1, 0.75], scale: [0.98, 1.03, 0.98] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="ml-2 inline-block rounded-full border border-marica-rose-deep/20 bg-marica-rose-deep/10 px-3.5 py-1.5 font-body text-xs font-bold uppercase tracking-wide text-marica-rose-deep"
+              >
+                Sudah Expired
+              </motion.span>
+            )}
 
             <h1 className="mt-4 font-display text-3xl font-bold text-marica-ink sm:text-4xl">
               {event.title}
@@ -264,7 +276,7 @@ export default function EventDetailPage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                disabled={event.quotaLeft === 0}
+                disabled={expired || event.quotaLeft === 0}
                 onClick={() => {
                   const destination = `/event/${event.slug}/daftar`;
                   router.push(
@@ -276,7 +288,11 @@ export default function EventDetailPage() {
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Ticket className="h-4 w-4" />
-                {event.quotaLeft === 0 ? "Kuota Penuh" : "Daftar Sekarang"}
+                {expired
+                  ? "Event Sudah Expired"
+                  : event.quotaLeft === 0
+                    ? "Kuota Penuh"
+                    : "Daftar Sekarang"}
               </motion.button>
 
               <p className="mt-3 text-center font-body text-xs text-marica-ink-soft">

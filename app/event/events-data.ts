@@ -63,3 +63,9 @@ export function formatLongDateID(iso: string) {
   const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
   return `${days[date.getDay()]}, ${date.getDate()} ${MONTH_LABELS_ID[date.getMonth()]} ${date.getFullYear()}`;
 }
+
+export function isEventExpired(iso: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(`${iso}T00:00:00`) < today;
+}
