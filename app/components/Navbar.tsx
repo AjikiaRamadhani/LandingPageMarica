@@ -26,7 +26,7 @@ type NavLink = { label: string; href: string; menu?: NavMenu };
 
 const navLinks: NavLink[] = [
   { label: "Beranda", href: "/" },
-  { label: "Belanja", href: "/belanja", menu: "shop" },
+  { label: "Belanja", href: "/belanja" },
   { label: "Aktivitas", href: "/event", menu: "activity" },
   { label: "Edugames", href: "/edugames", menu: "edugames" },
   { label: "Blog", href: "/artikel", menu: "blog" },
