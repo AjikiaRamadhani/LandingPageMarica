@@ -6,8 +6,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await params;
-    const body = (await request.json()) as { name?: string; durationMinutes?: number; price?: number; maxPlayers?: number; isActive?: boolean };
-    return NextResponse.json(await prisma.tableFeePackage.update({ where: { id }, data: { ...(body.name !== undefined ? { name: body.name.trim() } : {}), ...(body.durationMinutes !== undefined ? { durationMinutes: body.durationMinutes } : {}), ...(body.price !== undefined ? { price: body.price } : {}), ...(body.maxPlayers !== undefined ? { maxPlayers: body.maxPlayers } : {}), ...(body.isActive !== undefined ? { isActive: body.isActive } : {}) } }));
+    const body = (await request.json()) as { name?: string; durationMinutes?: number; price?: number; maxPlayers?: number; slotCapacity?: number; isActive?: boolean };
+    return NextResponse.json(await prisma.tableFeePackage.update({ where: { id }, data: { ...(body.name !== undefined ? { name: body.name.trim() } : {}), ...(body.durationMinutes !== undefined ? { durationMinutes: body.durationMinutes } : {}), ...(body.price !== undefined ? { price: body.price } : {}), ...(body.maxPlayers !== undefined ? { maxPlayers: body.maxPlayers } : {}), ...(body.slotCapacity !== undefined ? { slotCapacity: body.slotCapacity } : {}), ...(body.isActive !== undefined ? { isActive: body.isActive } : {}) } }));
   } catch (error) {
     console.error("[PUT /api/admin/table-fee-packages/[id]]", error);
     return NextResponse.json({ error: "Gagal memperbarui tarif table fee" }, { status: 500 });

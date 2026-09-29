@@ -83,6 +83,7 @@ const simpleMenus = {
   activity: [
     { label: "Event", href: "/event" },
     { label: "Booking Playpass", href: "/playpass" },
+    { label: "Reservasi Meja", href: "/reservasi" },
   ],
   edugames: [
     { label: "Jelajahi edugames", href: "/edugames" },
