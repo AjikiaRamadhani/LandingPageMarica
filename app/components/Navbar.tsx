@@ -82,6 +82,7 @@ type ApiArticleCategory = {
 const simpleMenus = {
   activity: [
     { label: "Event", href: "/event" },
+    { label: "Booking Playpass", href: "/playpass" },
   ],
   edugames: [
     { label: "Jelajahi edugames", href: "/edugames" },

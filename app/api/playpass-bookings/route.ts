@@ -1,0 +1,96 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { snap } from "@/lib/midtrans";
+import { prisma } from "@/lib/prisma";
+import { auditAction } from "@/lib/audit";
+import { getPlaypassSlotAvailability, combineDateAndMinutes, dateKey, parseDateInput, parseTimeInput } from "@/lib/playpass-booking";
+import { sendPlaypassTicketEmailIfNeeded } from "@/lib/playpass-ticket-mailer";
+import { validateInteger, validateOptionalText, validateText } from "@/lib/request-validation";
+import crypto from "crypto";
+
+function bookingNumber() {
+  return `PPB-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+}
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 });
+  const bookings = await prisma.playpassBooking.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    include: { package: true, tickets: true },
+  });
+  return NextResponse.json(bookings);
+}
+
+export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id || !session.user.email) return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 });
+
+  try {
+    const body = (await request.json()) as { packageId?: string; date?: string; startTime?: string; quantity?: number; customerPhone?: string };
+    const packageId = validateText(body.packageId, "Paket Playpass", 100);
+    const date = validateText(body.date, "Tanggal kunjungan", 20);
+    const startTime = validateText(body.startTime, "Jam kunjungan", 10);
+    const quantity = validateInteger(body.quantity ?? 1, "Jumlah tiket", 1);
+    const phone = validateOptionalText(body.customerPhone, "Nomor WhatsApp", 40);
+    if (packageId.error || date.error || startTime.error || quantity.error || phone.error || typeof packageId.value !== "string" || typeof date.value !== "string" || typeof startTime.value !== "string" || typeof quantity.value !== "number") {
+      return NextResponse.json({ error: "Data booking Playpass tidak valid" }, { status: 400 });
+    }
+
+    const dateObject = parseDateInput(date.value);
+    const startMinutes = parseTimeInput(startTime.value);
+    if (!dateObject || startMinutes === null || dateKey(dateObject) !== date.value || date.value < dateKey(new Date())) {
+      return NextResponse.json({ error: "Tanggal atau jam kunjungan tidak valid" }, { status: 400 });
+    }
+
+    const availability = await getPlaypassSlotAvailability(packageId.value, date.value);
+    const selectedSlot = availability?.slots.find((slot) => slot.value === startTime.value);
+    if (!availability || !selectedSlot || !selectedSlot.available) return NextResponse.json({ error: "Slot Playpass sudah penuh atau tidak tersedia" }, { status: 409 });
+    if (quantity.value > availability.package.maxParticipants || quantity.value > selectedSlot.remaining) return NextResponse.json({ error: "Jumlah tiket melebihi kapasitas slot" }, { status: 409 });
+
+    const endMinutes = startMinutes + availability.package.durationMinutes;
+    const start = combineDateAndMinutes(date.value, startMinutes);
+    const end = combineDateAndMinutes(date.value, endMinutes);
+    const number = bookingNumber();
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    const booking = await prisma.playpassBooking.create({
+      data: {
+        bookingNumber: number,
+        userId: session.user.id,
+        packageId: availability.package.id,
+        customerName: session.user.name ?? "Pelanggan Marica",
+        customerEmail: session.user.email,
+        customerPhone: phone.value,
+        visitDate: dateObject,
+        startTime: start,
+        endTime: end,
+        quantity: quantity.value,
+        totalPrice: availability.package.price * quantity.value,
+        status: availability.package.price > 0 ? "PENDING_PAYMENT" : "PAID",
+        expiresAt: availability.package.price > 0 ? expiresAt : null,
+      },
+    });
+
+    if (booking.totalPrice === 0) {
+      await prisma.$transaction(async (tx) => {
+        await tx.playpassBooking.update({ where: { id: booking.id }, data: { paidAt: new Date() } });
+        await tx.playpassTicket.create({ data: { ticketNumber: `${booking.bookingNumber}-1`, packageId: booking.packageId, bookingId: booking.id, customerId: booking.userId, cashierId: null, quantity: booking.quantity, total: 0, paymentMethod: "FREE", paidAmount: 0, changeAmount: 0, validFrom: booking.startTime, expiresAt: booking.endTime } });
+      });
+      await sendPlaypassTicketEmailIfNeeded(booking.id);
+      return NextResponse.json({ booking, redirectUrl: `/playpass/tiket/${booking.bookingNumber}` }, { status: 201 });
+    }
+
+    const transaction = await snap.createTransaction({
+      transaction_details: { order_id: number, gross_amount: booking.totalPrice },
+      customer_details: { first_name: booking.customerName, email: booking.customerEmail, phone: booking.customerPhone ?? undefined },
+      item_details: [{ id: availability.package.id, price: availability.package.price, quantity: booking.quantity, name: availability.package.name.slice(0, 50) }],
+    });
+    const updated = await prisma.playpassBooking.update({ where: { id: booking.id }, data: { midtransOrderId: number, midtransSnapToken: transaction.token } });
+    auditAction({ action: "playpass_booking_created", status: "success", payload: { bookingNumber: number, packageId, userId: session.user.id } });
+    return NextResponse.json({ booking: updated, snapToken: transaction.token, redirectUrl: transaction.redirect_url }, { status: 201 });
+  } catch (error) {
+    console.error("[POST /api/playpass-bookings]", error);
+    return NextResponse.json({ error: "Gagal membuat booking Playpass" }, { status: 500 });
+  }
+}

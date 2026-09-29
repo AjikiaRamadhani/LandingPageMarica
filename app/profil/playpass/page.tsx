@@ -1,0 +1,16 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
+
+type Booking = { bookingNumber: string; status: string; quantity: number; totalPrice: number; visitDate: string; startTime: string; package: { name: string } };
+const statusLabel: Record<string, string> = { PAID: "Berhasil", PENDING_PAYMENT: "Menunggu pembayaran", CANCELLED: "Dibatalkan", EXPIRED: "Kedaluwarsa" };
+const money = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
+
+export default function MyPlaypassPage() {
+  const [bookings, setBookings] = useState<Booking[]>([]); const [error, setError] = useState("");
+  useEffect(() => { fetch("/api/playpass-bookings", { cache: "no-store" }).then(async (response) => { const data = await response.json(); if (response.status === 401) { window.location.href = "/login?callbackUrl=/profil/playpass"; return; } if (!response.ok) throw new Error(data.error); setBookings(Array.isArray(data) ? data : []); }).catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Booking gagal dimuat")); }, []);
+  return <div className="flex min-h-screen flex-col bg-marica-sky-light/20 font-body"><Navbar /><main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10"><div className="flex items-end justify-between gap-4"><div><h1 className="font-display text-3xl font-bold text-marica-ink">Booking Playpass Saya</h1><p className="mt-2 text-sm text-marica-ink-soft">Simpan dan buka e-tiket QR dari halaman ini.</p></div><Link href="/playpass" className="rounded-full bg-marica-amber-dark px-4 py-2 text-sm font-semibold text-white">Booking baru</Link></div><div className="mt-8 space-y-4">{error && <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}{bookings.map((booking) => <article key={booking.bookingNumber} className="rounded-2xl bg-white p-5 shadow-sm"><div className="flex flex-col justify-between gap-4 sm:flex-row"><div><p className="text-xs font-semibold uppercase tracking-wide text-marica-amber-dark">{booking.bookingNumber}</p><h2 className="mt-1 font-display text-xl font-bold text-marica-ink">{booking.package.name}</h2><p className="mt-2 text-sm text-marica-ink-soft">{new Date(booking.visitDate).toLocaleDateString("id-ID")} · {new Date(booking.startTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB · {booking.quantity} tiket</p></div><span className="h-fit rounded-full bg-marica-amber/20 px-3 py-1 text-xs font-semibold text-marica-amber-dark">{statusLabel[booking.status] ?? booking.status}</span></div><div className="mt-5 flex items-center justify-between border-t border-black/5 pt-4 text-sm"><span className="text-marica-ink-soft">{money(booking.totalPrice)}</span><Link href={`/playpass/tiket/${booking.bookingNumber}`} className="rounded-full bg-marica-amber-dark px-4 py-2 font-semibold text-white">Buka e-tiket</Link></div></article>)}{!error && bookings.length === 0 && <p className="rounded-2xl bg-white p-8 text-center text-sm text-marica-ink-soft">Belum ada booking Playpass.</p>}</div></main><Footer /></div>;
+}
