@@ -30,7 +30,7 @@ function PrintablesDownloadContent() {
 
     fetch(`/api/printables/${encodeURIComponent(printableKey)}`)
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Printable tidak ditemukan"))))
-      .then((data: { id: string; slug: string; title: string; description: string; subject: string }) => {
+      .then((data: { id: string; slug: string; title: string; description: string; subject: string; thumbnailUrl: string | null }) => {
         setPrintable((current) => ({
           ...current,
           id: data.slug,
@@ -38,6 +38,7 @@ function PrintablesDownloadContent() {
           description: data.description,
           longDescription: data.description,
           categoryLabel: data.subject,
+          thumbnailUrl: data.thumbnailUrl,
         }));
       })
       .catch((error) => console.error("[PrintablesDownloadPage]", error));
@@ -63,16 +64,16 @@ function PrintablesDownloadContent() {
           initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pb-20 pt-8 lg:grid-cols-2 lg:gap-14 lg:px-10 lg:pb-28 lg:pt-10"
+          className="mx-auto grid max-w-7xl grid-cols-1 gap-7 px-4 pb-16 pt-6 sm:gap-10 sm:px-6 sm:pt-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14 lg:px-10 lg:pb-28 lg:pt-10"
         >
           {/* Preview */}
           <div>
             <div
-              className="overflow-hidden rounded-3xl border-2 p-2"
+              className="overflow-hidden rounded-2xl border-2 p-1.5 sm:rounded-3xl sm:p-2"
               style={{ borderColor: style.iconColor + "55" }}
             >
               <div
-                className="relative flex h-72 items-center justify-center rounded-2xl sm:h-96"
+                className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl sm:aspect-[5/4] sm:rounded-2xl lg:aspect-[4/3]"
                 style={{ backgroundImage: `linear-gradient(135deg, ${style.from}, ${style.to})` }}
               >
                 <div className="absolute left-4 top-4 flex gap-1.5 opacity-50" aria-hidden>
@@ -80,12 +81,21 @@ function PrintablesDownloadContent() {
                   <span className="h-2.5 w-2.5 rounded-full bg-marica-ink/40" />
                   <span className="h-2.5 w-2.5 rounded-full bg-marica-ink/40" />
                 </div>
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/70 shadow-inner">
-                  <Icon className="h-11 w-11" style={{ color: style.iconColor }} />
-                </div>
+                {printable.thumbnailUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={printable.thumbnailUrl}
+                    alt={printable.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/70 shadow-inner sm:h-24 sm:w-24">
+                    <Icon className="h-9 w-9 sm:h-11 sm:w-11" style={{ color: style.iconColor }} />
+                  </div>
+                )}
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between font-body text-xs text-marica-ink-soft">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 font-body text-xs text-marica-ink-soft">
               <span>Format: {printable.format}</span>
               <span>Size: {printable.fileSizeMb} MB</span>
             </div>
@@ -100,10 +110,10 @@ function PrintablesDownloadContent() {
               <Star className="h-3.5 w-3.5 fill-current" /> +{printable.points} MARICA POINTS
             </div>
 
-            <h1 className="mt-4 font-display text-3xl font-semibold text-marica-ink">{printable.title}</h1>
-            <p className="mt-3 font-body text-marica-ink-soft">{printable.longDescription}</p>
+            <h1 className="mt-3 font-display text-2xl font-semibold leading-tight text-marica-ink sm:mt-4 sm:text-3xl">{printable.title}</h1>
+            <p className="mt-3 text-sm leading-6 text-marica-ink-soft sm:text-base">{printable.longDescription}</p>
 
-            <div className="mt-6 rounded-2xl bg-white p-6 shadow-[0_14px_35px_rgba(120,60,10,0.08)] sm:p-7">
+            <div className="mt-5 rounded-2xl bg-white p-4 shadow-[0_14px_35px_rgba(120,60,10,0.08)] sm:mt-6 sm:p-7">
               <DownloadForm
                 printableId={printable.id}
                 printableTitle={printable.title}
@@ -111,7 +121,7 @@ function PrintablesDownloadContent() {
               />
             </div>
 
-            <p className="mt-4 font-body text-xs text-marica-ink-soft">
+            <p className="mt-4 text-xs leading-5 text-marica-ink-soft sm:text-sm">
               Dengan mengunduh materi ini, Anda menyetujui{" "}
               <Link href="/syarat-ketentuan" className="font-semibold text-marica-amber-text underline underline-offset-2">
                 Syarat & Ketentuan
@@ -139,14 +149,49 @@ function DownloadForm({
   printableTitle: string;
   reduceMotion: boolean;
 }) {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "", age: "" });
 
-  const nameValue = form.name || session?.user?.name || "";
-  const emailValue = form.email || session?.user?.email || "";
+  useEffect(() => {
+    if (sessionStatus !== "authenticated") return;
+
+    let cancelled = false;
+    const fallback = {
+      name: session?.user?.name ?? "",
+      email: session?.user?.email ?? "",
+    };
+
+    fetch("/api/user/profile", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error ?? "Profil tidak dapat dimuat");
+        return data as { name?: string | null; email?: string | null; whatsapp?: string | null };
+      })
+      .then((profile) => {
+        if (cancelled) return;
+        setForm((current) => ({
+          ...current,
+          name: current.name || profile.name || fallback.name,
+          email: current.email || profile.email || fallback.email,
+          whatsapp: current.whatsapp || normalizeWhatsapp(profile.whatsapp),
+        }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setForm((current) => ({
+          ...current,
+          name: current.name || fallback.name,
+          email: current.email || fallback.email,
+        }));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionStatus, session?.user?.email, session?.user?.name]);
 
   const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -161,8 +206,8 @@ function DownloadForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: nameValue,
-          email: emailValue,
+          name: form.name,
+          email: form.email,
           whatsapp: form.whatsapp,
           childAge: Number.parseInt(form.age, 10),
         }),
@@ -217,15 +262,19 @@ function DownloadForm({
           onSubmit={handleSubmit}
           className="flex flex-col gap-4"
         >
-          <h2 className="font-display text-lg font-semibold text-marica-ink">Informasi Pengiriman</h2>
+          <div>
+            <h2 className="font-display text-lg font-semibold text-marica-ink">Informasi Pengiriman</h2>
+            <p className="mt-1 font-body text-xs leading-5 text-marica-ink-soft">Data profilmu akan terisi otomatis dan masih bisa disesuaikan.</p>
+          </div>
 
           {error && <p className="rounded-xl bg-red-50 px-4 py-3 font-body text-sm text-red-700">{error}</p>}
 
+          <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Nama Lengkap Orang Tua">
             <input
               required
               type="text"
-              value={nameValue}
+              value={form.name}
               onChange={update("name")}
               placeholder="Masukkan nama lengkap"
               className="w-full rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 font-body text-sm text-marica-ink placeholder:text-marica-ink-soft/60 outline-none transition focus:border-marica-amber-dark focus:ring-2 focus:ring-marica-amber-dark/20"
@@ -236,7 +285,7 @@ function DownloadForm({
             <input
               required
               type="email"
-              value={emailValue}
+              value={form.email}
               onChange={update("email")}
               placeholder="Alamat pengiriman file PDF"
               className="w-full rounded-xl border border-marica-ink/10 bg-white px-4 py-2.5 font-body text-sm text-marica-ink placeholder:text-marica-ink-soft/60 outline-none transition focus:border-marica-amber-dark focus:ring-2 focus:ring-marica-amber-dark/20"
@@ -276,6 +325,7 @@ function DownloadForm({
               ))}
             </select>
           </Field>
+          </div>
 
           <button
             type="submit"
@@ -305,4 +355,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </label>
   );
+}
+
+function normalizeWhatsapp(value: string | null | undefined) {
+  const digits = (value ?? "").replace(/\D/g, "");
+  if (digits.startsWith("62")) return digits.slice(2);
+  if (digits.startsWith("0")) return digits.slice(1);
+  return digits;
 }
