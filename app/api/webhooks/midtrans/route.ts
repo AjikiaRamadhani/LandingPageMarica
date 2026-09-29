@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
 import { sendPlaypassTicketEmailIfNeeded } from "@/lib/playpass-ticket-mailer";
 import { settlePlaypassBooking } from "@/lib/playpass-booking";
+import { sendTableReservationEmailIfNeeded } from "@/lib/table-reservation-mailer";
+import { settleTableReservation } from "@/lib/table-reservation";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
 import {
   awardPointsInTransaction,
@@ -78,6 +80,19 @@ export async function POST(request: Request) {
           where: { id: booking.id, status: "PENDING_PAYMENT" },
           data: { status: transaction_status === "expire" ? "EXPIRED" : "CANCELLED" },
         });
+      }
+      return NextResponse.json({ message: "OK" });
+    }
+
+    if (order_id.startsWith("TBL-")) {
+      const reservation = await prisma.tableReservation.findUnique({ where: { midtransOrderId: order_id } });
+      if (!reservation) return NextResponse.json({ error: "Table reservation not found" }, { status: 404 });
+      if (Number(gross_amount) !== reservation.totalPrice) return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
+      if (transaction_status === "capture" || transaction_status === "settlement") {
+        await settleTableReservation(reservation.id, transaction_id);
+        await sendTableReservationEmailIfNeeded(reservation.id);
+      } else if (transaction_status === "deny" || transaction_status === "cancel" || transaction_status === "expire") {
+        await prisma.tableReservation.updateMany({ where: { id: reservation.id, status: "PENDING_PAYMENT" }, data: { status: transaction_status === "expire" ? "EXPIRED" : "CANCELLED" } });
       }
       return NextResponse.json({ message: "OK" });
     }

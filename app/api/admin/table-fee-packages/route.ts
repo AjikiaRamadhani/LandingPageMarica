@@ -10,12 +10,13 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const body = (await request.json()) as { name?: string; durationMinutes?: number; price?: number; maxPlayers?: number };
+    const body = (await request.json()) as { name?: string; durationMinutes?: number; price?: number; maxPlayers?: number; slotCapacity?: number };
     const durationMinutes = typeof body.durationMinutes === "number" ? body.durationMinutes : 0;
     const price = typeof body.price === "number" ? body.price : -1;
     const maxPlayers = typeof body.maxPlayers === "number" ? body.maxPlayers : 4;
-    if (!body.name?.trim() || !Number.isInteger(durationMinutes) || durationMinutes < 1 || !Number.isInteger(price) || price < 0 || !Number.isInteger(maxPlayers) || maxPlayers < 1) return NextResponse.json({ error: "Data tarif table fee tidak valid" }, { status: 400 });
-    return NextResponse.json(await prisma.tableFeePackage.create({ data: { name: body.name.trim(), durationMinutes, price, maxPlayers } }), { status: 201 });
+    const slotCapacity = typeof body.slotCapacity === "number" ? body.slotCapacity : 1;
+    if (!body.name?.trim() || !Number.isInteger(durationMinutes) || durationMinutes < 1 || !Number.isInteger(price) || price < 0 || !Number.isInteger(maxPlayers) || maxPlayers < 1 || !Number.isInteger(slotCapacity) || slotCapacity < 1) return NextResponse.json({ error: "Data tarif table fee tidak valid" }, { status: 400 });
+    return NextResponse.json(await prisma.tableFeePackage.create({ data: { name: body.name.trim(), durationMinutes, price, maxPlayers, slotCapacity } }), { status: 201 });
   } catch (error) {
     console.error("[POST /api/admin/table-fee-packages]", error);
     return NextResponse.json({ error: "Gagal membuat tarif table fee" }, { status: 500 });

@@ -32,6 +32,7 @@ model User {
   eventBookings               EventBooking[]
   printableLeads              PrintableLead[]
   recommendationEvents        RecommendationEvent[]
+  tableReservations           TableReservation[]
   inventoryMovements          InventoryMovement[]   @relation("InventoryMovementCreatedBy")
   pointAccount                PointAccount?
   pointTransactions           PointTransaction[]
@@ -756,6 +757,14 @@ enum TableFeeSessionStatus {
   CANCELLED
 }
 
+enum TableReservationStatus {
+  PENDING_PAYMENT
+  PAID
+  CHECKED_IN
+  CANCELLED
+  EXPIRED
+}
+
 model PlaypassBooking {
   id            String @id @default(cuid())
   bookingNumber String @unique
@@ -804,14 +813,55 @@ model TableFeePackage {
   durationMinutes         Int
   price                   Int
   maxPlayers              Int                      @default(4)
+  slotCapacity            Int?
   isActive                Boolean                  @default(true)
   sessions                TableFeeSession[]
   cashierTransactionItems CashierTransactionItem[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
+  reservations             TableReservation[]
 
   @@index([isActive])
   @@map("table_fee_packages")
+}
+
+model TableReservation {
+  id                String                 @id @default(cuid())
+  reservationNumber String                 @unique
+  qrToken           String                 @unique @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  packageId String
+  package   TableFeePackage @relation(fields: [packageId], references: [id])
+
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  partySize     Int
+  visitDate     DateTime
+  startTime     DateTime
+  endTime       DateTime
+  totalPrice    Int
+
+  status                TableReservationStatus @default(PENDING_PAYMENT)
+  expiresAt             DateTime?
+  midtransOrderId       String?                @unique
+  midtransTransactionId String?
+  midtransSnapToken     String?
+  paidAt                DateTime?
+  checkedInAt           DateTime?
+  ticketEmailSentAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([packageId, visitDate])
+  @@index([status, visitDate])
+  @@index([visitDate, startTime, endTime])
+  @@map("table_reservations")
 }
 
 model TableFeeSession {

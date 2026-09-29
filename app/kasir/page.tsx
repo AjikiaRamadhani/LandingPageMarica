@@ -60,7 +60,7 @@ type CartItem = {
 };
 type Shift = { id: string; openingCash: number; openedAt: string };
 type CatalogTab = "PRODUCT" | "PLAYPASS" | "TABLE_FEE";
-type CheckInMode = "EVENT" | "PLAYPASS";
+type CheckInMode = "EVENT" | "PLAYPASS" | "TABLE_RESERVATION";
 type Sale = {
   id: string;
   transactionNumber: string;
@@ -554,7 +554,9 @@ export default function PosPage() {
     const endpoint =
       checkInMode === "EVENT"
         ? "/api/event-tickets/check-in"
-        : "/api/cashier/playpasses/check-in";
+        : checkInMode === "PLAYPASS"
+          ? "/api/cashier/playpasses/check-in"
+          : "/api/cashier/table-reservations/check-in";
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1143,6 +1145,7 @@ export default function PosPage() {
               [
                 ["EVENT", "Event / Workshop"],
                 ["PLAYPASS", "Playpass"],
+                  ["TABLE_RESERVATION", "Reservasi meja"],
               ] as const
             ).map(([value, label]) => (
               <button
