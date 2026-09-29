@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { coreApi } from "@/lib/midtrans";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
 import { refundRedeemedPointsInTransaction } from "@/lib/points";
+import { addProductAvailability } from "@/lib/order-product-availability";
 
 type MidtransStatus = {
   transaction_status?: string;
@@ -32,7 +33,7 @@ export async function GET(
       return NextResponse.json({ error: "Pesanan tidak ditemukan" }, { status: 404 });
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(await addProductAvailability([order]).then(([item]) => item));
   } catch (error) {
     console.error("[GET /api/orders/[id]]", error);
     return NextResponse.json({ error: "Gagal mengambil detail pesanan" }, { status: 500 });
@@ -89,7 +90,7 @@ export async function PATCH(
       return updatedOrder;
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(await addProductAvailability([updated]).then(([item]) => item));
   } catch (error) {
     console.error("[PATCH /api/orders/[id]]", error);
     return NextResponse.json({ error: "Gagal membatalkan pesanan" }, { status: 500 });
@@ -119,7 +120,7 @@ export async function POST(
     }
 
     if (order.status !== "PENDING_PAYMENT") {
-      return NextResponse.json(order);
+      return NextResponse.json(await addProductAvailability([order]).then(([item]) => item));
     }
 
     if (!order.midtransOrderId) {
@@ -151,7 +152,8 @@ export async function POST(
       where: { id: order.id },
       include: { items: true },
     });
-    return NextResponse.json(updated ?? order);
+    const result = updated ?? order;
+    return NextResponse.json(await addProductAvailability([result]).then(([item]) => item));
   } catch (error) {
     console.error("[POST /api/orders/[id]]", error);
     return NextResponse.json(

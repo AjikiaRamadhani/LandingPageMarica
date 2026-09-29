@@ -6,7 +6,7 @@ type OrderToSettle = {
   userId: string;
   orderNumber: string;
   total: number;
-  items: Array<{ productId: string; quantity: number }>;
+  items: Array<{ productId: string | null; quantity: number }>;
 };
 
 /**
@@ -31,7 +31,17 @@ export async function settleOrderPayment(
       return;
     }
 
-    const productIds = order.items.map((item) => item.productId);
+    const validItems = order.items.filter(
+      (item): item is { productId: string; quantity: number } => Boolean(item.productId),
+    );
+    if (validItems.length !== order.items.length) {
+      throw Object.assign(new Error("PRODUCT_UNAVAILABLE"), {
+        statusCode: 409,
+        detail: `Produk pada pesanan ${order.orderNumber} sudah tidak tersedia`,
+      });
+    }
+
+    const productIds = validItems.map((item) => item.productId);
     const lockedProducts = await transaction.$queryRaw<
       Array<{ id: string; stock: number }>
     >`
@@ -42,7 +52,7 @@ export async function settleOrderPayment(
     `;
 
     const stockMap = new Map(lockedProducts.map((product) => [product.id, product.stock]));
-    const shortage = order.items.find(
+    const shortage = validItems.find(
       (item) => (stockMap.get(item.productId) ?? 0) < item.quantity,
     );
 
@@ -65,7 +75,7 @@ export async function settleOrderPayment(
     if (paidOrder.count === 0) return;
 
     await Promise.all(
-      order.items.map((item) =>
+      validItems.map((item) =>
         transaction.product.update({
           where: { id: item.productId },
           data: {
@@ -77,7 +87,7 @@ export async function settleOrderPayment(
     );
 
     await transaction.inventoryMovement.createMany({
-      data: order.items.map((item) => ({
+      data: validItems.map((item) => ({
         productId: item.productId,
         orderId: order.id,
         type: "SALE" as const,
@@ -88,7 +98,7 @@ export async function settleOrderPayment(
     });
 
     await transaction.recommendationEvent.createMany({
-      data: order.items.map((item) => ({
+      data: validItems.map((item) => ({
         userId: order.userId,
         productId: item.productId,
         type: "PURCHASE" as const,

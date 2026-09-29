@@ -462,7 +462,7 @@ model ProductBundleItem {
   bundleId  String
   bundle    ProductBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   productId String
-  product   Product       @relation(fields: [productId], references: [id])
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   order     Int           @default(0)
 
   @@map("product_bundle_items")
@@ -490,7 +490,7 @@ model CartItem {
   cartId    String
   cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int      @default(1)
   bundleId  String? // diisi kalau item ini bagian dari "Paket Hemat" tertentu
   createdAt DateTime @default(now())
@@ -566,8 +566,8 @@ enum InventoryMovementType {
 
 model InventoryMovement {
   id               String                @id @default(cuid())
-  productId        String
-  product          Product               @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId        String?
+  product          Product?              @relation(fields: [productId], references: [id], onDelete: SetNull)
   orderId          String?
   order            Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
   posTransactionId String?
@@ -928,8 +928,8 @@ model PosTransactionItem {
   id            String         @id @default(cuid())
   transactionId String
   transaction   PosTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  productId     String
-  product       Product        @relation(fields: [productId], references: [id])
+  productId     String?
+  product       Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
   productName   String
   price         Int
   quantity      Int
@@ -945,8 +945,8 @@ model OrderItem {
   id        String  @id @default(cuid())
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   // Snapshot data produk saat transaksi (biar gak berubah kalau produk aslinya diedit/dihapus admin nanti)
   productName     String

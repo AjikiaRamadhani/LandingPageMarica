@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(
   request: Request,
@@ -167,27 +168,47 @@ export async function DELETE(
 
     const existing = await prisma.product.findUnique({
       where: { id },
-      include: { bundleItems: true },
+      include: { images: { select: { url: true } } },
     });
 
     if (!existing) {
       return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
     }
 
-    if (existing.bundleItems.length > 0) {
-      return NextResponse.json(
-        {
-          error: `Produk ini masih dipakai di ${existing.bundleItems.length} paket bundle. Hapus dulu dari bundle-nya sebelum menghapus produk.`,
-        },
-        { status: 409 }
-      );
-    }
-
     await prisma.product.delete({ where: { id } });
 
-    return NextResponse.json({ message: "Produk berhasil dihapus" });
+    const storageFiles = new Map<string, string[]>();
+    for (const image of existing.images) {
+      const match = image.url.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+      if (!match) continue;
+      const bucketFiles = storageFiles.get(match[1]) ?? [];
+      bucketFiles.push(decodeURIComponent(match[2]));
+      storageFiles.set(match[1], bucketFiles);
+    }
+    await Promise.all(
+      Array.from(storageFiles, async ([bucket, files]) => {
+        const { error } = await supabaseAdmin.storage.from(bucket).remove(files);
+        if (error) console.warn(`[DELETE product] Gagal menghapus file storage bucket ${bucket}`, error);
+      }),
+    );
+
+    return NextResponse.json({ message: "Produk berhasil dihapus permanen" });
   } catch (error) {
     console.error("[DELETE /api/admin/products/[id]]", error);
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2003"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Struktur database belum mendukung penghapusan produk yang memiliki riwayat transaksi. Jalankan migration terbaru terlebih dahulu.",
+        },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "Gagal menghapus produk" }, { status: 500 });
   }
 }

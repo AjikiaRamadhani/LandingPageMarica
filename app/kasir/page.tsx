@@ -82,6 +82,16 @@ type ActiveTable = {
 
 const money = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
+function normalizeProductImageUrl(value?: string | null) {
+  const source = value?.trim();
+  if (!source) return null;
+  if (source.startsWith("//")) return `https:${source}`;
+  if (/^(https?:|data:|blob:)/i.test(source) || source.startsWith("/")) {
+    return source;
+  }
+  return `/${source}`;
+}
+
 function escapeHtml(value: unknown) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -115,6 +125,7 @@ export default function PosPage() {
   const [isSearchingMembers, setIsSearchingMembers] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isVoiding, setIsVoiding] = useState<string | null>(null);
+  const [isUpdatingTable, setIsUpdatingTable] = useState<string | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
   const [activeTables, setActiveTables] = useState<ActiveTable[]>([]);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
@@ -159,8 +170,8 @@ export default function PosPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/products?limit=50", { cache: "no-store" }).then((res) =>
-        res.json(),
+      fetch("/api/cashier/products?limit=50", { cache: "no-store" }).then(
+        (res) => res.json(),
       ),
       fetch("/api/cashier/playpasses", { cache: "no-store" }).then((res) =>
         res.json(),
@@ -263,6 +274,15 @@ export default function PosPage() {
     item.name.toLowerCase().includes(query.toLowerCase()),
   );
 
+  async function refreshActiveTables() {
+    const response = await fetch("/api/cashier/table-fees", {
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error ?? "Gagal memuat sesi meja.");
+    setActiveTables(Array.isArray(data.sessions) ? data.sessions : []);
+  }
+
   function addItem(item: Product | PackageItem) {
     const type = tab;
     const key = `${type}-${item.id}`;
@@ -351,6 +371,7 @@ export default function PosPage() {
       });
       return;
     }
+    const includesTableFee = cart.some((item) => item.type === "TABLE_FEE");
     setIsSubmitting(true);
     setNotice(null);
     const res = await fetch("/api/cashier/sales", {
@@ -386,10 +407,39 @@ export default function PosPage() {
     setMemberQuery("");
     setLastSaleId(data.id ?? null);
     setSales((current) => [data, ...current]);
+    if (includesTableFee) {
+      void refreshActiveTables().catch(() => undefined);
+    }
     setNotice({
       type: "success",
       text: `Transaksi ${data.transactionNumber} berhasil dibuat.`,
     });
+  }
+
+  async function updateTableSession(id: string, action: "complete" | "cancel") {
+    if (action === "cancel" && !window.confirm("Batalkan sesi Table Fee ini?")) {
+      return;
+    }
+    setIsUpdatingTable(id);
+    try {
+      const response = await fetch(`/api/cashier/table-fees/${id}/${action}`, {
+        method: "POST",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Sesi meja gagal diperbarui.");
+      await refreshActiveTables();
+      setNotice({
+        type: "success",
+        text: action === "complete" ? "Sesi meja berhasil diselesaikan." : "Sesi meja berhasil dibatalkan.",
+      });
+    } catch (error) {
+      setNotice({
+        type: "error",
+        text: error instanceof Error ? error.message : "Sesi meja gagal diperbarui.",
+      });
+    } finally {
+      setIsUpdatingTable(null);
+    }
   }
 
   async function closeShift(event: React.FormEvent) {
@@ -779,7 +829,17 @@ export default function PosPage() {
               <input
                 id="table-number"
                 value={tableNumber}
-                onChange={(event) => setTableNumber(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setTableNumber(value);
+                  setCart((current) =>
+                    current.map((item) =>
+                      item.type === "TABLE_FEE"
+                        ? { ...item, tableNumber: value }
+                        : item,
+                    ),
+                  );
+                }}
                 placeholder="A01"
                 className="w-28 rounded-lg border border-marica-amber/30 bg-white px-3 py-2 font-body text-sm outline-none focus:border-marica-amber-dark"
               />
@@ -791,24 +851,30 @@ export default function PosPage() {
                 Memuat katalog...
               </p>
             ) : (
-              filteredCatalog.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  disabled={
-                    "stock" in item && (item.stock <= 0 || !item.isActive)
-                  }
-                  onClick={() => addItem(item)}
-                  className="group overflow-hidden rounded-2xl border border-black/8 bg-white text-left transition hover:-translate-y-0.5 hover:border-marica-amber/60 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-45"
-                >
+              filteredCatalog.map((item) => {
+                const imageUrl =
+                  tab === "PRODUCT" && "images" in item
+                    ? normalizeProductImageUrl(item.images?.[0]?.url)
+                    : null;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    disabled={
+                      "stock" in item && (item.stock <= 0 || !item.isActive)
+                    }
+                    onClick={() => addItem(item)}
+                    className="group overflow-hidden rounded-2xl border border-black/8 bg-white text-left transition hover:-translate-y-0.5 hover:border-marica-amber/60 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-45"
+                  >
                   <div className="relative flex h-44 items-center justify-center overflow-hidden bg-linear-to-br from-marica-cream via-white to-marica-amber/10 p-3">
-                    {tab === "PRODUCT" &&
-                    "images" in item &&
-                    item.images?.[0]?.url ? (
+                    {imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={item.images[0].url}
+                        src={imageUrl}
                         alt={item.name}
                         loading="lazy"
+                        decoding="async"
                         onError={(event) => {
                           event.currentTarget.style.display = "none";
                           event.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -825,7 +891,7 @@ export default function PosPage() {
                         </span>
                       </span>
                     )}
-                    {tab === "PRODUCT" && "images" in item && item.images?.[0]?.url && (
+                    {imageUrl && (
                       <span className="hidden h-full w-full flex-col items-center justify-center rounded-2xl bg-linear-to-br from-marica-amber/15 via-marica-cream to-marica-rose/20 px-4 text-center text-marica-amber-text">
                         <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/80 font-display text-3xl font-semibold shadow-sm">
                           {item.name.trim().charAt(0).toUpperCase()}
@@ -857,8 +923,9 @@ export default function PosPage() {
                       </p>
                     )}
                   </div>
-                </button>
-              ))
+                  </button>
+                );
+              })
             )}
           </div>
         </section>
@@ -1240,6 +1307,24 @@ export default function PosPage() {
                     minute: "2-digit",
                   })}
                 </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={isUpdatingTable === table.id}
+                    onClick={() => void updateTableSession(table.id, "complete")}
+                    className="flex-1 rounded-lg bg-marica-amber-dark px-3 py-2 font-body text-xs font-bold text-white transition hover:bg-marica-amber-text disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Selesaikan
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isUpdatingTable === table.id}
+                    onClick={() => void updateTableSession(table.id, "cancel")}
+                    className="rounded-lg border border-marica-amber/30 px-3 py-2 font-body text-xs font-bold text-marica-amber-text transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                </div>
               </div>
             ))}
           </div>

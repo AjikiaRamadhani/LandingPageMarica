@@ -135,12 +135,14 @@ export default function ProductForm({
 
   // Auto-slug dari nama sampai user pertama kali edit slug secara manual
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!slugTouched) setSlug(slugify(name));
   }, [name, slugTouched]);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("bucket", "products");
     const res = await fetch("/api/admin/upload", {
       method: "POST",
       body: formData,
