@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../app/generated/prisma/client";
+import { PrismaClient } from "../app/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -360,57 +360,88 @@ async function main() {
     }
   });
 
+  // 18b. Playpass, table reservation, and F&B demo catalog
+  const playpassDemoPackages = [
+    { id: 'seed-playpass-anak', name: 'Playpass Anak - 2 Jam', durationMinutes: 120, price: 50000, maxParticipants: 6, slotCapacity: 6 },
+    { id: 'seed-playpass-keluarga', name: 'Playpass Keluarga - 3 Jam', durationMinutes: 180, price: 120000, maxParticipants: 8, slotCapacity: 4 },
+  ];
+  for (const item of playpassDemoPackages) {
+    await prisma.playpassPackage.upsert({ where: { id: item.id }, update: item, create: item });
+  }
+  const tableDemoPackages = [
+    { id: 'seed-table-boardgame', name: 'Meja Board Game - 2 Jam', durationMinutes: 120, price: 75000, maxPlayers: 6, slotCapacity: 4 },
+    { id: 'seed-table-family', name: 'Meja Family - 3 Jam', durationMinutes: 180, price: 100000, maxPlayers: 8, slotCapacity: 3 },
+  ];
+  for (const item of tableDemoPackages) {
+    await prisma.tableFeePackage.upsert({ where: { id: item.id }, update: item, create: item });
+  }
+  const fnbDemoProducts = [
+    { id: 'seed-fnb-air-mineral', name: 'Air Mineral Marica', description: 'Air mineral dingin untuk menemani aktivitas bermain.', price: 8000, stock: 100, imageUrl: '/images/fnb-water.png' },
+    { id: 'seed-fnb-roti-cokelat', name: 'Roti Cokelat Mini', description: 'Roti lembut dengan isian cokelat, cocok untuk anak.', price: 15000, stock: 40, imageUrl: '/images/fnb-bread.png' },
+    { id: 'seed-fnb-paket-keluarga', name: 'Paket Snack Keluarga', description: 'Kombinasi snack ringan untuk 3-4 orang.', price: 45000, stock: 25, imageUrl: '/images/fnb-snack.png' },
+  ];
+  for (const item of fnbDemoProducts) {
+    await prisma.fnbProduct.upsert({ where: { id: item.id }, update: item, create: item });
+  }
+
   // 19. Products & Categories
   await prisma.productBundleItem.deleteMany();
   await prisma.productBundle.deleteMany();
   await prisma.cartItem.deleteMany();
-  await prisma.productImage.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.productCategory.deleteMany();
   
-  const cat1 = await prisma.productCategory.create({
-    data: { name: 'Board Games', slug: 'board-games', colorTag: 'blue' }
+  const cat1 = await prisma.productCategory.upsert({
+    where: { slug: 'board-games' },
+    update: { name: 'Board Games', colorTag: 'blue', isActive: true },
+    create: { name: 'Board Games', slug: 'board-games', colorTag: 'blue' }
   });
-  const cat2 = await prisma.productCategory.create({
-    data: { name: 'Edu Kit', slug: 'edu-kit', colorTag: 'orange' }
+  const cat2 = await prisma.productCategory.upsert({
+    where: { slug: 'edu-kit' },
+    update: { name: 'Edu Kit', colorTag: 'orange', isActive: true },
+    create: { name: 'Edu Kit', slug: 'edu-kit', colorTag: 'orange' }
   });
 
-  await prisma.product.create({
-    data: {
+  const smartBoard = await prisma.product.upsert({
+    where: { slug: 'marica-smart-board' },
+    update: {
       name: 'Marica Smart Board',
-      slug: 'marica-smart-board',
       description: 'Papan pintar edukatif untuk anak',
       price: 150000,
       stock: 50,
       categoryId: cat1.id,
       highlights: ['Meningkatkan motorik', 'Warna cerah'],
-      images: { create: [{ url: '/images/product1.png' }] }
-    }
+      isActive: true,
+    },
+    create: { name: 'Marica Smart Board', slug: 'marica-smart-board', description: 'Papan pintar edukatif untuk anak', price: 150000, stock: 50, categoryId: cat1.id, highlights: ['Meningkatkan motorik', 'Warna cerah'] }
   });
-  await prisma.product.create({
-    data: {
+  const puzzle = await prisma.product.upsert({
+    where: { slug: 'puzzle-logika-anak' },
+    update: {
       name: 'Puzzle Logika Anak',
-      slug: 'puzzle-logika-anak',
       description: 'Puzzle kayu melatih problem solving',
       price: 75000,
       stock: 100,
       categoryId: cat1.id,
       highlights: ['Bahan kayu aman', 'Melatih fokus'],
-      images: { create: [{ url: '/images/product2.png' }] }
-    }
+      isActive: true,
+    },
+    create: { name: 'Puzzle Logika Anak', slug: 'puzzle-logika-anak', description: 'Puzzle kayu melatih problem solving', price: 75000, stock: 100, categoryId: cat1.id, highlights: ['Bahan kayu aman', 'Melatih fokus'] }
   });
-  await prisma.product.create({
-    data: {
+  const sensoryKit = await prisma.product.upsert({
+    where: { slug: 'sensory-play-kit' },
+    update: {
       name: 'Sensory Play Kit',
-      slug: 'sensory-play-kit',
       description: 'Paket bermain sensori untuk balita',
       price: 120000,
       stock: 30,
       categoryId: cat2.id,
       highlights: ['Tekstur beragam', 'Aman jika tertelan sedikit'],
-      images: { create: [{ url: '/images/product3.png' }] }
-    }
+      isActive: true,
+    },
+    create: { name: 'Sensory Play Kit', slug: 'sensory-play-kit', description: 'Paket bermain sensori untuk balita', price: 120000, stock: 30, categoryId: cat2.id, highlights: ['Tekstur beragam', 'Aman jika tertelan sedikit'] }
   });
+  await prisma.productImage.upsert({ where: { id: 'seed-image-smart-board' }, update: { url: '/images/product1.png', productId: smartBoard.id }, create: { id: 'seed-image-smart-board', url: '/images/product1.png', productId: smartBoard.id } });
+  await prisma.productImage.upsert({ where: { id: 'seed-image-puzzle' }, update: { url: '/images/product2.png', productId: puzzle.id }, create: { id: 'seed-image-puzzle', url: '/images/product2.png', productId: puzzle.id } });
+  await prisma.productImage.upsert({ where: { id: 'seed-image-sensory-kit' }, update: { url: '/images/product3.png', productId: sensoryKit.id }, create: { id: 'seed-image-sensory-kit', url: '/images/product3.png', productId: sensoryKit.id } });
 
   // 20. Articles & Categories
   await prisma.comment.deleteMany();

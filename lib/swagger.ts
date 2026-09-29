@@ -97,6 +97,29 @@ export const getApiDocs = () => {
     errorCodes: ["500"],
   });
   add("/api/products/{slug}", "get", "Get product detail", "Catalog", { parameters: [pathParam("slug", "Product slug.")], success: objectSchema, errorCodes: ["404", "500"] });
+  add("/api/recommendations/{productId}", "get", "Get product recommendations", "Recommendations", {
+    parameters: [
+      pathParam("productId", "Product ID used as the recommendation context."),
+      queryParam("limit", "Maximum number of recommendations; defaults to 5.", { type: "integer", minimum: 1 }),
+      queryParam("sessionId", "Anonymous recommendation session ID."),
+    ],
+    success: objectSchema,
+    errorCodes: ["400", "404", "500"],
+  });
+  add("/api/recommendations/events", "post", "Record a product recommendation event", "Recommendations", {
+    requestBody: {
+      type: "object",
+      required: ["productId", "type"],
+      properties: {
+        productId: { type: "string" },
+        type: { type: "string", enum: ["VIEW", "CLICK", "CART", "PURCHASE"] },
+        sessionId: { type: "string", description: "Required for anonymous users." },
+      },
+    },
+    success: objectSchema,
+    successStatus: "201",
+    errorCodes: ["400", "404", "429", "500"],
+  });
 
   add("/api/cart", "get", "Get current user cart", "Cart", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/cart", "post", "Add product to cart", "Cart", { auth: true, requestBody: { type: "object", required: ["productId", "quantity"], properties: { productId: { type: "string" }, quantity: { type: "integer", minimum: 1 }, bundleId: { type: "string", nullable: true } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "404", "500"] });
@@ -119,6 +142,70 @@ export const getApiDocs = () => {
   add("/api/admin/playpass-packages", "post", "Create Playpass package", "Admin", { admin: true, requestBody: objectSchema, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "500"] });
   add("/api/admin/playpass-packages/{id}", "put", "Update Playpass package", "Admin", { admin: true, parameters: [pathParam("id", "Playpass package ID.")], requestBody: objectSchema, success: objectSchema, errorCodes: ["401", "404", "500"] });
   add("/api/admin/playpass-packages/{id}", "delete", "Deactivate Playpass package", "Admin", { admin: true, parameters: [pathParam("id", "Playpass package ID.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
+  add("/api/playpass", "get", "List active Playpass packages or return slot availability", "Playpass", {
+    parameters: [
+      queryParam("packageId", "Playpass package ID; provide together with date for slot availability."),
+      queryParam("date", "Visit date in YYYY-MM-DD; provide together with packageId."),
+    ],
+    success: objectSchema,
+    errorCodes: ["404", "500"],
+  });
+  add("/api/playpass-bookings", "get", "List current user Playpass bookings", "Playpass", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
+  add("/api/playpass-bookings", "post", "Create an online Playpass booking", "Playpass", {
+    auth: true,
+    requestBody: {
+      type: "object",
+      required: ["packageId", "date", "startTime", "quantity"],
+      properties: {
+        packageId: { type: "string" },
+        date: { type: "string", format: "date" },
+        startTime: { type: "string", pattern: "^\\d{2}:\\d{2}$" },
+        quantity: { type: "integer", minimum: 1 },
+        customerPhone: { type: "string", nullable: true },
+        participants: { type: "array", description: "Optional child/parent participant list; maximum equals quantity.", items: { type: "object", required: ["name"], properties: { name: { type: "string" }, age: { type: "integer", minimum: 0, maximum: 120 }, relationship: { type: "string" } } } },
+        fnbItems: { type: "array", description: "Optional F&B add-ons.", items: { type: "object", required: ["productId", "quantity"], properties: { productId: { type: "string" }, quantity: { type: "integer", minimum: 1 } } } },
+      },
+    },
+    success: objectSchema,
+    successStatus: "201",
+    errorCodes: ["400", "401", "409", "500"],
+  });
+  add("/api/playpass-bookings/{bookingNumber}", "get", "Get the current user's Playpass booking", "Playpass", { auth: true, parameters: [pathParam("bookingNumber", "Playpass booking number.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
+  add("/api/table-reservations", "get", "List table packages, availability, or current user reservations", "Table reservation", {
+    parameters: [
+      queryParam("packageId", "Table fee package ID; provide together with date for slot availability."),
+      queryParam("date", "Reservation date in YYYY-MM-DD; provide together with packageId."),
+      queryParam("mine", "Set to 1 to list the authenticated user's reservations.", { type: "string", enum: ["1"] }),
+    ],
+    success: objectSchema,
+    errorCodes: ["401", "404", "500"],
+  });
+  add("/api/table-reservations", "post", "Create an online table reservation", "Table reservation", {
+    auth: true,
+    requestBody: {
+      type: "object",
+      required: ["packageId", "date", "startTime", "partySize"],
+      properties: {
+        packageId: { type: "string" },
+        date: { type: "string", format: "date" },
+        startTime: { type: "string", pattern: "^\\d{2}:\\d{2}$" },
+        partySize: { type: "integer", minimum: 1 },
+        customerPhone: { type: "string", nullable: true },
+        participants: { type: "array", description: "Optional child/parent participant list; maximum equals partySize.", items: { type: "object", required: ["name"], properties: { name: { type: "string" }, age: { type: "integer", minimum: 0, maximum: 120 }, relationship: { type: "string" } } } },
+        fnbItems: { type: "array", description: "Optional F&B add-ons.", items: { type: "object", required: ["productId", "quantity"], properties: { productId: { type: "string" }, quantity: { type: "integer", minimum: 1 } } } },
+      },
+    },
+    success: objectSchema,
+    successStatus: "201",
+    errorCodes: ["400", "401", "409", "500"],
+  });
+  add("/api/table-reservations/{reservationNumber}", "get", "Get the current user's table reservation", "Table reservation", { auth: true, parameters: [pathParam("reservationNumber", "Reservation number.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
+  add("/api/cashier/table-reservations/check-in", "post", "Check in a table reservation QR", "Cashier", { auth: true, requestBody: { type: "object", description: "Provide qrToken or reservationNumber.", properties: { qrToken: { type: "string" }, reservationNumber: { type: "string" } } }, success: objectSchema, errorCodes: ["400", "401", "404", "409", "500"] });
+  add("/api/cashier/table-fees/packages", "get", "List active table fee packages for cashier", "Cashier", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
+  add("/api/cashier/vouchers", "get", "List active vouchers for cashier", "Cashier", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
+  add("/api/fnb-products", "get", "List active F&B menu products", "F&B", { success: arraySchema(), errorCodes: ["500"] });
+  add("/api/cashier/fnb-orders", "get", "List pre-ordered F&B items", "Cashier", { auth: true, parameters: [queryParam("status", "PENDING, PREPARING, READY, SERVED, or CANCELLED.")], success: arraySchema(), errorCodes: ["401", "500"] });
+  add("/api/cashier/fnb-orders/{id}", "patch", "Update F&B pre-order status", "Cashier", { auth: true, parameters: [pathParam("id", "F&B order item ID.")], requestBody: { type: "object", required: ["status"], properties: { status: { type: "string", enum: ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"] } } }, success: objectSchema, errorCodes: ["400", "401", "404", "500"] });
   add("/api/cashier/table-fees", "get", "List active table fee sessions", "Cashier", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/cashier/table-fees", "post", "Open table fee session", "Cashier", { auth: true, requestBody: objectSchema, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "404", "409", "500"] });
   add("/api/cashier/table-fees/{id}/complete", "post", "Complete table fee session", "Cashier", { auth: true, parameters: [pathParam("id", "Table fee session ID.")], success: objectSchema, errorCodes: ["401", "409", "500"] });
@@ -249,10 +336,14 @@ export const getApiDocs = () => {
       { name: "Profile", description: "Profil, foto profil, dan kata sandi user yang sedang login." },
       { name: "Content", description: "Konten landing page." },
       { name: "Catalog", description: "Produk dan kategori produk." },
+      { name: "Recommendations", description: "Rekomendasi produk dan event perilaku pengguna." },
       { name: "Cart", description: "Keranjang user yang sedang login." },
       { name: "Orders", description: "Checkout dan pesanan." },
       { name: "Events", description: "Event, booking, dan tiket." },
       { name: "Tickets", description: "E-ticket dan check-in QR." },
+      { name: "Playpass", description: "Paket Playpass, slot, booking, dan tiket online." },
+      { name: "Table reservation", description: "Reservasi meja/space, slot, dan check-in." },
+      { name: "F&B", description: "Menu makanan/minuman dan pre-order booking." },
       { name: "Printables", description: "Materi aktivitas dan download." },
       { name: "Articles", description: "Artikel dan komentar." },
       { name: "Shipping", description: "Destinasi dan ongkos kirim." },

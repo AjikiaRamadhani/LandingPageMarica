@@ -136,9 +136,10 @@ export const ORDER_STATUS_STYLE: Record<ApiOrderStatus, string> = {
 
 export type ApiOrderItem = {
   id: string;
-  productId: string;
+  productId: string | null;
   productName: string;
   productImageUrl: string | null;
+  productAvailable: boolean;
   price: number;
   quantity: number;
   subtotal: number;

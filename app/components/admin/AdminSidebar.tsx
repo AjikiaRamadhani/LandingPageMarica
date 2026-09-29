@@ -13,6 +13,7 @@ import {
   FileDown,
   ClipboardList,
   CalendarDays,
+  CalendarRange,
   BarChart3,
   TicketPercent,
   Settings,
@@ -44,6 +45,12 @@ const navItems = [
     label: "Pesanan",
     href: "/admin/pesanan",
     icon: ClipboardList,
+    enabled: true,
+  },
+  {
+    label: "Booking",
+    href: "/admin/bookings",
+    icon: CalendarRange,
     enabled: true,
   },
   {

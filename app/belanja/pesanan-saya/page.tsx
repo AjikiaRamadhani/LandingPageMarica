@@ -289,6 +289,11 @@ function OrderCard({
               <p className="font-body text-sm font-semibold text-marica-ink sm:text-base">
                 {item.productName}
               </p>
+                        {!item.productAvailable && (
+                          <p className="mt-1 font-body text-xs font-semibold text-marica-rose-deep">
+                            Produk sudah tidak tersedia
+                          </p>
+                        )}
               <p className="mt-0.5 font-body text-xs text-marica-ink-soft sm:text-sm">
                 {item.quantity} barang x {formatRupiah(item.price)}
               </p>

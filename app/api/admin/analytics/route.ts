@@ -136,13 +136,16 @@ export async function GET(request: Request) {
         return { date: key, revenue: orderRevenue };
       }),
       topProducts: await (async () => {
+        const productIds = topProducts
+          .map((item) => item.productId)
+          .filter((id): id is string => Boolean(id));
         const products = await prisma.product.findMany({
-          where: { id: { in: topProducts.map((item) => item.productId) } },
+          where: { id: { in: productIds } },
           select: { id: true, name: true },
         });
         const productMap = new Map(products.map((product) => [product.id, product.name]));
         return topProducts.map((item) => ({
-          name: productMap.get(item.productId) ?? "Produk tidak ditemukan",
+          name: item.productId ? productMap.get(item.productId) ?? "Produk tidak ditemukan" : "Produk dihapus",
           quantity: item._sum?.quantity ?? 0,
           revenue: item._sum?.subtotal ?? 0,
         }));

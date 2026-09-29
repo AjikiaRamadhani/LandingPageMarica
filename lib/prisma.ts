@@ -9,8 +9,17 @@ const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
 });
 
+// Saat schema/client digenerate ulang dalam mode development, Next.js dapat
+// mempertahankan instance lama di globalThis. Pastikan cache tersebut sudah
+// memiliki delegate yang ditambahkan oleh schema booking terbaru.
+const cachedPrisma = globalForPrisma.prisma;
+const hasBookingDelegates =
+  cachedPrisma &&
+  typeof cachedPrisma.playpassBooking !== "undefined" &&
+  typeof cachedPrisma.tableReservation !== "undefined";
+
 export const prisma =
-  globalForPrisma.prisma ??
+  (hasBookingDelegates ? cachedPrisma : undefined) ??
   new PrismaClient({
     adapter,
     log:

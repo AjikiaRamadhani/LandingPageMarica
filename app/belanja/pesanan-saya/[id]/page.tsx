@@ -185,6 +185,7 @@ export default function OrderDetailPage() {
                     >
                       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-marica-cream">
                         {item.productImageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={item.productImageUrl}
                             alt={item.productName}
@@ -196,6 +197,11 @@ export default function OrderDetailPage() {
                         <p className="font-body text-sm font-semibold text-marica-ink">
                           {item.productName}
                         </p>
+                        {!item.productAvailable && (
+                          <p className="mt-1 font-body text-xs font-semibold text-marica-rose-deep">
+                            Produk sudah tidak tersedia
+                          </p>
+                        )}
                         <p className="mt-1 font-body text-xs text-marica-ink-soft">
                           {item.quantity} barang x {formatRupiah(item.price)}
                         </p>

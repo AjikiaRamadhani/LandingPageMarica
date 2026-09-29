@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { addProductAvailability } from "@/lib/order-product-availability";
 
 export async function GET() {
   const session = await auth();
@@ -15,7 +16,7 @@ export async function GET() {
       include: { items: true },
     });
 
-    return NextResponse.json(orders);
+    return NextResponse.json(await addProductAvailability(orders));
   } catch (error) {
     console.error("[GET /api/orders]", error);
     return NextResponse.json({ error: "Gagal mengambil riwayat pesanan" }, { status: 500 });
