@@ -7,6 +7,7 @@ import { getPlaypassSlotAvailability, combineDateAndMinutes, dateKey, parseDateI
 import { sendPlaypassTicketEmailIfNeeded } from "@/lib/playpass-ticket-mailer";
 import { validateInteger, validateOptionalText, validateText } from "@/lib/request-validation";
 import crypto from "crypto";
+import { normalizeParticipants, resolveFnbItems } from "@/lib/fnb";
 
 function bookingNumber() {
   return `PPB-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
@@ -18,7 +19,7 @@ export async function GET() {
   const bookings = await prisma.playpassBooking.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
-    include: { package: true, tickets: true },
+    include: { package: true, tickets: true, fnbItems: { include: { fnbProduct: true } }, participants: true },
   });
   return NextResponse.json(bookings);
 }
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
   if (!session?.user?.id || !session.user.email) return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 });
 
   try {
-    const body = (await request.json()) as { packageId?: string; date?: string; startTime?: string; quantity?: number; customerPhone?: string };
+    const body = (await request.json()) as { packageId?: string; date?: string; startTime?: string; quantity?: number; customerPhone?: string; participants?: unknown; fnbItems?: Array<{ productId: string; quantity: number }> };
     const packageId = validateText(body.packageId, "Paket Playpass", 100);
     const date = validateText(body.date, "Tanggal kunjungan", 20);
     const startTime = validateText(body.startTime, "Jam kunjungan", 10);
@@ -37,6 +38,9 @@ export async function POST(request: Request) {
     if (packageId.error || date.error || startTime.error || quantity.error || phone.error || typeof packageId.value !== "string" || typeof date.value !== "string" || typeof startTime.value !== "string" || typeof quantity.value !== "number") {
       return NextResponse.json({ error: "Data booking Playpass tidak valid" }, { status: 400 });
     }
+    const participants = normalizeParticipants(body.participants);
+    if (participants.length > quantity.value) return NextResponse.json({ error: "Jumlah peserta melebihi jumlah tiket" }, { status: 400 });
+    const fnb = await resolveFnbItems(body.fnbItems);
 
     const dateObject = parseDateInput(date.value);
     const startMinutes = parseTimeInput(startTime.value);
@@ -66,9 +70,11 @@ export async function POST(request: Request) {
         startTime: start,
         endTime: end,
         quantity: quantity.value,
-        totalPrice: availability.package.price * quantity.value,
-        status: availability.package.price > 0 ? "PENDING_PAYMENT" : "PAID",
-        expiresAt: availability.package.price > 0 ? expiresAt : null,
+        totalPrice: availability.package.price * quantity.value + fnb.total,
+        status: availability.package.price * quantity.value + fnb.total > 0 ? "PENDING_PAYMENT" : "PAID",
+        expiresAt: availability.package.price * quantity.value + fnb.total > 0 ? expiresAt : null,
+        fnbItems: { create: fnb.items },
+        participants: { create: participants.map((participant) => ({ name: participant.name, age: participant.age, relationship: participant.relationship })) },
       },
     });
 
@@ -84,12 +90,18 @@ export async function POST(request: Request) {
     const transaction = await snap.createTransaction({
       transaction_details: { order_id: number, gross_amount: booking.totalPrice },
       customer_details: { first_name: booking.customerName, email: booking.customerEmail, phone: booking.customerPhone ?? undefined },
-      item_details: [{ id: availability.package.id, price: availability.package.price, quantity: booking.quantity, name: availability.package.name.slice(0, 50) }],
+      item_details: [
+        { id: availability.package.id, price: availability.package.price, quantity: booking.quantity, name: availability.package.name.slice(0, 50) },
+        ...fnb.items.map((item) => ({ id: item.fnbProductId, price: item.unitPrice, quantity: item.quantity, name: `F&B ${item.fnbProductId}` })),
+      ],
     });
     const updated = await prisma.playpassBooking.update({ where: { id: booking.id }, data: { midtransOrderId: number, midtransSnapToken: transaction.token } });
     auditAction({ action: "playpass_booking_created", status: "success", payload: { bookingNumber: number, packageId, userId: session.user.id } });
     return NextResponse.json({ booking: updated, snapToken: transaction.token, redirectUrl: transaction.redirect_url }, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && ["FNB_PRODUCT_NOT_FOUND", "FNB_STOCK_SHORTAGE", "FNB_TOO_MANY_ITEMS", "PARTICIPANT_INVALID", "TOO_MANY_PARTICIPANTS"].includes(error.message)) {
+      return NextResponse.json({ error: "Data peserta atau F&B tidak valid" }, { status: 400 });
+    }
     console.error("[POST /api/playpass-bookings]", error);
     return NextResponse.json({ error: "Gagal membuat booking Playpass" }, { status: 500 });
   }
