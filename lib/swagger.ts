@@ -162,6 +162,8 @@ export const getApiDocs = () => {
         startTime: { type: "string", pattern: "^\\d{2}:\\d{2}$" },
         quantity: { type: "integer", minimum: 1 },
         customerPhone: { type: "string", nullable: true },
+        participants: { type: "array", description: "Optional child/parent participant list; maximum equals quantity.", items: { type: "object", required: ["name"], properties: { name: { type: "string" }, age: { type: "integer", minimum: 0, maximum: 120 }, relationship: { type: "string" } } } },
+        fnbItems: { type: "array", description: "Optional F&B add-ons.", items: { type: "object", required: ["productId", "quantity"], properties: { productId: { type: "string" }, quantity: { type: "integer", minimum: 1 } } } },
       },
     },
     success: objectSchema,
@@ -189,6 +191,8 @@ export const getApiDocs = () => {
         startTime: { type: "string", pattern: "^\\d{2}:\\d{2}$" },
         partySize: { type: "integer", minimum: 1 },
         customerPhone: { type: "string", nullable: true },
+        participants: { type: "array", description: "Optional child/parent participant list; maximum equals partySize.", items: { type: "object", required: ["name"], properties: { name: { type: "string" }, age: { type: "integer", minimum: 0, maximum: 120 }, relationship: { type: "string" } } } },
+        fnbItems: { type: "array", description: "Optional F&B add-ons.", items: { type: "object", required: ["productId", "quantity"], properties: { productId: { type: "string" }, quantity: { type: "integer", minimum: 1 } } } },
       },
     },
     success: objectSchema,
@@ -199,6 +203,9 @@ export const getApiDocs = () => {
   add("/api/cashier/table-reservations/check-in", "post", "Check in a table reservation QR", "Cashier", { auth: true, requestBody: { type: "object", description: "Provide qrToken or reservationNumber.", properties: { qrToken: { type: "string" }, reservationNumber: { type: "string" } } }, success: objectSchema, errorCodes: ["400", "401", "404", "409", "500"] });
   add("/api/cashier/table-fees/packages", "get", "List active table fee packages for cashier", "Cashier", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
   add("/api/cashier/vouchers", "get", "List active vouchers for cashier", "Cashier", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
+  add("/api/fnb-products", "get", "List active F&B menu products", "F&B", { success: arraySchema(), errorCodes: ["500"] });
+  add("/api/cashier/fnb-orders", "get", "List pre-ordered F&B items", "Cashier", { auth: true, parameters: [queryParam("status", "PENDING, PREPARING, READY, SERVED, or CANCELLED.")], success: arraySchema(), errorCodes: ["401", "500"] });
+  add("/api/cashier/fnb-orders/{id}", "patch", "Update F&B pre-order status", "Cashier", { auth: true, parameters: [pathParam("id", "F&B order item ID.")], requestBody: { type: "object", required: ["status"], properties: { status: { type: "string", enum: ["PENDING", "PREPARING", "READY", "SERVED", "CANCELLED"] } } }, success: objectSchema, errorCodes: ["400", "401", "404", "500"] });
   add("/api/cashier/table-fees", "get", "List active table fee sessions", "Cashier", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/cashier/table-fees", "post", "Open table fee session", "Cashier", { auth: true, requestBody: objectSchema, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "404", "409", "500"] });
   add("/api/cashier/table-fees/{id}/complete", "post", "Complete table fee session", "Cashier", { auth: true, parameters: [pathParam("id", "Table fee session ID.")], success: objectSchema, errorCodes: ["401", "409", "500"] });
@@ -336,6 +343,7 @@ export const getApiDocs = () => {
       { name: "Tickets", description: "E-ticket dan check-in QR." },
       { name: "Playpass", description: "Paket Playpass, slot, booking, dan tiket online." },
       { name: "Table reservation", description: "Reservasi meja/space, slot, dan check-in." },
+      { name: "F&B", description: "Menu makanan/minuman dan pre-order booking." },
       { name: "Printables", description: "Materi aktivitas dan download." },
       { name: "Articles", description: "Artikel dan komentar." },
       { name: "Shipping", description: "Destinasi dan ongkos kirim." },
