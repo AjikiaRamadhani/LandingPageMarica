@@ -3,21 +3,21 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   output        = "../app/generated/prisma"
   binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 // AUTH (Auth.js / NextAuth) - login & register
 
 model User {
-  id                          String               @id @default(cuid())
+  id                          String                @id @default(cuid())
   name                        String?
-  email                       String?              @unique
+  email                       String?               @unique
   whatsapp                    String?
   emailVerified               DateTime?
   image                       String?
@@ -26,27 +26,28 @@ model User {
   orders                      Order[]
   accounts                    Account[]
   sessions                    Session[]
-  role                        Role                 @default(USER)
+  role                        Role                  @default(USER)
   articles                    Article[]
   comments                    Comment[]
   eventBookings               EventBooking[]
   printableLeads              PrintableLead[]
   recommendationEvents        RecommendationEvent[]
-  inventoryMovements          InventoryMovement[]  @relation("InventoryMovementCreatedBy")
+  inventoryMovements          InventoryMovement[]   @relation("InventoryMovementCreatedBy")
   pointAccount                PointAccount?
   pointTransactions           PointTransaction[]
   vouchers                    UserVoucher[]
-  posTransactions             PosTransaction[]     @relation("PosCashier")
-  posCustomerTransactions     PosTransaction[]     @relation("PosCustomer")
-  playpassTickets             PlaypassTicket[]     @relation("PlaypassCustomer")
-  issuedPlaypassTickets       PlaypassTicket[]     @relation("PlaypassCashier")
-  tableFeeSessions            TableFeeSession[]    @relation("TableFeeCustomer")
-  openedTableFeeSessions      TableFeeSession[]    @relation("TableFeeCashier")
-  posShifts                   PosShift[]           @relation("PosShiftCashier")
-  cashierTransactions         CashierTransaction[] @relation("CashierTransactionCashier")
-  cashierCustomerTransactions CashierTransaction[] @relation("CashierTransactionCustomer")
-  createdAt                   DateTime             @default(now())
-  updatedAt                   DateTime             @updatedAt
+  posTransactions             PosTransaction[]      @relation("PosCashier")
+  posCustomerTransactions     PosTransaction[]      @relation("PosCustomer")
+  playpassTickets             PlaypassTicket[]      @relation("PlaypassCustomer")
+  playpassBookings            PlaypassBooking[]
+  issuedPlaypassTickets       PlaypassTicket[]      @relation("PlaypassCashier")
+  tableFeeSessions            TableFeeSession[]     @relation("TableFeeCustomer")
+  openedTableFeeSessions      TableFeeSession[]     @relation("TableFeeCashier")
+  posShifts                   PosShift[]            @relation("PosShiftCashier")
+  cashierTransactions         CashierTransaction[]  @relation("CashierTransactionCashier")
+  cashierCustomerTransactions CashierTransaction[]  @relation("CashierTransactionCustomer")
+  createdAt                   DateTime              @default(now())
+  updatedAt                   DateTime              @updatedAt
 
   @@map("users")
 }
@@ -397,9 +398,9 @@ model Product {
   categoryId String?
   category   ProductCategory? @relation(fields: [categoryId], references: [id])
 
-  images             ProductImage[]
-  bundleItems        ProductBundleItem[]
-  inventoryMovements InventoryMovement[]
+  images               ProductImage[]
+  bundleItems          ProductBundleItem[]
+  inventoryMovements   InventoryMovement[]
   recommendationEvents RecommendationEvent[]
 
   createdAt DateTime @default(now())
@@ -603,6 +604,13 @@ enum PlaypassTicketStatus {
   CANCELLED
 }
 
+enum PlaypassBookingStatus {
+  PENDING_PAYMENT
+  PAID
+  CANCELLED
+  EXPIRED
+}
+
 enum PosShiftStatus {
   OPEN
   CLOSED
@@ -694,11 +702,13 @@ model PlaypassPackage {
   durationMinutes         Int
   price                   Int
   maxParticipants         Int                      @default(1)
+  slotCapacity            Int?
   isActive                Boolean                  @default(true)
   tickets                 PlaypassTicket[]
   cashierTransactionItems CashierTransactionItem[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
+  playpassBookings        PlaypassBooking[]
 
   @@index([isActive])
   @@map("playpass_packages")
@@ -710,10 +720,12 @@ model PlaypassTicket {
   qrToken              String               @unique @default(cuid())
   packageId            String
   package              PlaypassPackage      @relation(fields: [packageId], references: [id])
+  bookingId            String?
+  booking              PlaypassBooking?     @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   customerId           String?
   customer             User?                @relation("PlaypassCustomer", fields: [customerId], references: [id], onDelete: SetNull)
-  cashierId            String
-  cashier              User                 @relation("PlaypassCashier", fields: [cashierId], references: [id])
+  cashierId            String?
+  cashier              User?                @relation("PlaypassCashier", fields: [cashierId], references: [id])
   shiftId              String?
   shift                PosShift?            @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   cashierTransactionId String?
@@ -732,6 +744,7 @@ model PlaypassTicket {
 
   @@index([customerId, createdAt])
   @@index([status, expiresAt])
+  @@index([bookingId])
   @@map("playpass_tickets")
 }
 
@@ -739,6 +752,48 @@ enum TableFeeSessionStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+}
+
+model PlaypassBooking {
+  id            String @id @default(cuid())
+  bookingNumber String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  packageId String
+  package   PlaypassPackage @relation(fields: [packageId], references: [id])
+
+  customerName  String
+  customerEmail String
+  customerPhone String?
+
+  visitDate DateTime
+  startTime DateTime
+  endTime   DateTime
+
+  quantity   Int
+  totalPrice Int
+
+  status    PlaypassBookingStatus @default(PENDING_PAYMENT)
+  expiresAt DateTime?
+
+  midtransOrderId       String?   @unique
+  midtransTransactionId String?
+  midtransSnapToken     String?
+  paidAt                DateTime?
+  ticketEmailSentAt     DateTime?
+
+  tickets PlaypassTicket[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([packageId, visitDate])
+  @@index([status, visitDate])
+  @@index([visitDate, startTime, endTime])
+  @@map("playpass_bookings")
 }
 
 model TableFeePackage {

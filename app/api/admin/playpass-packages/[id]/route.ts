@@ -6,8 +6,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { id } = await params;
-    const body = (await request.json()) as { name?: string; durationMinutes?: number; price?: number; maxParticipants?: number; isActive?: boolean };
-    const packageData = await prisma.playpassPackage.update({ where: { id }, data: { ...(body.name !== undefined ? { name: body.name.trim() } : {}), ...(body.durationMinutes !== undefined ? { durationMinutes: body.durationMinutes } : {}), ...(body.price !== undefined ? { price: body.price } : {}), ...(body.maxParticipants !== undefined ? { maxParticipants: body.maxParticipants } : {}), ...(body.isActive !== undefined ? { isActive: body.isActive } : {}) } });
+    const body = (await request.json()) as { name?: string; durationMinutes?: number; price?: number; maxParticipants?: number; slotCapacity?: number; isActive?: boolean };
+    const packageData = await prisma.playpassPackage.update({ where: { id }, data: { ...(body.name !== undefined ? { name: body.name.trim() } : {}), ...(body.durationMinutes !== undefined ? { durationMinutes: body.durationMinutes } : {}), ...(body.price !== undefined ? { price: body.price } : {}), ...(body.maxParticipants !== undefined ? { maxParticipants: body.maxParticipants } : {}), ...(body.slotCapacity !== undefined ? { slotCapacity: body.slotCapacity } : {}), ...(body.isActive !== undefined ? { isActive: body.isActive } : {}) } });
     return NextResponse.json(packageData);
   } catch (error) {
     console.error("[PUT /api/admin/playpass-packages/[id]]", error);

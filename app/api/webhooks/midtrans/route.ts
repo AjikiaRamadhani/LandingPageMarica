@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
+import { sendPlaypassTicketEmailIfNeeded } from "@/lib/playpass-ticket-mailer";
+import { settlePlaypassBooking } from "@/lib/playpass-booking";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
 import {
   awardPointsInTransaction,
@@ -56,6 +58,28 @@ export async function POST(request: Request) {
     ) {
       console.error("[Midtrans webhook] Invalid signature for order", order_id);
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+    }
+
+    if (order_id.startsWith("PPB-")) {
+      const booking = await prisma.playpassBooking.findUnique({
+        where: { midtransOrderId: order_id },
+      });
+      if (!booking) return NextResponse.json({ error: "Playpass booking not found" }, { status: 404 });
+      if (Number(gross_amount) !== booking.totalPrice) {
+        console.error("[Midtrans webhook] Playpass amount mismatch for", order_id);
+        return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
+      }
+
+      if (transaction_status === "capture" || transaction_status === "settlement") {
+        await settlePlaypassBooking(booking.id, transaction_id);
+        await sendPlaypassTicketEmailIfNeeded(booking.id);
+      } else if (transaction_status === "deny" || transaction_status === "cancel" || transaction_status === "expire") {
+        await prisma.playpassBooking.updateMany({
+          where: { id: booking.id, status: "PENDING_PAYMENT" },
+          data: { status: transaction_status === "expire" ? "EXPIRED" : "CANCELLED" },
+        });
+      }
+      return NextResponse.json({ message: "OK" });
     }
 
     if (order_id.startsWith("EVT-")) {
