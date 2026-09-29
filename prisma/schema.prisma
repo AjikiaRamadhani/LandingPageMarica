@@ -765,6 +765,67 @@ enum TableReservationStatus {
   EXPIRED
 }
 
+enum FnbOrderStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  CANCELLED
+}
+
+model FnbProduct {
+  id          String         @id @default(cuid())
+  name        String
+  description String?        @db.Text
+  price       Int
+  stock       Int            @default(0)
+  imageUrl    String?
+  isActive    Boolean        @default(true)
+  items       FnbOrderItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([isActive])
+  @@map("fnb_products")
+}
+
+model FnbOrderItem {
+  id                String                @id @default(cuid())
+  fnbProductId      String
+  fnbProduct        FnbProduct             @relation(fields: [fnbProductId], references: [id], onDelete: Restrict)
+  playpassBookingId String?
+  playpassBooking   PlaypassBooking?       @relation(fields: [playpassBookingId], references: [id], onDelete: Cascade)
+  tableReservationId String?
+  tableReservation  TableReservation?     @relation(fields: [tableReservationId], references: [id], onDelete: Cascade)
+  quantity          Int
+  unitPrice         Int
+  subtotal          Int
+  status            FnbOrderStatus         @default(PENDING)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([playpassBookingId])
+  @@index([tableReservationId])
+  @@index([status, createdAt])
+  @@map("fnb_order_items")
+}
+
+model BookingParticipant {
+  id                String           @id @default(cuid())
+  name              String
+  age               Int?
+  relationship      String?
+  playpassBookingId String?
+  playpassBooking   PlaypassBooking? @relation(fields: [playpassBookingId], references: [id], onDelete: Cascade)
+  tableReservationId String?
+  tableReservation  TableReservation? @relation(fields: [tableReservationId], references: [id], onDelete: Cascade)
+  createdAt         DateTime         @default(now())
+
+  @@index([playpassBookingId])
+  @@index([tableReservationId])
+  @@map("booking_participants")
+}
+
 model PlaypassBooking {
   id            String @id @default(cuid())
   bookingNumber String @unique
@@ -796,6 +857,8 @@ model PlaypassBooking {
   ticketEmailSentAt     DateTime?
 
   tickets PlaypassTicket[]
+  fnbItems FnbOrderItem[]
+  participants BookingParticipant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -853,6 +916,8 @@ model TableReservation {
   paidAt                DateTime?
   checkedInAt           DateTime?
   ticketEmailSentAt     DateTime?
+  fnbItems              FnbOrderItem[]
+  participants          BookingParticipant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
