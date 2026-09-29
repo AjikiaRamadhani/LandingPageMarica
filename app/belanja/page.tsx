@@ -347,7 +347,7 @@ function BelanjaPageContent() {
 
               {/* Loading skeleton */}
               {!error && isLoading && (
-                <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <div
                       key={i}
@@ -384,7 +384,7 @@ function BelanjaPageContent() {
 
               {/* Product grid */}
               {!error && !isLoading && products.length > 0 && (
-                <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}

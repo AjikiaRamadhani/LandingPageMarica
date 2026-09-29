@@ -21,6 +21,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       }
       await tx.playpassTicket.updateMany({ where: { cashierTransactionId: sale.id, status: "ACTIVE" }, data: { status: "CANCELLED" } });
       await tx.tableFeeSession.updateMany({ where: { cashierTransactionId: sale.id, status: { in: ["ACTIVE", "COMPLETED"] } }, data: { status: "CANCELLED" } });
+      if (sale.userVoucherId) {
+        await tx.userVoucher.updateMany({ where: { id: sale.userVoucherId, status: "USED" }, data: { status: "AVAILABLE", usedAt: null } });
+      }
       const points = sale.customerId ? calculateEarnedPoints(sale.total) : 0;
       if (sale.customerId && points > 0) {
         const account = await tx.pointAccount.findUnique({ where: { userId: sale.customerId } });

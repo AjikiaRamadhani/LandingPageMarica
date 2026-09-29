@@ -646,6 +646,8 @@ model CashierTransaction {
   shift             PosShift?                @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   subtotal          Int
   discountAmount    Int                      @default(0)
+  userVoucherId     String?                  @unique
+  userVoucher       UserVoucher?             @relation(fields: [userVoucherId], references: [id], onDelete: SetNull)
   total             Int
   paymentMethod     PosPaymentMethod
   paidAmount        Int
@@ -1041,16 +1043,17 @@ enum UserVoucherStatus {
 }
 
 model UserVoucher {
-  id             String            @id @default(cuid())
-  userId         String
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  voucherId      String
-  voucher        Voucher           @relation(fields: [voucherId], references: [id], onDelete: Restrict)
-  status         UserVoucherStatus @default(AVAILABLE)
-  redeemedAt     DateTime          @default(now())
-  usedAt         DateTime?
-  order          Order?
-  posTransaction PosTransaction?
+  id                 String            @id @default(cuid())
+  userId             String
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voucherId          String
+  voucher            Voucher           @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  status             UserVoucherStatus @default(AVAILABLE)
+  redeemedAt         DateTime          @default(now())
+  usedAt             DateTime?
+  order              Order?
+  posTransaction     PosTransaction?
+  cashierTransaction CashierTransaction?
 
   @@index([userId, status])
   @@index([voucherId])

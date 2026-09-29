@@ -42,6 +42,7 @@ type ApiUserProfile = {
   name: string | null;
   email: string | null;
   image: string | null;
+  role?: string;
 };
 
 function ProfileAvatar({
@@ -91,10 +92,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
-  const isAdmin =
-    (session?.user as { role?: string } | undefined)?.role === "ADMIN";
-  const isKasir =
-    (session?.user as { role?: string } | undefined)?.role === "KASIR";
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -111,6 +108,14 @@ export default function Navbar() {
   >([]);
   const [points, setPoints] = useState(0);
   const [profile, setProfile] = useState<ApiUserProfile | null>(null);
+
+  // Session yang sudah terlanjur terbuka bisa belum membawa role terbaru di
+  // client. Profil API membaca role langsung dari database, jadi dipakai
+  // sebagai fallback agar menu khusus kasir tetap muncul.
+  const sessionRole = (session?.user as { role?: string } | undefined)?.role;
+  const currentRole = profile?.role ?? sessionRole;
+  const isAdmin = currentRole === "ADMIN";
+  const isKasir = currentRole === "KASIR";
 
   // Menu aktif mengikuti route saat ini. startsWith dipakai supaya halaman
   // detail (mis. /artikel/slug-nya) tetap menyorot menu "Blog" sebagai induknya.

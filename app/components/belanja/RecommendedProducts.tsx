@@ -75,18 +75,23 @@ export default function RecommendedProducts({
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="flex gap-3 overflow-x-auto pb-3 pr-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {Array.from({ length: Math.min(limit, 5) }).map((_, index) => (
             <div
               key={index}
-              className="h-[360px] animate-pulse rounded-2xl bg-marica-ink/5"
+              className="h-[330px] w-[68vw] max-w-[220px] shrink-0 animate-pulse rounded-2xl bg-marica-ink/5 sm:h-[360px] sm:w-[220px]"
             />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 pr-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <div
+              key={product.id}
+              className="w-[68vw] max-w-[220px] shrink-0 snap-start sm:w-[220px]"
+            >
+              <ProductCard product={product} />
+            </div>
           ))}
         </div>
       )}

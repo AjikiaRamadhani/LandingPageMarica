@@ -49,14 +49,6 @@ type Member = {
   pointsBalance: number;
   vouchers?: MemberVoucher[];
 };
-type CatalogVoucher = {
-  id: string;
-  code: string;
-  title: string;
-  discountAmount: number;
-  pointsCost: number;
-  expiresAt: string | null;
-};
 type CartItem = {
   key: string;
   type: "PRODUCT" | "PLAYPASS" | "TABLE_FEE";
@@ -90,6 +82,15 @@ type ActiveTable = {
 
 const money = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export default function PosPage() {
   const [tab, setTab] = useState<CatalogTab>("PRODUCT");
   const [products, setProducts] = useState<Product[]>([]);
@@ -111,11 +112,11 @@ export default function PosPage() {
   const [tableNumber, setTableNumber] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearchingMembers, setIsSearchingMembers] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isVoiding, setIsVoiding] = useState<string | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
   const [activeTables, setActiveTables] = useState<ActiveTable[]>([]);
-  const [catalogVouchers, setCatalogVouchers] = useState<CatalogVoucher[]>([]);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{
     type: "error" | "success";
@@ -125,6 +126,7 @@ export default function PosPage() {
   const [checkInToken, setCheckInToken] = useState("");
   const [isCameraActive, setIsCameraActive] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const memberSearchRequestRef = useRef(0);
 
   useEffect(() => {
     if (!isCameraActive) return;
@@ -175,9 +177,6 @@ export default function PosPage() {
       fetch("/api/cashier/table-fees", { cache: "no-store" }).then((res) =>
         res.json(),
       ),
-      fetch("/api/cashier/vouchers", { cache: "no-store" }).then((res) =>
-        res.json(),
-      ),
     ])
       .then(
         ([
@@ -187,7 +186,6 @@ export default function PosPage() {
           shiftData,
           salesData,
           tableData,
-          voucherData,
         ]) => {
           setProducts(productData.products ?? []);
           setPlaypasses(Array.isArray(playpassData) ? playpassData : []);
@@ -196,9 +194,6 @@ export default function PosPage() {
           setSales(Array.isArray(salesData.sales) ? salesData.sales : []);
           setActiveTables(
             Array.isArray(tableData.sessions) ? tableData.sessions : [],
-          );
-          setCatalogVouchers(
-            Array.isArray(voucherData.vouchers) ? voucherData.vouchers : [],
           );
         },
       )
@@ -209,21 +204,48 @@ export default function PosPage() {
   }, []);
 
   useEffect(() => {
+    const requestId = ++memberSearchRequestRef.current;
     const value = memberQuery.trim();
     if (value.length < 2) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMembers([]);
+      setIsSearchingMembers(false);
       return;
     }
+    setIsSearchingMembers(true);
+    const controller = new AbortController();
     const timer = setTimeout(() => {
       fetch(`/api/cashier/members?search=${encodeURIComponent(value)}`, {
         cache: "no-store",
+        signal: controller.signal,
       })
-        .then((res) => res.json())
-        .then((data) => setMembers(data.members ?? []))
-        .catch(() => setMembers([]));
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error ?? "Gagal mencari member.");
+          if (requestId === memberSearchRequestRef.current) {
+            setMembers(Array.isArray(data.members) ? data.members : []);
+          }
+        })
+        .catch((error: unknown) => {
+          if (error instanceof Error && error.name === "AbortError") return;
+          if (requestId === memberSearchRequestRef.current) {
+            setMembers([]);
+            setNotice({
+              type: "error",
+              text: error instanceof Error ? error.message : "Gagal mencari member.",
+            });
+          }
+        })
+        .finally(() => {
+          if (requestId === memberSearchRequestRef.current) {
+            setIsSearchingMembers(false);
+          }
+        });
     }, 300);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [memberQuery]);
 
   const subtotal = useMemo(
@@ -436,8 +458,91 @@ export default function PosPage() {
       });
       return;
     }
+
+    const voucher = data.voucher as
+      | { code: string; title: string; discountAmount: number }
+      | null
+      | undefined;
+    const itemRows = (data.items as Array<{ name: string; quantity: number; price: number; subtotal: number }>)
+      .map(
+        (item) => `<tr>
+          <td>
+            <div class="item-name">${escapeHtml(item.name)}</div>
+            <div class="item-meta">${item.quantity} x ${escapeHtml(money(item.price))}</div>
+          </td>
+          <td class="amount">${escapeHtml(money(item.subtotal))}</td>
+        </tr>`,
+      )
+      .join("");
+    const voucherDetails = voucher
+      ? `<section class="voucher-box">
+          <div class="section-label">Voucher digunakan</div>
+          <div class="voucher-title">${escapeHtml(voucher.title)}</div>
+          <div class="voucher-code">Kode: <strong>${escapeHtml(voucher.code)}</strong></div>
+          <div class="voucher-row"><span>Nilai voucher</span><span>${escapeHtml(money(voucher.discountAmount))}</span></div>
+          <div class="voucher-row applied"><span>Potongan diterapkan</span><span>-${escapeHtml(money(data.discountAmount ?? 0))}</span></div>
+        </section>`
+      : "";
+    const paymentLabel = ({ CASH: "Tunai", CARD: "Kartu", QRIS: "QRIS" } as Record<string, string>)[data.paymentMethod] ?? data.paymentMethod;
+    const statusLabel = data.status === "VOIDED" ? "DIBATALKAN / VOID" : "LUNAS";
+
     popup.document.write(
-      `<html><head><title>${data.transactionNumber}</title><style>body{font:14px Arial;padding:24px;color:#222}h1{text-align:center;font-size:20px}table{width:100%;border-collapse:collapse;margin:18px 0}td{padding:6px 0;border-bottom:1px solid #eee}td:last-child{text-align:right}strong{font-size:18px}</style></head><body><h1>${data.title}</h1><p>${data.transactionNumber}<br>${new Date(data.date).toLocaleString("id-ID")}<br>Kasir: ${data.cashierName}</p><table>${data.items.map((item: { name: string; quantity: number; subtotal: number }) => `<tr><td>${item.name} x${item.quantity}</td><td>${money(item.subtotal)}</td></tr>`).join("")}</table><p>Total: <strong>${money(data.total)}</strong></p><p>Bayar: ${money(data.paidAmount)}<br>Kembalian: ${money(data.changeAmount)}</p><script>window.print();</script></body></html>`,
+      `<html><head><meta charset="utf-8"><title>${escapeHtml(data.transactionNumber)}</title><style>
+        @page{size:80mm auto;margin:5mm}
+        *{box-sizing:border-box}
+        body{width:70mm;margin:0 auto;color:#202124;font:12px Arial,sans-serif;line-height:1.4}
+        .header{text-align:center;border-bottom:1px dashed #999;padding-bottom:12px}
+        h1{margin:0;font-size:22px;letter-spacing:.04em}
+        .subtitle{margin:3px 0 0;color:#666;font-size:11px}
+        .meta{padding:10px 0;border-bottom:1px dashed #999;color:#444;font-size:11px}
+        .meta-row{display:flex;justify-content:space-between;gap:12px;margin:3px 0}
+        .meta-row span:first-child{color:#777}
+        .meta-row span:last-child{text-align:right;font-weight:600}
+        table{width:100%;border-collapse:collapse;margin:10px 0}
+        th{padding:0 0 5px;border-bottom:1px solid #333;text-align:left;font-size:10px;text-transform:uppercase;color:#666}
+        th:last-child{text-align:right}
+        td{padding:7px 0;border-bottom:1px solid #eee;vertical-align:top}
+        td.amount{text-align:right;white-space:nowrap;padding-left:8px}
+        .item-name{font-weight:600}
+        .item-meta{margin-top:2px;color:#777;font-size:10px}
+        .voucher-box{margin:12px 0;padding:9px;border:1px solid #e4b34c;border-radius:6px;background:#fff9e8}
+        .section-label{margin-bottom:4px;color:#8a5a00;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+        .voucher-title{font-weight:700}
+        .voucher-code{margin:3px 0 7px;color:#555;font-size:10px}
+        .voucher-row{display:flex;justify-content:space-between;gap:8px;font-size:10px}
+        .voucher-row.applied{margin-top:3px;color:#13803d;font-weight:700}
+        .summary{border-top:1px solid #333;padding-top:8px}
+        .summary-row{display:flex;justify-content:space-between;gap:12px;margin:4px 0}
+        .summary-row.discount{color:#13803d}
+        .summary-row.total{margin-top:8px;padding-top:7px;border-top:1px dashed #999;font-size:16px;font-weight:700}
+        .payment{margin-top:10px;padding-top:8px;border-top:1px dashed #999}
+        .status{text-align:center;margin:12px 0 0;font-weight:700;letter-spacing:.08em}
+        .footer{margin-top:14px;padding-top:10px;border-top:1px dashed #999;text-align:center;color:#777;font-size:10px}
+        @media print{body{width:auto}.no-print{display:none}}
+      </style></head><body>
+        <header class="header"><h1>${escapeHtml(data.title)}</h1><p class="subtitle">STRUK PEMBAYARAN</p></header>
+        <section class="meta">
+          <div class="meta-row"><span>No. transaksi</span><span>${escapeHtml(data.transactionNumber)}</span></div>
+          <div class="meta-row"><span>Tanggal</span><span>${escapeHtml(new Date(data.date).toLocaleString("id-ID"))}</span></div>
+          <div class="meta-row"><span>Kasir</span><span>${escapeHtml(data.cashierName)}</span></div>
+          <div class="meta-row"><span>Member</span><span>${escapeHtml(data.customerName)}</span></div>
+        </section>
+        <table><thead><tr><th>Item</th><th>Total</th></tr></thead><tbody>${itemRows}</tbody></table>
+        ${voucherDetails}
+        <section class="summary">
+          <div class="summary-row"><span>Subtotal</span><span>${escapeHtml(money(data.subtotal))}</span></div>
+          ${data.discountAmount > 0 ? `<div class="summary-row discount"><span>Potongan voucher</span><span>-${escapeHtml(money(data.discountAmount))}</span></div>` : ""}
+          <div class="summary-row total"><span>Total</span><span>${escapeHtml(money(data.total))}</span></div>
+        </section>
+        <section class="payment">
+          <div class="summary-row"><span>Metode pembayaran</span><span>${escapeHtml(paymentLabel)}</span></div>
+          <div class="summary-row"><span>Dibayar</span><span>${escapeHtml(money(data.paidAmount))}</span></div>
+          <div class="summary-row"><span>Kembalian</span><span>${escapeHtml(money(data.changeAmount))}</span></div>
+        </section>
+        <div class="status">${escapeHtml(statusLabel)}</div>
+        <footer class="footer">Terima kasih sudah berbelanja di Marica.id</footer>
+        <script>window.print();</script>
+      </body></html>`,
     );
     popup.document.close();
   }
@@ -854,6 +959,7 @@ export default function PosPage() {
                     onClick={() => {
                       setMember(null);
                       setSelectedVoucherId(null);
+                      setMemberQuery("");
                     }}
                     className="ml-auto text-xs font-semibold text-marica-rose-deep"
                   >
@@ -907,7 +1013,12 @@ export default function PosPage() {
                     placeholder="Cari nama, email, WhatsApp"
                     className="w-full rounded-xl border border-black/10 py-2.5 pl-9 pr-3 font-body text-xs outline-none focus:border-marica-amber-dark"
                   />
-                  {members.length > 0 && (
+                  {isSearchingMembers && (
+                    <div className="absolute inset-x-0 top-full z-10 mt-1 rounded-xl border border-black/5 bg-white px-3 py-2.5 font-body text-xs text-marica-ink-soft shadow-xl">
+                      Mencari member...
+                    </div>
+                  )}
+                  {!isSearchingMembers && members.length > 0 && (
                     <div className="absolute inset-x-0 top-full z-10 mt-1 overflow-hidden rounded-xl border border-black/5 bg-white shadow-xl">
                       {members.map((item) => (
                         <button
@@ -915,6 +1026,7 @@ export default function PosPage() {
                           key={item.id}
                           onClick={() => {
                             setMember(item);
+                            setSelectedVoucherId(null);
                             setMembers([]);
                             setMemberQuery("");
                           }}
@@ -936,25 +1048,6 @@ export default function PosPage() {
                 </div>
               )}
             </div>
-            {catalogVouchers.length > 0 && (
-              <div className="mt-5 rounded-2xl border border-marica-amber/20 bg-marica-amber/5 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-body text-xs font-bold text-marica-amber-text">Voucher tersedia</p>
-                  <span className="font-body text-[10px] text-marica-ink-soft">{catalogVouchers.length} aktif</span>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {catalogVouchers.slice(0, 3).map((voucher) => (
-                    <div key={voucher.id} className="rounded-xl bg-white px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate font-body text-xs font-bold text-marica-ink">{voucher.code} · {voucher.title}</p>
-                        <span className="shrink-0 font-body text-xs font-bold text-marica-amber-text">{money(voucher.discountAmount)}</span>
-                      </div>
-                      <p className="mt-1 font-body text-[10px] text-marica-ink-soft">Tukar {voucher.pointsCost.toLocaleString("id-ID")} poin melalui Profil.</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
             {selectedVoucher && (
               <div className="mt-2 flex justify-between font-body text-sm text-green-700">
                 <span>Diskon {selectedVoucher.voucher.code}</span>

@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/access-control";
+import { validateOptionalText } from "@/lib/request-validation";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
 
 const paymentMethods = ["CASH", "CARD", "QRIS"] as const;
@@ -25,9 +26,10 @@ export async function POST(request: Request) {
   const session = await requireRole("ADMIN", "KASIR");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const body = (await request.json()) as { customerId?: string; paymentMethod?: string; paidAmount?: number; paymentReference?: string; notes?: string; items?: SaleItem[] };
+    const body = (await request.json()) as { customerId?: string; userVoucherId?: string; paymentMethod?: string; paidAmount?: number; paymentReference?: string; notes?: string; items?: SaleItem[] };
     const items = body.items ?? [];
-    if (!paymentMethods.includes(body.paymentMethod as (typeof paymentMethods)[number]) || !Number.isInteger(body.paidAmount) || body.paidAmount! < 0 || items.length === 0 || items.length > 50) return NextResponse.json({ error: "Data mixed sale tidak valid" }, { status: 400 });
+    const userVoucherCheck = validateOptionalText(body.userVoucherId, "userVoucherId", 100);
+    if (userVoucherCheck.error || !paymentMethods.includes(body.paymentMethod as (typeof paymentMethods)[number]) || !Number.isInteger(body.paidAmount) || body.paidAmount! < 0 || items.length === 0 || items.length > 50) return NextResponse.json({ error: "Data mixed sale tidak valid" }, { status: 400 });
     if (items.some((item) => !["PRODUCT", "PLAYPASS", "TABLE_FEE"].includes(item.type ?? "") || !Number.isInteger(item.quantity) || item.quantity! < 1)) return NextResponse.json({ error: "Item mixed sale tidak valid" }, { status: 400 });
     const result = await prisma.$transaction(async (tx) => {
       const shift = await tx.posShift.findFirst({ where: { cashierId: session.user.id, status: "OPEN" } });
@@ -36,6 +38,7 @@ export async function POST(request: Request) {
         const customer = await tx.user.findFirst({ where: { id: body.customerId, role: "USER" }, select: { id: true } });
         if (!customer) throw new Error("CUSTOMER_NOT_FOUND");
       }
+      if (userVoucherCheck.value && !body.customerId) throw new Error("CUSTOMER_REQUIRED_FOR_VOUCHER");
       const productItems = items.filter((item) => item.type === "PRODUCT");
       const productQuantities = new Map<string, number>();
       for (const item of productItems) {
@@ -60,10 +63,22 @@ export async function POST(request: Request) {
       });
       for (const item of lineItems.filter((line) => line.type === "TABLE_FEE")) { const active = await tx.tableFeeSession.findFirst({ where: { tableNumber: item.tableNumber!, status: "ACTIVE" } }); if (active) throw new Error("TABLE_OCCUPIED"); }
       const subtotal = lineItems.reduce((sum, item) => sum + item.subtotal, 0);
-      const total = subtotal;
+      let discountAmount = 0;
+      if (userVoucherCheck.value) {
+        const userVoucher = await tx.userVoucher.findUnique({ where: { id: userVoucherCheck.value }, include: { voucher: true } });
+        if (!userVoucher || userVoucher.userId !== body.customerId || userVoucher.status !== "AVAILABLE" || !userVoucher.voucher.isActive || (userVoucher.voucher.expiresAt && userVoucher.voucher.expiresAt <= new Date())) {
+          throw new Error("VOUCHER_UNAVAILABLE");
+        }
+        discountAmount = Math.min(userVoucher.voucher.discountAmount, subtotal);
+      }
+      const total = subtotal - discountAmount;
       if (body.paidAmount! < total) throw new Error("PAYMENT_SHORTAGE");
       if (body.paymentMethod !== "CASH" && body.paidAmount !== total) throw new Error("PAYMENT_MISMATCH");
-      const created = await tx.cashierTransaction.create({ data: { transactionNumber: saleNumber(), cashierId: session.user.id, customerId: body.customerId || null, shiftId: shift.id, subtotal, total, paymentMethod: body.paymentMethod as "CASH" | "CARD" | "QRIS", paidAmount: body.paidAmount!, changeAmount: body.paidAmount! - total, paymentReference: body.paymentReference?.trim() || null, notes: body.notes?.trim() || null, items: { create: lineItems } }, include: { items: true } });
+      const created = await tx.cashierTransaction.create({ data: { transactionNumber: saleNumber(), cashierId: session.user.id, customerId: body.customerId || null, shiftId: shift.id, subtotal, discountAmount, userVoucherId: userVoucherCheck.value, total, paymentMethod: body.paymentMethod as "CASH" | "CARD" | "QRIS", paidAmount: body.paidAmount!, changeAmount: body.paidAmount! - total, paymentReference: body.paymentReference?.trim() || null, notes: body.notes?.trim() || null, items: { create: lineItems } }, include: { items: true } });
+      if (userVoucherCheck.value) {
+        const changedVoucher = await tx.userVoucher.updateMany({ where: { id: userVoucherCheck.value, userId: body.customerId!, status: "AVAILABLE" }, data: { status: "USED", usedAt: new Date() } });
+        if (changedVoucher.count !== 1) throw new Error("VOUCHER_UNAVAILABLE");
+      }
       for (const item of lineItems) {
         if (item.type === "PRODUCT") { await tx.product.update({ where: { id: item.productId! }, data: { stock: { decrement: item.quantity }, soldCount: { increment: item.quantity } } }); await tx.inventoryMovement.create({ data: { productId: item.productId!, type: "SALE", quantityDelta: -item.quantity, reason: `Mixed sale ${created.transactionNumber}`, referenceId: created.id, createdById: session.user.id } }); }
         if (item.type === "PLAYPASS") { const pkg = playpassMap.get(item.playpassPackageId! )!; const now = new Date(); await tx.playpassTicket.create({ data: { ticketNumber: `PP-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`, packageId: pkg.id, cashierTransactionId: created.id, shiftId: shift.id, customerId: body.customerId || null, cashierId: session.user.id, quantity: item.quantity, total: item.subtotal, paymentMethod: body.paymentMethod!, paidAmount: item.subtotal, changeAmount: 0, validFrom: now, expiresAt: new Date(now.getTime() + pkg.durationMinutes * 60000) } }); }
@@ -76,7 +91,7 @@ export async function POST(request: Request) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof Error) {
-      const errors: Record<string, [string, number]> = { SHIFT_REQUIRED: ["Buka shift kasir terlebih dahulu", 409], CUSTOMER_NOT_FOUND: ["Member tidak ditemukan", 404], PRODUCT_NOT_FOUND: ["Produk tidak ditemukan atau tidak aktif", 404], PACKAGE_NOT_FOUND: ["Paket layanan tidak ditemukan", 404], STOCK_SHORTAGE: ["Stok produk tidak mencukupi", 409], TABLE_OCCUPIED: ["Meja sedang digunakan", 409], PAYMENT_SHORTAGE: ["Nominal pembayaran kurang", 400], PAYMENT_MISMATCH: ["Pembayaran non-tunai harus sama dengan total", 400] };
+      const errors: Record<string, [string, number]> = { SHIFT_REQUIRED: ["Buka shift kasir terlebih dahulu", 409], CUSTOMER_NOT_FOUND: ["Member tidak ditemukan", 404], CUSTOMER_REQUIRED_FOR_VOUCHER: ["Member wajib dipilih untuk menggunakan voucher", 400], VOUCHER_UNAVAILABLE: ["Voucher member tidak tersedia atau sudah digunakan", 409], PRODUCT_NOT_FOUND: ["Produk tidak ditemukan atau tidak aktif", 404], PACKAGE_NOT_FOUND: ["Paket layanan tidak ditemukan", 404], STOCK_SHORTAGE: ["Stok produk tidak mencukupi", 409], TABLE_OCCUPIED: ["Meja sedang digunakan", 409], PAYMENT_SHORTAGE: ["Nominal pembayaran kurang", 400], PAYMENT_MISMATCH: ["Pembayaran non-tunai harus sama dengan total", 400] };
       if (errors[error.message]) return NextResponse.json({ error: errors[error.message][0] }, { status: errors[error.message][1] });
     }
     console.error("[POST /api/cashier/sales]", error);
