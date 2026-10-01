@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ShoppingCart,
-  Bell,
+  PackageX,
   Smile,
   Sparkles,
   Users,
@@ -169,13 +169,13 @@ export default function ProductCard({ product }: { product: ApiProduct }) {
               Beli
             </button>
           ) : (
-            <button
-              type="button"
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-marica-ink/15 bg-marica-cream px-3 py-2.5 font-body text-xs font-semibold text-marica-ink-soft transition hover:bg-marica-ink/5 sm:w-auto sm:px-3.5 sm:py-2 sm:text-sm"
+            <div
+              role="status"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-marica-rose-deep/20 bg-marica-rose-deep/5 px-3 py-2.5 font-body text-xs font-semibold text-marica-rose-deep sm:w-auto sm:px-3.5 sm:py-2 sm:text-sm"
             >
-              <Bell className="h-3.5 w-3.5" />
-              Ingatkan
-            </button>
+              <PackageX className="h-3.5 w-3.5" />
+              Stok Habis
+            </div>
           )}
         </div>
 

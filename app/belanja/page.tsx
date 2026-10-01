@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -15,6 +16,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ArrowDownUp,
   PackageSearch,
   RotateCcw,
 } from "lucide-react";
@@ -57,6 +59,8 @@ function BelanjaPageContent() {
   }));
 
   const [sort, setSort] = useState<SortValue>("newest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
@@ -82,6 +86,22 @@ function BelanjaPageContent() {
 
     return () => window.clearTimeout(timer);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!sortOpen) return;
+
+    const closeSortMenu = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !sortMenuRef.current?.contains(event.target)
+      ) {
+        setSortOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeSortMenu);
+    return () => document.removeEventListener("pointerdown", closeSortMenu);
+  }, [sortOpen]);
 
   // Debounce the free-text search so we don't hit the API on every keystroke.
   useEffect(() => {
@@ -249,6 +269,8 @@ function BelanjaPageContent() {
     () => buildPageNumbers(page, totalPages),
     [page, totalPages],
   );
+  const selectedSortLabel =
+    SORT_OPTIONS.find((option) => option.value === sort)?.label ?? "Terbaru";
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -284,30 +306,78 @@ function BelanjaPageContent() {
 
             <div className="flex items-center gap-2.5">
               {/* Sort */}
-              <div className="relative">
-                <select
-                  value={sort}
-                  onChange={(e) => {
-                    setSort(e.target.value as SortValue);
-                    setPage(1);
-                  }}
-                  className="appearance-none rounded-full border border-marica-ink/10 bg-white py-2.5 pl-4 pr-9 font-body text-sm font-medium text-marica-ink shadow-sm outline-none transition focus:border-marica-amber-dark/50"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+              <div
+                ref={sortMenuRef}
+                className="relative min-w-[152px]"
+              >
+                <div className="flex h-10 items-center gap-2 rounded-xl border border-marica-ink/10 bg-white px-3 shadow-sm transition hover:border-marica-amber-dark/35">
+                  <ArrowDownUp className="h-3.5 w-3.5 shrink-0 text-marica-amber-text" />
+                  <div className="min-w-0 flex-1">
+                    <span className="block font-body text-[8px] font-semibold uppercase leading-none tracking-wide text-marica-ink-soft">
+                      Urutkan Produk
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSortOpen((open) => !open)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") setSortOpen(false);
+                      }}
+                      aria-expanded={sortOpen}
+                      aria-haspopup="listbox"
+                      className="flex w-full items-center justify-between gap-2 pt-1 text-left font-body text-xs font-semibold leading-none text-marica-ink outline-none"
+                    >
+                      {selectedSortLabel}
+                      <ChevronRight
+                        className={`h-3 w-3 shrink-0 text-marica-ink-soft/60 transition-transform ${
+                          sortOpen ? "-rotate-90" : "rotate-90"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
 
-                <ChevronRight className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 rotate-90 text-marica-ink-soft/60" />
+                {sortOpen && (
+                  <div
+                    role="listbox"
+                    aria-label="Pilihan urutan produk"
+                    className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-xl border border-marica-ink/10 bg-white p-1.5 shadow-[0_12px_28px_rgba(120,60,10,0.16)]"
+                  >
+                    {SORT_OPTIONS.map((option) => {
+                      const isSelected = option.value === sort;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => {
+                            setSort(option.value);
+                            setPage(1);
+                            setSortOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left font-body text-sm transition ${
+                            isSelected
+                              ? "bg-marica-amber/15 font-semibold text-marica-amber-text"
+                              : "text-marica-ink-soft hover:bg-marica-cream hover:text-marica-ink"
+                          }`}
+                        >
+                          {option.label}
+                          {isSelected && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-marica-amber-dark" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Filter button — mobile/tablet only */}
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(true)}
-                className="relative flex shrink-0 items-center gap-2 rounded-full border border-marica-ink/10 bg-white px-4 py-2.5 font-body text-sm font-medium text-marica-ink shadow-sm transition hover:bg-marica-cream lg:hidden"
+                className="relative flex h-10 shrink-0 items-center gap-2 rounded-full border border-marica-ink/10 bg-white px-4 font-body text-sm font-medium text-marica-ink shadow-sm transition hover:bg-marica-cream lg:hidden"
               >
                 <SlidersHorizontal className="h-4 w-4" />
 

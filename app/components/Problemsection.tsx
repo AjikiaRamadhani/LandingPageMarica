@@ -88,7 +88,7 @@ export default function ProblemSection() {
               transition={{ duration: 0.5, delay: i * 0.12 }}
               className="rounded-[28px] bg-white p-7 text-left shadow-[0_20px_50px_rgba(120,60,10,0.1)]"
             >
-              <div className="relative h-32 w-32 overflow-hidden rounded-full bg-marica-cream">
+              <div className="relative mx-auto h-32 w-32 overflow-hidden rounded-full bg-marica-cream">
                 <Image
                   src={fallbackImages[i % fallbackImages.length]}
                   alt={item.title}

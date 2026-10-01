@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ShoppingCart,
-  Bell,
   Smile,
   Sparkles,
   Users,
@@ -511,13 +510,13 @@ export default function ProductDetailPage() {
                         </button>
                       </>
                     ) : (
-                      <button
-                        type="button"
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-marica-ink/15 bg-marica-cream px-4 py-3 font-body text-sm font-semibold text-marica-ink-soft transition hover:bg-marica-ink/5"
+                      <div
+                        role="status"
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-marica-rose-deep/20 bg-marica-rose-deep/5 px-4 py-3 font-body text-sm font-semibold text-marica-rose-deep"
                       >
-                        <Bell className="h-4 w-4" />
-                        Ingatkan Saya Saat Tersedia
-                      </button>
+                        <PackageX className="h-4 w-4" />
+                        Stok Habis
+                      </div>
                     )}
                   </div>
                 </div>

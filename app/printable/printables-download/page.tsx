@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowLeft, Star, Download, CheckCircle2, Loader2 } from "lucide-react";
+import { Star, Download, CheckCircle2, Loader2 } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { CATEGORY_STYLES, getPrintableById } from "../activities-data";
@@ -51,15 +51,6 @@ function PrintablesDownloadContent() {
     <>
       <Navbar />
       <main className="hero-gradient-bg-v2 min-h-screen">
-        <div className="mx-auto max-w-7xl px-6 pt-6 lg:px-10">
-          <Link
-            href="/printable"
-            className="inline-flex items-center gap-2 font-body text-sm font-medium text-marica-ink-soft transition hover:text-marica-ink"
-          >
-            <ArrowLeft className="h-4 w-4" /> Kembali
-          </Link>
-        </div>
-
         <motion.section
           initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
