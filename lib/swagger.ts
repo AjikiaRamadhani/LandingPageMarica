@@ -12,6 +12,7 @@ const errors: Record<string, Schema> = {
   "404": { description: "Resource tidak ditemukan." },
   "429": { description: "Too many requests." },
   "500": { description: "Internal server error." },
+  "502": { description: "Bad gateway: layanan email atau provider eksternal gagal." },
 };
 
 const pathParam = (name: string, description: string): Schema => ({
@@ -245,6 +246,7 @@ export const getApiDocs = () => {
   add("/api/articles/{slug}/comments", "post", "Create article comment", "Articles", { auth: true, parameters: [pathParam("slug", "Article slug.")], requestBody: { type: "object", required: ["content"], properties: { content: { type: "string", maxLength: 2000 } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "404", "500"] });
   add("/api/article-categories", "get", "List article categories", "Articles", { success: arraySchema(), errorCodes: ["500"] });
   add("/api/newsletter", "post", "Subscribe to newsletter", "Marketing", { requestBody: { type: "object", required: ["email"], properties: { email: { type: "string", format: "email" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "500"] });
+  add("/api/b2b/inquiries", "post", "Submit a corporate or school inquiry", "B2B", { requestBody: { type: "object", required: ["organizationName", "organizationType", "contactName", "email", "whatsapp", "requestType"], properties: { organizationName: { type: "string" }, organizationType: { type: "string", description: "For example SCHOOL, CORPORATE, or COMMUNITY." }, contactName: { type: "string" }, email: { type: "string", format: "email" }, whatsapp: { type: "string" }, requestType: { type: "string", description: "For example school visit, birthday package, area rental, or teacher training." }, participantCount: { type: "integer", minimum: 1 }, eventDate: { type: "string", format: "date" }, budget: { type: "integer", minimum: 0 }, notes: { type: "string" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "429", "500"] });
   add("/api/points", "get", "Get current user points", "Rewards", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/vouchers", "get", "List voucher catalog and owned vouchers", "Rewards", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/vouchers", "post", "Exchange points for a voucher", "Rewards", { auth: true, requestBody: { type: "object", required: ["voucherId"], properties: { voucherId: { type: "string" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "409", "500"] });
@@ -317,6 +319,12 @@ export const getApiDocs = () => {
   add("/api/admin/printable-leads", "get", "List printable leads", "Admin", { admin: true, parameters: [queryParam("page", "Page number."), queryParam("limit", "Items per page.")], success: objectSchema, errorCodes: ["401", "403", "500"] });
   add("/api/admin/upload", "post", "Upload admin image", "Admin", { admin: true, requestBody: { type: "object", description: "multipart/form-data upload payload" }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "403", "500"] });
   add("/api/admin/printables/upload", "post", "Upload printable PDF", "Admin", { admin: true, requestBody: { type: "object", description: "multipart/form-data PDF upload payload" }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "403", "500"] });
+  add("/api/admin/b2b/inquiries", "get", "List B2B inquiries", "Admin", { admin: true, parameters: [queryParam("page", "Page number."), queryParam("limit", "Items per page; maximum 50."), queryParam("status", "NEW, CONTACTED, QUOTED, WON, or LOST."), queryParam("search", "Search inquiry number, organization, contact, or email.")], success: objectSchema, errorCodes: ["400", "401", "403", "500"] });
+  add("/api/admin/b2b/inquiries/{inquiryNumber}", "get", "Get B2B inquiry detail and quotation", "Admin", { admin: true, parameters: [pathParam("inquiryNumber", "B2B inquiry number.")], success: objectSchema, errorCodes: ["401", "403", "404", "500"] });
+  add("/api/admin/b2b/inquiries/{inquiryNumber}", "patch", "Update B2B inquiry status or admin notes", "Admin", { admin: true, parameters: [pathParam("inquiryNumber", "B2B inquiry number.")], requestBody: { type: "object", properties: { status: { type: "string", enum: ["NEW", "CONTACTED", "QUOTED", "WON", "LOST"] }, adminNotes: { type: "string" } } }, success: objectSchema, errorCodes: ["400", "401", "403", "404", "500"] });
+  add("/api/admin/b2b/inquiries/{inquiryNumber}/quotation", "post", "Create or replace a B2B quotation", "Admin", { admin: true, parameters: [pathParam("inquiryNumber", "B2B inquiry number.")], requestBody: { type: "object", required: ["items"], properties: { validUntil: { type: "string", format: "date" }, items: { type: "array", items: { type: "object", required: ["name", "quantity", "unitPrice"], properties: { name: { type: "string" }, description: { type: "string" }, quantity: { type: "integer", minimum: 1 }, unitPrice: { type: "integer", minimum: 0 }, discount: { type: "integer", minimum: 0 } } } } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "403", "404", "500"] });
+  add("/api/admin/b2b/inquiries/{inquiryNumber}/quotation/pdf", "get", "Download B2B quotation as PDF", "Admin", { admin: true, parameters: [pathParam("inquiryNumber", "B2B inquiry number.")], success: { type: "string", format: "binary" }, errorCodes: ["401", "403", "404", "409", "500"] });
+  add("/api/admin/b2b/inquiries/{inquiryNumber}/quotation/send", "post", "Send B2B quotation by email", "Admin", { admin: true, parameters: [pathParam("inquiryNumber", "B2B inquiry number.")], success: objectSchema, errorCodes: ["401", "403", "404", "409", "502"] });
 
   add("/api/swagger", "get", "Get OpenAPI document", "Documentation", { success: objectSchema, errorCodes: ["500"] });
 
@@ -348,6 +356,7 @@ export const getApiDocs = () => {
       { name: "Articles", description: "Artikel dan komentar." },
       { name: "Shipping", description: "Destinasi dan ongkos kirim." },
       { name: "Marketing", description: "Newsletter." },
+      { name: "B2B", description: "Inquiry dan quotation untuk sekolah, corporate, komunitas, dan rombongan." },
       { name: "Rewards", description: "Saldo dan riwayat Marica Points." },
       { name: "Admin", description: "Endpoint yang membutuhkan role ADMIN." },
       { name: "Cashier", description: "Endpoint POS dan operasional toko untuk role KASIR." },
