@@ -287,14 +287,14 @@ export default function AdminPrintablesPage() {
       );
       const data = await response.json();
       if (!response.ok)
-        throw new Error(data.error ?? "Gagal menonaktifkan printable");
+        throw new Error(data.error ?? "Gagal menghapus printable");
       setPrintableToDelete(null);
       await loadPrintables();
     } catch (deleteError) {
       setActionError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Gagal menonaktifkan printable",
+          : "Gagal menghapus printable",
       );
     } finally {
       setIsDeleting(false);
@@ -417,16 +417,14 @@ export default function AdminPrintablesPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        {item.isActive && (
-                          <button
-                            type="button"
-                            onClick={() => openDelete(item)}
-                            title="Nonaktifkan printable"
-                            className="rounded-lg p-2 text-marica-ink-soft hover:bg-marica-rose-deep/10 hover:text-marica-rose-deep"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => openDelete(item)}
+                          title="Hapus printable"
+                          className="rounded-lg p-2 text-marica-ink-soft hover:bg-marica-rose-deep/10 hover:text-marica-rose-deep"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
@@ -710,18 +708,18 @@ export default function AdminPrintablesPage() {
       )}
       <ConfirmActionModal
         isOpen={printableToDelete !== null}
-        title="Nonaktifkan Printable?"
+        title="Hapus Printable?"
         description={
           <>
             Printable{" "}
             <span className="font-semibold text-marica-ink">
               &ldquo;{printableToDelete?.title}&rdquo;
             </span>{" "}
-            tidak akan ditampilkan lagi kepada pengguna.
+            dan data lead terkait akan dihapus permanen.
           </>
         }
-        confirmLabel="Ya, Nonaktifkan"
-        loadingLabel="Menonaktifkan..."
+        confirmLabel="Ya, Hapus"
+        loadingLabel="Menghapus..."
         isProcessing={isDeleting}
         error={actionError}
         onCancel={() => {
