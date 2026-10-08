@@ -170,6 +170,30 @@ body {
   pointer-events: none;
 }
 
+.b2b-admin-page tbody td:last-child {
+  min-width: 9.5rem;
+}
+
+.b2b-admin-page tbody td:last-child span {
+  display: inline-flex;
+  max-width: none;
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .b2b-admin-page [role="dialog"] > div {
+    max-width: 72rem;
+  }
+
+  .b2b-admin-page [role="dialog"] > div > div:nth-child(2) {
+    grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.5fr);
+  }
+
+  .b2b-admin-page [role="dialog"] > div > div:nth-child(2) > div {
+    min-width: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-blob-drift,
   .animate-bubble,

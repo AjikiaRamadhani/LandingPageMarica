@@ -16,6 +16,7 @@ import {
   CalendarRange,
   BarChart3,
   TicketPercent,
+  BriefcaseBusiness,
   Settings,
   Lock,
   Menu,
@@ -63,6 +64,12 @@ const navItems = [
     label: "Voucher",
     href: "/admin/vouchers",
     icon: TicketPercent,
+    enabled: true,
+  },
+  {
+    label: "B2B",
+    href: "/admin/b2b",
+    icon: BriefcaseBusiness,
     enabled: true,
   },
   {
