@@ -383,6 +383,16 @@ async function main() {
   for (const item of fnbDemoProducts) {
     await prisma.fnbProduct.upsert({ where: { id: item.id }, update: item, create: item });
   }
+  const demoInquiry = await prisma.b2BInquiry.upsert({
+    where: { inquiryNumber: 'B2B-DEMO-001' },
+    update: { organizationName: 'SD Ceria Yogyakarta', organizationType: 'SCHOOL', contactName: 'Ibu Diah', email: 'diah@sdceria.sch.id', whatsapp: '081234567890', requestType: 'KUNJUNGAN_SEKOLAH', participantCount: 30, eventDate: new Date('2026-10-17T00:00:00.000Z'), budget: 5000000, notes: 'Paket kunjungan edukatif untuk siswa kelas 3-4.', status: 'QUOTED', quotationNumber: 'QT-DEMO-001', quotedTotal: 4200000, validUntil: new Date('2026-10-10T00:00:00.000Z'), userId: customerUser.id },
+    create: { inquiryNumber: 'B2B-DEMO-001', userId: customerUser.id, organizationName: 'SD Ceria Yogyakarta', organizationType: 'SCHOOL', contactName: 'Ibu Diah', email: 'diah@sdceria.sch.id', whatsapp: '081234567890', requestType: 'KUNJUNGAN_SEKOLAH', participantCount: 30, eventDate: new Date('2026-10-17T00:00:00.000Z'), budget: 5000000, notes: 'Paket kunjungan edukatif untuk siswa kelas 3-4.', status: 'QUOTED', quotationNumber: 'QT-DEMO-001', quotedTotal: 4200000, validUntil: new Date('2026-10-10T00:00:00.000Z') },
+  });
+  await prisma.b2BQuotationItem.deleteMany({ where: { inquiryId: demoInquiry.id } });
+  await prisma.b2BQuotationItem.createMany({ data: [
+    { inquiryId: demoInquiry.id, name: 'Paket Playpass Rombongan', description: 'Tiket area bermain untuk 30 peserta.', quantity: 30, unitPrice: 100000, discount: 300000, subtotal: 2700000 },
+    { inquiryId: demoInquiry.id, name: 'Workshop Edugame', description: 'Sesi fasilitator dan aktivitas edukatif.', quantity: 1, unitPrice: 1500000, discount: 0, subtotal: 1500000 },
+  ] });
 
   // 19. Products & Categories
   await prisma.productBundleItem.deleteMany();

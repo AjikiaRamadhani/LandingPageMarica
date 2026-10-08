@@ -43,8 +43,19 @@ export async function DELETE(
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
-  const result = await prisma.printable.updateMany({ where: { id }, data: { isActive: false } });
-  if (!result.count) return NextResponse.json({ error: "Printable tidak ditemukan" }, { status: 404 });
-  return NextResponse.json({ message: "Printable dinonaktifkan" });
+  try {
+    const { id } = await params;
+    const printable = await prisma.printable.findUnique({ where: { id }, select: { id: true } });
+    if (!printable) return NextResponse.json({ error: "Printable tidak ditemukan" }, { status: 404 });
+
+    await prisma.$transaction(async (transaction) => {
+      await transaction.printableLead.deleteMany({ where: { printableId: id } });
+      await transaction.printable.delete({ where: { id } });
+    });
+
+    return NextResponse.json({ message: "Printable dihapus" });
+  } catch (error) {
+    console.error("[DELETE /api/admin/printables/[id]]", error);
+    return NextResponse.json({ error: "Gagal menghapus printable" }, { status: 500 });
+  }
 }

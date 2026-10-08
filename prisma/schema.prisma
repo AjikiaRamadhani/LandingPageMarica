@@ -33,6 +33,7 @@ model User {
   printableLeads              PrintableLead[]
   recommendationEvents        RecommendationEvent[]
   tableReservations           TableReservation[]
+  b2bInquiries                B2BInquiry[]
   inventoryMovements          InventoryMovement[]   @relation("InventoryMovementCreatedBy")
   pointAccount                PointAccount?
   pointTransactions           PointTransaction[]
@@ -763,6 +764,62 @@ enum TableReservationStatus {
   CHECKED_IN
   CANCELLED
   EXPIRED
+}
+
+enum B2BInquiryStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  WON
+  LOST
+}
+
+model B2BInquiry {
+  id               String             @id @default(cuid())
+  inquiryNumber    String             @unique
+  userId           String?
+  user             User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organizationName String
+  organizationType String
+  contactName      String
+  email            String
+  whatsapp         String
+  requestType      String
+  participantCount Int?
+  eventDate        DateTime?
+  budget           Int?
+  notes            String?            @db.Text
+  adminNotes       String?            @db.Text
+  status           B2BInquiryStatus   @default(NEW)
+  quotationNumber  String?            @unique
+  quotedTotal      Int?
+  validUntil       DateTime?
+  quotationSentAt  DateTime?
+  quotationItems   B2BQuotationItem[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([organizationName])
+  @@map("b2b_inquiries")
+}
+
+model B2BQuotationItem {
+  id          String    @id @default(cuid())
+  inquiryId   String
+  inquiry     B2BInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  quantity    Int
+  unitPrice   Int
+  discount    Int       @default(0)
+  subtotal    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([inquiryId])
+  @@map("b2b_quotation_items")
 }
 
 enum FnbOrderStatus {
