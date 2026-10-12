@@ -250,6 +250,7 @@ export const getApiDocs = () => {
   add("/api/preorders", "get", "List published pre-order and exclusive release campaigns", "Pre-Orders", { success: arraySchema(), errorCodes: ["500"] });
   add("/api/preorders", "post", "Create a pre-order reservation and Midtrans payment", "Pre-Orders", { auth: true, requestBody: { type: "object", required: ["campaignId", "quantity"], properties: { campaignId: { type: "string" }, quantity: { type: "integer", minimum: 1 }, whatsapp: { type: "string" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "409", "500"] });
   add("/api/preorders/mine", "get", "List current user's pre-order reservations", "Pre-Orders", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
+  add("/api/preorders/{slug}", "get", "Get published pre-order campaign detail", "Pre-Orders", { parameters: [pathParam("slug", "Campaign slug.")], success: objectSchema, errorCodes: ["404", "500"] });
   add("/api/points", "get", "Get current user points", "Rewards", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/vouchers", "get", "List voucher catalog and owned vouchers", "Rewards", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/vouchers", "post", "Exchange points for a voucher", "Rewards", { auth: true, requestBody: { type: "object", required: ["voucherId"], properties: { voucherId: { type: "string" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "409", "500"] });
