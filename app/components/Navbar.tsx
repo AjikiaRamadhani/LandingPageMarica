@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
-type NavMenu = "shop" | "activity" | "edugames" | "event" | "blog";
+type NavMenu = "shop" | "activity" | "edugames" | "event" | "blog" | "more";
 type NavLink = { label: string; href: string; menu?: NavMenu };
 
 const navLinks: NavLink[] = [
@@ -31,7 +31,7 @@ const navLinks: NavLink[] = [
   { label: "Edugames", href: "/edugames", menu: "edugames" },
   { label: "Blog", href: "/artikel", menu: "blog" },
   { label: "Printable", href: "/printable" },
-  { label: "Sekolah & Bisnis", href: "/b2b" },
+  { label: "Lainnya", href: "#lainnya", menu: "more" },
 ];
 
 type ApiCompany = {
@@ -88,6 +88,10 @@ const simpleMenus = {
   ],
   edugames: [
     { label: "Jelajahi edugames", href: "/edugames" },
+  ],
+  more: [
+    { label: "Rilis Eksklusif", href: "/preorder" },
+    { label: "Sekolah & Bisnis", href: "/b2b" },
   ],
 } as const;
 
@@ -502,7 +506,14 @@ export default function Navbar() {
               >
                 <Link
                   href={link.href}
-                  onClick={() => setOpenMenu(null)}
+                  onClick={(event) => {
+                    if (link.menu) {
+                      event.preventDefault();
+                      setOpenMenu(link.menu);
+                    } else {
+                      setOpenMenu(null);
+                    }
+                  }}
                   className={`relative flex items-center gap-1 rounded-full px-3 py-2 transition-colors xl:px-3.5 ${
                     isHighlighted
                       ? "text-white"
