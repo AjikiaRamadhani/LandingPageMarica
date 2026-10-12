@@ -42,6 +42,7 @@ model User {
   posCustomerTransactions     PosTransaction[]      @relation("PosCustomer")
   playpassTickets             PlaypassTicket[]      @relation("PlaypassCustomer")
   playpassBookings            PlaypassBooking[]
+  preOrderReservations        PreOrderReservation[]
   issuedPlaypassTickets       PlaypassTicket[]      @relation("PlaypassCashier")
   tableFeeSessions            TableFeeSession[]     @relation("TableFeeCustomer")
   openedTableFeeSessions      TableFeeSession[]     @relation("TableFeeCashier")
@@ -404,6 +405,7 @@ model Product {
   bundleItems          ProductBundleItem[]
   inventoryMovements   InventoryMovement[]
   recommendationEvents RecommendationEvent[]
+  preOrderCampaign     PreOrderCampaign?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -467,6 +469,67 @@ model ProductBundleItem {
   order     Int           @default(0)
 
   @@map("product_bundle_items")
+}
+
+enum PreOrderCampaignStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  COMPLETED
+}
+
+enum PreOrderReservationStatus {
+  PENDING_PAYMENT
+  PAID
+  CANCELLED
+  EXPIRED
+}
+
+model PreOrderCampaign {
+  id               String                 @id @default(cuid())
+  slug             String                 @unique
+  title            String
+  description      String                 @db.Text
+  productId        String                 @unique
+  product          Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  price            Int
+  preorderOpenAt   DateTime
+  preorderCloseAt  DateTime?
+  releaseAt        DateTime
+  stockLimit       Int?
+  reservedQuantity Int                    @default(0)
+  status           PreOrderCampaignStatus @default(DRAFT)
+  reservations     PreOrderReservation[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([status, preorderOpenAt, preorderCloseAt])
+  @@map("pre_order_campaigns")
+}
+
+model PreOrderReservation {
+  id                    String                    @id @default(cuid())
+  reservationNumber     String                    @unique
+  campaignId            String
+  campaign              PreOrderCampaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerName          String
+  customerEmail         String
+  customerWhatsapp      String?
+  quantity              Int
+  totalPrice            Int
+  status                PreOrderReservationStatus @default(PENDING_PAYMENT)
+  midtransOrderId       String?                   @unique
+  midtransSnapToken     String?
+  midtransTransactionId String?
+  paidAt                DateTime?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([campaignId, status])
+  @@map("pre_order_reservations")
 }
 
 // ============================================
@@ -806,17 +869,17 @@ model B2BInquiry {
 }
 
 model B2BQuotationItem {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   inquiryId   String
   inquiry     B2BInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
   name        String
   description String?
   quantity    Int
   unitPrice   Int
-  discount    Int       @default(0)
+  discount    Int        @default(0)
   subtotal    Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@index([inquiryId])
   @@map("b2b_quotation_items")
@@ -847,19 +910,19 @@ model FnbProduct {
 }
 
 model FnbOrderItem {
-  id                String                @id @default(cuid())
-  fnbProductId      String
-  fnbProduct        FnbProduct             @relation(fields: [fnbProductId], references: [id], onDelete: Restrict)
-  playpassBookingId String?
-  playpassBooking   PlaypassBooking?       @relation(fields: [playpassBookingId], references: [id], onDelete: Cascade)
+  id                 String            @id @default(cuid())
+  fnbProductId       String
+  fnbProduct         FnbProduct        @relation(fields: [fnbProductId], references: [id], onDelete: Restrict)
+  playpassBookingId  String?
+  playpassBooking    PlaypassBooking?  @relation(fields: [playpassBookingId], references: [id], onDelete: Cascade)
   tableReservationId String?
-  tableReservation  TableReservation?     @relation(fields: [tableReservationId], references: [id], onDelete: Cascade)
-  quantity          Int
-  unitPrice         Int
-  subtotal          Int
-  status            FnbOrderStatus         @default(PENDING)
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
+  tableReservation   TableReservation? @relation(fields: [tableReservationId], references: [id], onDelete: Cascade)
+  quantity           Int
+  unitPrice          Int
+  subtotal           Int
+  status             FnbOrderStatus    @default(PENDING)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@index([playpassBookingId])
   @@index([tableReservationId])
@@ -868,15 +931,15 @@ model FnbOrderItem {
 }
 
 model BookingParticipant {
-  id                String           @id @default(cuid())
-  name              String
-  age               Int?
-  relationship      String?
-  playpassBookingId String?
-  playpassBooking   PlaypassBooking? @relation(fields: [playpassBookingId], references: [id], onDelete: Cascade)
+  id                 String            @id @default(cuid())
+  name               String
+  age                Int?
+  relationship       String?
+  playpassBookingId  String?
+  playpassBooking    PlaypassBooking?  @relation(fields: [playpassBookingId], references: [id], onDelete: Cascade)
   tableReservationId String?
-  tableReservation  TableReservation? @relation(fields: [tableReservationId], references: [id], onDelete: Cascade)
-  createdAt         DateTime         @default(now())
+  tableReservation   TableReservation? @relation(fields: [tableReservationId], references: [id], onDelete: Cascade)
+  createdAt          DateTime          @default(now())
 
   @@index([playpassBookingId])
   @@index([tableReservationId])
@@ -913,8 +976,8 @@ model PlaypassBooking {
   paidAt                DateTime?
   ticketEmailSentAt     DateTime?
 
-  tickets PlaypassTicket[]
-  fnbItems FnbOrderItem[]
+  tickets      PlaypassTicket[]
+  fnbItems     FnbOrderItem[]
   participants BookingParticipant[]
 
   createdAt DateTime @default(now())
@@ -939,16 +1002,16 @@ model TableFeePackage {
   cashierTransactionItems CashierTransactionItem[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
-  reservations             TableReservation[]
+  reservations            TableReservation[]
 
   @@index([isActive])
   @@map("table_fee_packages")
 }
 
 model TableReservation {
-  id                String                 @id @default(cuid())
-  reservationNumber String                 @unique
-  qrToken           String                 @unique @default(cuid())
+  id                String @id @default(cuid())
+  reservationNumber String @unique
+  qrToken           String @unique @default(cuid())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1064,9 +1127,9 @@ model PosTransactionItem {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String?
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
@@ -1270,13 +1333,13 @@ enum UserVoucherStatus {
 }
 
 model UserVoucher {
-  id                 String            @id @default(cuid())
+  id                 String              @id @default(cuid())
   userId             String
-  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   voucherId          String
-  voucher            Voucher           @relation(fields: [voucherId], references: [id], onDelete: Restrict)
-  status             UserVoucherStatus @default(AVAILABLE)
-  redeemedAt         DateTime          @default(now())
+  voucher            Voucher             @relation(fields: [voucherId], references: [id], onDelete: Restrict)
+  status             UserVoucherStatus   @default(AVAILABLE)
+  redeemedAt         DateTime            @default(now())
   usedAt             DateTime?
   order              Order?
   posTransaction     PosTransaction?

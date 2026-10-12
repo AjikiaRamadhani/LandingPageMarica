@@ -168,6 +168,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "OK" });
     }
 
+    if (order_id.startsWith("POR-")) {
+      const reservation = await prisma.preOrderReservation.findUnique({ where: { midtransOrderId: order_id } });
+      if (!reservation) return NextResponse.json({ error: "Pre-order reservation not found" }, { status: 404 });
+      if (Number(gross_amount) !== reservation.totalPrice) return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
+      if (transaction_status === "capture" || transaction_status === "settlement") {
+        await prisma.preOrderReservation.updateMany({ where: { id: reservation.id, status: "PENDING_PAYMENT" }, data: { status: "PAID", midtransTransactionId: transaction_id, paidAt: new Date() } });
+      } else if (transaction_status === "deny" || transaction_status === "cancel" || transaction_status === "expire") {
+        await prisma.$transaction(async (transaction) => {
+          const changed = await transaction.preOrderReservation.updateMany({ where: { id: reservation.id, status: "PENDING_PAYMENT" }, data: { status: transaction_status === "expire" ? "EXPIRED" : "CANCELLED" } });
+          if (changed.count) await transaction.preOrderCampaign.update({ where: { id: reservation.campaignId }, data: { reservedQuantity: { decrement: reservation.quantity } } });
+        });
+      }
+      return NextResponse.json({ message: "OK" });
+    }
+
     const order = await prisma.order.findUnique({
       where: { midtransOrderId: order_id },
       include: { items: true },

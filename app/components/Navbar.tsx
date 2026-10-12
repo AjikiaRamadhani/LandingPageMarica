@@ -31,6 +31,7 @@ const navLinks: NavLink[] = [
   { label: "Edugames", href: "/edugames", menu: "edugames" },
   { label: "Blog", href: "/artikel", menu: "blog" },
   { label: "Printable", href: "/printable" },
+  { label: "Sekolah & Bisnis", href: "/b2b" },
 ];
 
 type ApiCompany = {
