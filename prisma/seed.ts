@@ -395,6 +395,9 @@ async function main() {
   ] });
 
   // 19. Products & Categories
+  await prisma.preOrderReservation.deleteMany();
+  await prisma.preOrderCampaign.deleteMany();
+  await prisma.orderItem.deleteMany();
   await prisma.productBundleItem.deleteMany();
   await prisma.productBundle.deleteMany();
   await prisma.cartItem.deleteMany();
@@ -503,6 +506,32 @@ async function main() {
   });
 
   console.log("Seed selesai ✅");
+  await prisma.preOrderCampaign.upsert({
+    where: { slug: 'marica-edugame-adventure-kit' },
+    update: {
+      title: 'Marica Edugame Adventure Kit - Exclusive Release',
+      description: 'Paket edugame self-published Marica dengan jumlah batch perdana terbatas.',
+      productId: sensoryKit.id,
+      price: 175000,
+      preorderOpenAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      preorderCloseAt: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+      releaseAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      stockLimit: 50,
+      status: 'PUBLISHED',
+    },
+    create: {
+      slug: 'marica-edugame-adventure-kit',
+      title: 'Marica Edugame Adventure Kit - Exclusive Release',
+      description: 'Paket edugame self-published Marica dengan jumlah batch perdana terbatas.',
+      productId: sensoryKit.id,
+      price: 175000,
+      preorderOpenAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      preorderCloseAt: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+      releaseAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      stockLimit: 50,
+      status: 'PUBLISHED',
+    },
+  });
 }
 
 main()

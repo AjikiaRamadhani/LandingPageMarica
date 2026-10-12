@@ -26,6 +26,7 @@ const layanan = [
   { label: "Books & Edugames", href: "/layanan" },
   { label: "Subscription", href: "/layanan" },
   { label: "Play & Interactive Zone", href: "/layanan" },
+  { label: "Sekolah & Bisnis", href: "/b2b" },
 ];
 
 function TikTokIcon({ className }: { className?: string }) {
