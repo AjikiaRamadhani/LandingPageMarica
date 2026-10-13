@@ -28,7 +28,7 @@ const navLinks: NavLink[] = [
   { label: "Beranda", href: "/" },
   { label: "Belanja", href: "/belanja" },
   { label: "Aktivitas", href: "/event", menu: "activity" },
-  { label: "Edugames", href: "/edugames", menu: "edugames" },
+  { label: "Edugames", href: "/edugames" },
   { label: "Blog", href: "/artikel", menu: "blog" },
   { label: "Printable", href: "/printable" },
   { label: "Lainnya", href: "#lainnya", menu: "more" },
@@ -85,9 +85,6 @@ const simpleMenus = {
     { label: "Event", href: "/event" },
     { label: "Booking Playpass", href: "/playpass" },
     { label: "Reservasi Meja", href: "/reservasi" },
-  ],
-  edugames: [
-    { label: "Jelajahi edugames", href: "/edugames" },
   ],
   more: [
     { label: "Rilis Eksklusif", href: "/preorder" },
