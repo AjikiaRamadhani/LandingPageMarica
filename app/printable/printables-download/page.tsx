@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Star, Download, CheckCircle2, Loader2 } from "lucide-react";
 import Navbar from "../../components/Navbar";
@@ -141,6 +142,7 @@ function DownloadForm({
   reduceMotion: boolean;
 }) {
   const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -189,6 +191,11 @@ function DownloadForm({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (sessionStatus !== "authenticated") {
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+
     setStatus("submitting");
     setError(null);
 
@@ -205,6 +212,11 @@ function DownloadForm({
       });
       const result = (await response.json()) as { downloadUrl?: string; error?: string };
 
+      if (response.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        return;
+      }
+
       if (!response.ok || !result.downloadUrl) {
         throw new Error(result.error ?? "Download belum bisa disiapkan");
       }
@@ -219,7 +231,35 @@ function DownloadForm({
 
   return (
     <AnimatePresence mode="wait">
-      {status === "success" ? (
+      {sessionStatus === "loading" ? (
+        <motion.div
+          key="session-loading"
+          initial={reduceMotion ? undefined : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-center gap-2 py-6 text-sm text-marica-ink-soft"
+        >
+          <Loader2 className="h-4 w-4 animate-spin" /> Memeriksa sesi login...
+        </motion.div>
+      ) : sessionStatus !== "authenticated" ? (
+        <motion.div
+          key="login-required"
+          initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center py-6 text-center"
+        >
+          <h3 className="font-display text-lg font-semibold text-marica-ink">Login untuk mengunduh</h3>
+          <p className="mt-2 max-w-sm font-body text-sm leading-5 text-marica-ink-soft">
+            Silakan login terlebih dahulu agar data download dan MARICA Points dapat tercatat di akunmu.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
+          >
+            Login untuk Download
+          </button>
+        </motion.div>
+      ) : status === "success" ? (
         <motion.div
           key="success"
           initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}

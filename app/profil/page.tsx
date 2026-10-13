@@ -21,18 +21,20 @@ import {
   TicketPercent,
   Trash2,
   UserRound,
-  UsersRound,
   X,
 } from "lucide-react";
 import ProfileHeader from "../components/Profileheader";
 import Footer from "@/app/components/Footer";
+import { payWithSnap } from "@/app/components/belanja/snap";
+import ChildProfiles from "@/app/components/profile/ChildProfiles";
 
 type Voucher = { id: string; code: string; title: string; pointsCost: number; discountAmount: number; isActive?: boolean; expiresAt?: string | null };
 type OwnedVoucher = { id: string; status: string; voucher: Voucher };
 type AccountOrder = { id: string; orderNumber: string; status: string; total: number; createdAt: string; items: { productName: string; quantity: number; productAvailable?: boolean }[] };
 type EventBooking = { id: string; bookingNumber: string; status: string; quantity: number; totalPrice: number; event: { title: string; eventDate: string; locationName: string } };
 type ProfileData = { balance: number; catalog: Voucher[]; owned: OwnedVoucher[]; orderCount: number; orders: AccountOrder[]; bookings: EventBooking[] };
-type ActivePanel = "profile" | "orders" | "tickets" | "points" | "vouchers" | "settings";
+type Subscription = { id: string; subscriptionNumber: string; status: string; startDate: string; nextBillingAt: string; nextDeliveryAt: string; plan: { name: string; price: number; interval: string }; cycles: { cycleNumber: string; amount: number; status: string; midtransSnapToken?: string | null; delivery?: { status: string } | null }[] };
+type ActivePanel = "profile" | "orders" | "subscriptions" | "tickets" | "points" | "vouchers" | "settings";
 
 type ProfileUser = {
   id: string;
@@ -70,6 +72,8 @@ export default function ProfilePage() {
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [subscriptionAction, setSubscriptionAction] = useState<string | null>(null);
 
   // --- Edit profil (nama & nomor HP) ---
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -93,16 +97,18 @@ export default function ProfilePage() {
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
 
   async function loadProfile() {
-    const [profileResponse, pointsResponse, vouchersResponse, ordersResponse] = await Promise.all([
+    const [profileResponse, pointsResponse, vouchersResponse, ordersResponse, subscriptionsResponse] = await Promise.all([
       fetch("/api/user/profile", { cache: "no-store" }),
       fetch("/api/points", { cache: "no-store" }),
       fetch("/api/vouchers", { cache: "no-store" }),
       fetch("/api/orders", { cache: "no-store" }),
+      fetch("/api/subscriptions", { cache: "no-store" }),
     ]);
     const profile = profileResponse.ok ? await profileResponse.json().catch(() => null) : null;
     const points = await pointsResponse.json().catch(() => ({}));
     const vouchers = await vouchersResponse.json().catch(() => ({}));
     const orders = ordersResponse.ok ? await ordersResponse.json().catch(() => []) : [];
+    const subscriptions = subscriptionsResponse.ok ? await subscriptionsResponse.json().catch(() => []) : [];
     const bookingsResponse = await fetch("/api/event-bookings", { cache: "no-store" });
     const bookings = bookingsResponse.ok ? await bookingsResponse.json().catch(() => []) : [];
     if (!pointsResponse.ok || !vouchersResponse.ok) throw new Error(points.error ?? vouchers.error ?? "Gagal memuat data akun");
@@ -113,6 +119,37 @@ export default function ProfilePage() {
       setEditWhatsapp(profile.whatsapp ?? "");
     }
     setData({ balance: points.balance ?? 0, catalog: vouchers.catalog ?? [], owned: vouchers.owned ?? [], orderCount: Array.isArray(orders) ? orders.length : 0, orders: Array.isArray(orders) ? orders : [], bookings: Array.isArray(bookings) ? bookings : [] });
+    setSubscriptions(Array.isArray(subscriptions) ? subscriptions : []);
+  }
+
+  async function cancelSubscription(subscriptionNumber: string) {
+    if (!window.confirm("Batalkan subscription ini? Pembayaran dan pengiriman berikutnya akan dihentikan.")) return;
+    setSubscriptionAction(subscriptionNumber);
+    setError(null);
+    try {
+      const response = await fetch(`/api/subscriptions/${subscriptionNumber}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "CANCEL" }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Subscription gagal dibatalkan");
+      setNotice("Subscription berhasil dibatalkan.");
+      await loadProfile();
+    } catch (cancelError) {
+      setError(cancelError instanceof Error ? cancelError.message : "Subscription gagal dibatalkan");
+    } finally {
+      setSubscriptionAction(null);
+    }
+  }
+
+  async function continueSubscriptionPayment(token: string) {
+    setError(null);
+    try {
+      await payWithSnap(token, {
+        onSuccess: () => { setNotice("Pembayaran berhasil diterima."); void loadProfile(); },
+        onPending: () => setNotice("Pembayaran masih menunggu penyelesaian."),
+        onError: () => setError("Pembayaran gagal. Silakan coba lagi."),
+      });
+    } catch (paymentError) {
+      setError(paymentError instanceof Error ? paymentError.message : "Gagal membuka pembayaran");
+    }
   }
 
   useEffect(() => {
@@ -259,16 +296,17 @@ export default function ProfilePage() {
           {error && <p className="mb-4 rounded-xl bg-marica-rose-deep/10 px-4 py-3 font-body text-sm text-marica-rose-deep">{error}</p>}
 
           <div className="grid min-w-0 gap-4 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-5">
-            <aside className="rounded-xl bg-[#fffdfa] p-2 shadow-sm sm:p-3">
-              <nav className="grid grid-cols-2 gap-2 lg:block lg:space-y-1">
-                <button type="button" onClick={() => setActivePanel("profile")} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left font-body text-xs sm:gap-3 sm:px-3 ${activePanel === "profile" ? "bg-marica-amber-dark font-semibold text-white" : "text-marica-ink-soft hover:bg-marica-cream"}`}><UserRound className="h-4 w-4 shrink-0" /> Profil &amp; Keluarga</button>
-                <button type="button" onClick={() => setActivePanel("orders")} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left font-body text-xs sm:gap-3 sm:px-3 ${activePanel === "orders" ? "bg-marica-amber-dark font-semibold text-white" : "text-marica-ink-soft hover:bg-marica-cream"}`}><PackageCheck className="h-4 w-4 shrink-0" /> Pesanan Saya</button>
-                <button type="button" onClick={() => setActivePanel("tickets")} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left font-body text-xs sm:gap-3 sm:px-3 ${activePanel === "tickets" ? "bg-marica-amber-dark font-semibold text-white" : "text-marica-ink-soft hover:bg-marica-cream"}`}><CalendarDays className="h-4 w-4 shrink-0" /> E-Tiket</button>
-                <button type="button" onClick={() => setActivePanel("points")} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left font-body text-xs sm:gap-3 sm:px-3 ${activePanel === "points" ? "bg-marica-amber-dark font-semibold text-white" : "text-marica-ink-soft hover:bg-marica-cream"}`}><Coins className="h-4 w-4 shrink-0" /> Marica Points</button>
-                <button type="button" onClick={() => setActivePanel("vouchers")} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left font-body text-xs sm:gap-3 sm:px-3 ${activePanel === "vouchers" ? "bg-marica-amber-dark font-semibold text-white" : "text-marica-ink-soft hover:bg-marica-cream"}`}><TicketPercent className="h-4 w-4 shrink-0" /> Voucher Saya</button>
-                <button type="button" onClick={() => setActivePanel("settings")} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left font-body text-xs sm:gap-3 sm:px-3 ${activePanel === "settings" ? "bg-marica-amber-dark font-semibold text-white" : "text-marica-ink-soft hover:bg-marica-cream"}`}><Settings className="h-4 w-4 shrink-0" /> Pengaturan</button>
+            <aside className="min-w-0 rounded-2xl bg-[#fffdfa] p-2 shadow-sm sm:p-3">
+              <nav aria-label="Menu profil" className="grid min-w-0 grid-cols-2 gap-2 lg:block lg:space-y-1">
+                <button type="button" onClick={() => setActivePanel("profile")} className={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-xl px-2 py-2.5 text-center font-body text-[11px] transition-colors sm:gap-3 sm:px-3 sm:text-xs lg:w-full lg:text-left ${activePanel === "profile" ? "bg-marica-amber-dark font-semibold text-white shadow-sm" : "bg-marica-cream/35 text-marica-ink-soft hover:bg-marica-cream"}`}><UserRound className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">Profil &amp; Keluarga</span></button>
+                <button type="button" onClick={() => setActivePanel("orders")} className={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-xl px-2 py-2.5 text-center font-body text-[11px] transition-colors sm:gap-3 sm:px-3 sm:text-xs lg:w-full lg:text-left ${activePanel === "orders" ? "bg-marica-amber-dark font-semibold text-white shadow-sm" : "bg-marica-cream/35 text-marica-ink-soft hover:bg-marica-cream"}`}><PackageCheck className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">Pesanan Saya</span></button>
+                <button type="button" onClick={() => setActivePanel("subscriptions")} className={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-xl px-2 py-2.5 text-center font-body text-[11px] transition-colors sm:gap-3 sm:px-3 sm:text-xs lg:w-full lg:text-left ${activePanel === "subscriptions" ? "bg-marica-amber-dark font-semibold text-white shadow-sm" : "bg-marica-cream/35 text-marica-ink-soft hover:bg-marica-cream"}`}><PackageCheck className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">Subscription</span></button>
+                <button type="button" onClick={() => setActivePanel("tickets")} className={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-xl px-2 py-2.5 text-center font-body text-[11px] transition-colors sm:gap-3 sm:px-3 sm:text-xs lg:w-full lg:text-left ${activePanel === "tickets" ? "bg-marica-amber-dark font-semibold text-white" : "bg-marica-cream/35 text-marica-ink-soft hover:bg-marica-cream"}`}><CalendarDays className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">E-Tiket</span></button>
+                <button type="button" onClick={() => setActivePanel("points")} className={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-xl px-2 py-2.5 text-center font-body text-[11px] transition-colors sm:gap-3 sm:px-3 sm:text-xs lg:w-full lg:text-left ${activePanel === "points" ? "bg-marica-amber-dark font-semibold text-white" : "bg-marica-cream/35 text-marica-ink-soft hover:bg-marica-cream"}`}><Coins className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">Marica Points</span></button>
+                <button type="button" onClick={() => setActivePanel("vouchers")} className={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-xl px-2 py-2.5 text-center font-body text-[11px] transition-colors sm:gap-3 sm:px-3 sm:text-xs lg:w-full lg:text-left ${activePanel === "vouchers" ? "bg-marica-amber-dark font-semibold text-white" : "bg-marica-cream/35 text-marica-ink-soft hover:bg-marica-cream"}`}><TicketPercent className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">Voucher Saya</span></button>
+                <button type="button" onClick={() => setActivePanel("settings")} className={`flex min-h-11 min-w-0 items-center gap-1.5 rounded-xl px-2 py-2.5 text-center font-body text-[11px] transition-colors sm:gap-3 sm:px-3 sm:text-xs lg:w-full lg:text-left ${activePanel === "settings" ? "bg-marica-amber-dark font-semibold text-white" : "bg-marica-cream/35 text-marica-ink-soft hover:bg-marica-cream"}`}><Settings className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">Pengaturan</span></button>
               </nav>
-              <button type="button" onClick={() => void signOut({ callbackUrl: "/" })} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-marica-amber-dark/50 px-3 py-2 font-body text-xs font-semibold text-marica-amber-text transition-colors hover:bg-marica-cream lg:mt-5"><LogOut className="h-3.5 w-3.5" /> Keluar</button>
+              <button type="button" onClick={() => void signOut({ callbackUrl: "/" })} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-marica-amber-dark/40 px-3 py-2 font-body text-xs font-semibold text-marica-amber-text transition-colors hover:bg-marica-cream lg:mt-5"><LogOut className="h-3.5 w-3.5" /> Keluar</button>
             </aside>
 
             {activePanel !== "profile" ? (
@@ -276,10 +314,12 @@ export default function ProfilePage() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-marica-ink/10 pb-4">
                   <div>
                     <p className="font-body text-[10px] font-bold uppercase tracking-[0.15em] text-marica-ink-soft">Akun Saya</p>
-                    <h2 className="mt-1 font-display text-xl text-marica-ink">{activePanel === "orders" ? "Pesanan Saya" : activePanel === "tickets" ? "E-Tiket Saya" : activePanel === "points" ? "Marica Points" : activePanel === "vouchers" ? "Voucher Saya" : "Pengaturan"}</h2>
+                    <h2 className="mt-1 font-display text-xl text-marica-ink">{activePanel === "orders" ? "Pesanan Saya" : activePanel === "subscriptions" ? "Subscription Saya" : activePanel === "tickets" ? "E-Tiket Saya" : activePanel === "points" ? "Marica Points" : activePanel === "vouchers" ? "Voucher Saya" : "Pengaturan"}</h2>
                   </div>
                 </div>
-                {activePanel === "orders" && (data.orders.length === 0 ? <p className="mt-5 rounded-lg bg-marica-cream/60 p-5 font-body text-sm text-marica-ink-soft">Belum ada pesanan.</p> : <div className="mt-5 space-y-3">{data.orders.map((order) => <div key={order.id} className="rounded-xl border border-marica-ink/10 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-body text-sm font-semibold text-marica-ink">{order.orderNumber}</p><p className="mt-1 font-body text-xs text-marica-ink-soft">{new Date(order.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</p></div><span className="rounded-full bg-marica-amber/15 px-2.5 py-1 font-body text-[10px] font-semibold text-marica-amber-text">{order.status}</span></div><p className="mt-3 font-body text-xs text-marica-ink-soft">{order.items.map((item) => `${item.productName} (${item.quantity}x)`).join(", ")}</p>{order.items.some((item) => item.productAvailable === false) && <p className="mt-2 font-body text-xs font-semibold text-marica-rose-deep">Produk pada pesanan ini sudah tidak tersedia.</p>}<p className="mt-3 font-display text-base font-semibold text-marica-amber-text">{money(order.total)}</p></div>)}</div>)}
+                {activePanel === "orders" && (data.orders.length === 0 ? <div className="mt-5 rounded-2xl border border-dashed border-marica-ink/15 bg-marica-cream/35 p-8 text-center"><ShoppingBag className="mx-auto h-9 w-9 text-marica-amber-dark" /><p className="mt-3 font-display text-lg font-semibold text-marica-ink">Belum ada pesanan</p><p className="mt-1 font-body text-sm text-marica-ink-soft">Pesanan belanja kamu akan muncul di sini.</p><Link href="/belanja" className="mt-4 inline-flex rounded-full bg-marica-amber-dark px-4 py-2 font-body text-xs font-semibold text-white">Mulai Belanja</Link></div> : <div className="mt-5 space-y-3">{data.orders.map((order) => <Link key={order.id} href={`/belanja/pesanan-saya/${order.id}`} className="group block rounded-2xl border border-marica-ink/10 bg-white p-4 transition hover:-translate-y-0.5 hover:border-marica-amber/50 hover:shadow-[0_8px_22px_rgba(120,60,10,0.08)] focus:outline-none focus:ring-2 focus:ring-marica-amber-dark sm:p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-body text-sm font-bold text-marica-ink">{order.orderNumber}</p><p className="mt-1 font-body text-xs text-marica-ink-soft">{new Date(order.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}</p></div><span className="shrink-0 rounded-full bg-marica-amber/15 px-3 py-1 font-body text-[10px] font-bold uppercase tracking-wide text-marica-amber-text">{order.status}</span></div><div className="mt-4 flex items-end justify-between gap-3 border-t border-marica-ink/10 pt-3"><div className="min-w-0"><p className="truncate font-body text-xs text-marica-ink-soft">{order.items.map((item) => `${item.productName} (${item.quantity}x)`).join(", ")}</p>{order.items.some((item) => item.productAvailable === false) && <p className="mt-1 font-body text-[11px] font-semibold text-marica-rose-deep">Ada produk yang sudah tidak tersedia.</p>}<p className="mt-2 font-display text-lg font-bold text-marica-amber-text">{money(order.total)}</p></div><span className="inline-flex shrink-0 items-center gap-1 font-body text-xs font-semibold text-marica-amber-dark">Detail <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></span></div></Link>)}</div>)}
+                {activePanel === "orders" && subscriptions.length > 0 && <div className="mt-6 rounded-xl border border-marica-amber/30 bg-marica-amber/5 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-display text-lg font-semibold text-marica-ink">Subscription Edu-Kit</h3><Link href="/profil/subscription" className="text-xs font-semibold text-marica-amber-text">Lihat semua</Link></div><div className="mt-3 space-y-3">{subscriptions.map((subscription) => { const pendingCycle = subscription.cycles.find((cycle) => cycle.status === "PENDING_PAYMENT" && cycle.midtransSnapToken); return <div key={subscription.id} className="rounded-lg bg-white p-3"><div className="flex flex-wrap items-center justify-between gap-2"><Link href={`/profil/subscription#${subscription.subscriptionNumber}`} className="font-semibold text-marica-ink">{subscription.plan.name}</Link><span className="text-[10px] font-semibold text-marica-amber-text">{subscription.status}</span></div><div className="mt-2 flex flex-wrap gap-2">{pendingCycle && <button type="button" onClick={() => void continueSubscriptionPayment(pendingCycle.midtransSnapToken as string)} className="rounded-md bg-marica-amber-dark px-2.5 py-1.5 text-[10px] font-semibold text-white">Lanjutkan Pembayaran</button>}{subscription.status !== "CANCELLED" && <button type="button" disabled={subscriptionAction === subscription.subscriptionNumber} onClick={() => void cancelSubscription(subscription.subscriptionNumber)} className="rounded-md border border-red-200 px-2.5 py-1.5 text-[10px] font-semibold text-red-600">Batalkan</button>}</div></div>; })}</div></div>}
+                {activePanel === "subscriptions" && <div className="mt-5 space-y-4">{subscriptions.length === 0 ? <div className="rounded-lg bg-marica-cream/60 p-5 text-sm text-marica-ink-soft">Belum ada subscription. <Link href="/subscription" className="font-semibold text-marica-amber-text">Lihat paket Edu-Kit</Link></div> : subscriptions.map((subscription) => { const pendingCycle = subscription.cycles.find((cycle) => cycle.status === "PENDING_PAYMENT" && cycle.midtransSnapToken); return <article key={subscription.id} className="rounded-xl border border-marica-ink/10 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-marica-amber-text">{subscription.subscriptionNumber}</p><h3 className="mt-1 font-display text-lg font-semibold">{subscription.plan.name}</h3><p className="mt-1 text-xs text-marica-ink-soft">{money(subscription.plan.price)} / {subscription.plan.interval === "MONTHLY" ? "bulan" : "3 bulan"}</p></div><span className="rounded-full bg-marica-amber/15 px-2.5 py-1 text-[10px] font-semibold text-marica-amber-text">{subscription.status}</span></div><div className="mt-4 grid gap-2 text-xs text-marica-ink-soft sm:grid-cols-2"><p>Tagihan berikutnya: <strong>{new Date(subscription.nextBillingAt).toLocaleDateString("id-ID")}</strong></p><p>Pengiriman berikutnya: <strong>{new Date(subscription.nextDeliveryAt).toLocaleDateString("id-ID")}</strong></p></div><div className="mt-4 flex flex-wrap gap-2"><Link href={`/profil/subscription#${subscription.subscriptionNumber}`} className="rounded-lg border border-marica-ink/15 px-3 py-2 text-xs font-semibold">Lihat Detail</Link>{pendingCycle && <button type="button" onClick={() => void continueSubscriptionPayment(pendingCycle.midtransSnapToken as string)} className="rounded-lg bg-marica-amber-dark px-3 py-2 text-xs font-semibold text-white">Lanjutkan Pembayaran</button>}{subscription.status !== "CANCELLED" && <button type="button" disabled={subscriptionAction === subscription.subscriptionNumber} onClick={() => void cancelSubscription(subscription.subscriptionNumber)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600">{subscriptionAction === subscription.subscriptionNumber ? "Membatalkan..." : "Batalkan"}</button>}</div></article>; })}</div>}
                 {activePanel === "tickets" && (data.bookings.length === 0 ? <p className="mt-5 rounded-lg bg-marica-cream/60 p-5 font-body text-sm text-marica-ink-soft">Belum ada e-tiket.</p> : <div className="mt-5 space-y-3">{data.bookings.map((booking) => <div key={booking.id} className="rounded-xl border border-marica-ink/10 p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-body text-sm font-semibold text-marica-ink">{booking.event.title}</p><p className="mt-1 font-body text-xs text-marica-ink-soft">{booking.bookingNumber} · {booking.event.locationName}</p><p className="mt-3 font-body text-xs text-marica-ink-soft">{booking.status} · {booking.quantity} tiket</p></div><Link href={`/event/tiket/${booking.bookingNumber}`} className="w-full rounded-lg bg-marica-amber-dark px-3 py-2 text-center font-body text-[10px] font-semibold text-white sm:w-auto">Lihat &amp; Unduh QR</Link></div></div>)}</div>)}
                 {activePanel === "points" && <div className="mt-5 rounded-xl bg-marica-cream/60 p-5"><p className="font-body text-sm text-marica-ink-soft">Saldo poin Anda</p><p className="mt-2 font-display text-3xl font-semibold text-marica-amber-text">{pointBalance.toLocaleString("id-ID")} poin</p><p className="mt-2 font-body text-xs text-marica-ink-soft">Poin dapat ditukar menjadi voucher belanja.</p></div>}
                 {activePanel === "vouchers" && <div className="mt-5 space-y-3">{available.length === 0 ? <p className="rounded-lg bg-marica-cream/60 p-5 font-body text-sm text-marica-ink-soft">Belum ada voucher aktif.</p> : available.map((item) => <div key={item.id} className="rounded-xl border border-marica-amber/20 bg-marica-cream/35 p-4"><p className="font-body text-sm font-semibold text-marica-ink">{item.voucher.title}</p><p className="mt-1 font-body text-xs text-marica-ink-soft">{item.voucher.code} · {money(item.voucher.discountAmount)}</p></div>)}</div>}
@@ -355,6 +395,7 @@ export default function ProfilePage() {
                 </section>
               </div>
               <div className="space-y-5">
+                <ChildProfiles />
                 <section className="rounded-xl bg-[#fffdfa] p-4 shadow-sm sm:p-6">
                   <div className="flex items-center justify-between border-b border-marica-ink/10 pb-4">
                     <h2 className="font-display text-xl text-marica-ink">Informasi pribadi</h2>
@@ -423,17 +464,6 @@ export default function ProfilePage() {
                   </div>
                 </section>
 
-                <section className="rounded-xl bg-[#fffdfa] p-4 shadow-sm sm:p-6">
-                  <h2 className="font-display text-xl text-marica-ink">Profil keluarga</h2>
-                  <div className="mt-4 flex items-center gap-4 border-t border-marica-ink/10 pt-5">
-                    <UsersRound className="h-10 w-10 shrink-0 rounded-full bg-marica-rose/30 p-2 text-marica-rose-deep" />
-                    <div>
-                      <p className="font-body text-sm font-semibold text-marica-ink">Kelola profil keluarga</p>
-                      <p className="mt-1 font-body text-xs text-marica-ink-soft">Tambahkan profil anak untuk pengalaman belajar yang dipersonalisasi.</p>
-                      <button type="button" className="mt-3 rounded-lg border border-marica-amber-dark px-4 py-2 font-body text-[10px] font-semibold text-marica-amber-text">Kelola Keluarga</button>
-                    </div>
-                  </div>
-                </section>
               </div>
             </div>
             )}

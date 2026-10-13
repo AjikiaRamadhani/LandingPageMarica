@@ -43,6 +43,8 @@ model User {
   playpassTickets             PlaypassTicket[]      @relation("PlaypassCustomer")
   playpassBookings            PlaypassBooking[]
   preOrderReservations        PreOrderReservation[]
+  childProfiles               ChildProfile[]
+  subscriptions               Subscription[]
   issuedPlaypassTickets       PlaypassTicket[]      @relation("PlaypassCashier")
   tableFeeSessions            TableFeeSession[]     @relation("TableFeeCustomer")
   openedTableFeeSessions      TableFeeSession[]     @relation("TableFeeCashier")
@@ -53,6 +55,48 @@ model User {
   updatedAt                   DateTime              @updatedAt
 
   @@map("users")
+}
+
+model ChildProfile {
+  id                   String         @id @default(cuid())
+  userId               String
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                 String
+  birthDate            DateTime?
+  gender               String?
+  learningLevel        String?
+  learningStyle        String?
+  interests            String[]       @default([])
+  favoriteThemes       String[]       @default([])
+  allergies            String?
+  personalizationNotes String?        @db.Text
+  isActive             Boolean        @default(true)
+  subscriptions        Subscription[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([userId, isActive])
+  @@map("child_profiles")
+}
+
+model SubscriptionActivity {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  description  String   @db.Text
+  contentType  String
+  videoUrl     String?
+  guideUrl     String?
+  thumbnailUrl String?
+  ageMin       Int?
+  ageMax       Int?
+  sortOrder    Int      @default(0)
+  isPublished  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, sortOrder])
+  @@map("subscription_activities")
 }
 
 model Account {
@@ -282,22 +326,26 @@ model ArticleCategory {
 }
 
 model Article {
-  id            String           @id @default(cuid())
-  title         String
-  slug          String           @unique
-  excerpt       String?
-  content       String           @db.Text // rich text HTML dari editor
-  coverImageUrl String?
-  status        ArticleStatus    @default(DRAFT)
-  publishedAt   DateTime?
-  views         Int              @default(0)
-  categoryId    String?
-  category      ArticleCategory? @relation(fields: [categoryId], references: [id])
-  authorId      String?
-  author        User?            @relation(fields: [authorId], references: [id])
-  comments      Comment[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id                   String           @id @default(cuid())
+  title                String
+  slug                 String           @unique
+  excerpt              String?
+  content              String           @db.Text // rich text HTML dari editor
+  coverImageUrl        String?
+  videoUrl             String?
+  videoProvider        String?
+  videoDurationSeconds Int?
+  isVideoFeatured      Boolean          @default(false)
+  status               ArticleStatus    @default(DRAFT)
+  publishedAt          DateTime?
+  views                Int              @default(0)
+  categoryId           String?
+  category             ArticleCategory? @relation(fields: [categoryId], references: [id])
+  authorId             String?
+  author               User?            @relation(fields: [authorId], references: [id])
+  comments             Comment[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   @@map("articles")
 }
@@ -530,6 +578,130 @@ model PreOrderReservation {
   @@index([userId, createdAt])
   @@index([campaignId, status])
   @@map("pre_order_reservations")
+}
+
+enum SubscriptionPlanInterval {
+  MONTHLY
+  QUARTERLY
+}
+
+enum SubscriptionStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionCycleStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  SKIPPED
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionDeliveryStatus {
+  SCHEDULED
+  PREPARING
+  SHIPPED
+  DELIVERED
+  SKIPPED
+  CANCELLED
+}
+
+model SubscriptionPlan {
+  id            String                   @id @default(cuid())
+  slug          String                   @unique
+  name          String
+  description   String                   @db.Text
+  price         Int
+  interval      SubscriptionPlanInterval
+  isActive      Boolean                  @default(true)
+  subscriptions Subscription[]
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                 String                 @id @default(cuid())
+  subscriptionNumber String                 @unique
+  userId             String
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId             String
+  plan               SubscriptionPlan       @relation(fields: [planId], references: [id])
+  childProfileId     String?
+  childProfile       ChildProfile?          @relation(fields: [childProfileId], references: [id], onDelete: SetNull)
+  status             SubscriptionStatus     @default(PENDING_PAYMENT)
+  startDate          DateTime               @default(now())
+  nextBillingAt      DateTime
+  nextDeliveryAt     DateTime
+  pausedUntil        DateTime?
+  cancelledAt        DateTime?
+  shippingName       String
+  shippingPhone      String
+  shippingAddress    String                 @db.Text
+  shippingCity       String
+  shippingProvince   String
+  shippingPostalCode String
+  cycles             SubscriptionCycle[]
+  deliveries         SubscriptionDelivery[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([userId, status])
+  @@index([status, nextBillingAt])
+  @@index([childProfileId])
+  @@map("subscriptions")
+}
+
+model SubscriptionCycle {
+  id                    String                  @id @default(cuid())
+  cycleNumber           String                  @unique
+  subscriptionId        String
+  subscription          Subscription            @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  periodStart           DateTime
+  periodEnd             DateTime
+  billingDueAt          DateTime
+  amount                Int
+  status                SubscriptionCycleStatus @default(PENDING_PAYMENT)
+  midtransOrderId       String?                 @unique
+  midtransSnapToken     String?
+  midtransTransactionId String?
+  paidAt                DateTime?
+  delivery              SubscriptionDelivery?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  @@index([subscriptionId, periodStart])
+  @@index([status, billingDueAt])
+  @@map("subscription_cycles")
+}
+
+model SubscriptionDelivery {
+  id              String                     @id @default(cuid())
+  deliveryNumber  String                     @unique
+  subscriptionId  String
+  subscription    Subscription               @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  cycleId         String                     @unique
+  cycle           SubscriptionCycle          @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  status          SubscriptionDeliveryStatus @default(SCHEDULED)
+  scheduledAt     DateTime
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  trackingNumber  String?
+  courier         String?
+  fulfillmentNote String?                    @db.Text
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([subscriptionId, scheduledAt])
+  @@index([status, scheduledAt])
+  @@map("subscription_deliveries")
 }
 
 // ============================================

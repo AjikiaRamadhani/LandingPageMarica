@@ -24,6 +24,13 @@ export async function POST(
 
   try {
     const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Silakan login untuk mengunduh printable" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await params;
     const body = (await request.json()) as {
       name?: string;
@@ -59,7 +66,7 @@ export async function POST(
     const lead = await prisma.printableLead.create({
       data: {
         printableId: printable.id,
-        userId: session?.user?.id ?? null,
+        userId: session.user.id,
         name,
         email,
         whatsapp,
@@ -83,7 +90,7 @@ export async function POST(
         data: { downloadCount: { increment: 1 } },
       });
 
-      if (session?.user?.id && printable.points > 0) {
+      if (printable.points > 0) {
         const idempotencyKey = `printable-download:${session.user.id}:${printable.id}`;
         const existingPointTransaction = await tx.pointTransaction.findUnique({
           where: { idempotencyKey },

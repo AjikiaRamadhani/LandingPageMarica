@@ -165,7 +165,7 @@ export async function POST(request: Request) {
     const updatedBooking = await prisma.eventBooking.update({
       where: { id: bookingResult.booking.id },
       data: {
-        midtransSnapToken: transaction.token,
+        midtransSnapToken: transaction.token ?? transaction.redirect_url,
       },
       include: { tickets: true },
     });

@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const { title, excerpt, content, coverImageUrl, categoryId, status, publishedAt } = validation.data;
+    const { title, excerpt, content, coverImageUrl, videoUrl, videoProvider, videoDurationSeconds, isVideoFeatured, categoryId, status, publishedAt } = validation.data;
     if (!title || !content) {
       return NextResponse.json({ error: "Judul dan konten wajib diisi" }, { status: 400 });
     }
@@ -105,6 +105,10 @@ export async function POST(request: Request) {
         excerpt,
         content,
         coverImageUrl,
+        videoUrl,
+        videoProvider,
+        videoDurationSeconds,
+        isVideoFeatured: isVideoFeatured ?? false,
         categoryId,
         status: finalStatus,
         publishedAt: finalStatus === "PUBLISHED" ? new Date(publishedAt ?? Date.now()) : null,

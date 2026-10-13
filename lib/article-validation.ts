@@ -6,6 +6,10 @@ export type ArticlePayload = {
   excerpt?: string | null;
   content?: string;
   coverImageUrl?: string | null;
+  videoUrl?: string | null;
+  videoProvider?: string | null;
+  videoDurationSeconds?: number | null;
+  isVideoFeatured?: boolean;
   categoryId?: string | null;
   status?: ArticleStatus;
   publishedAt?: string | null;
@@ -43,10 +47,12 @@ export function validateArticlePayload(
   const excerpt = optionalText(input.excerpt, "Excerpt", MAX_EXCERPT_LENGTH);
   const content = optionalText(input.content, "Konten", MAX_CONTENT_LENGTH);
   const coverImageUrl = optionalText(input.coverImageUrl, "URL cover", MAX_URL_LENGTH);
+  const videoUrl = optionalText(input.videoUrl, "URL video", MAX_URL_LENGTH);
+  const videoProvider = optionalText(input.videoProvider, "Provider video", 40);
   const categoryId = optionalText(input.categoryId, "Kategori", 100);
 
-  if (title.error || excerpt.error || content.error || coverImageUrl.error || categoryId.error) {
-    return { error: title.error ?? excerpt.error ?? content.error ?? coverImageUrl.error ?? categoryId.error };
+  if (title.error || excerpt.error || content.error || coverImageUrl.error || videoUrl.error || videoProvider.error || categoryId.error) {
+    return { error: title.error ?? excerpt.error ?? content.error ?? coverImageUrl.error ?? videoUrl.error ?? videoProvider.error ?? categoryId.error };
   }
 
   if (requireTitleAndContent && (!title.value || !content.value)) {
@@ -69,12 +75,23 @@ export function validateArticlePayload(
     publishedAt = new Date(publishedAt).toISOString();
   }
 
+  const videoDurationSeconds = input.videoDurationSeconds;
+  if (videoDurationSeconds !== undefined && videoDurationSeconds !== null && (!Number.isInteger(videoDurationSeconds) || Number(videoDurationSeconds) < 0)) {
+    return { error: "Durasi video tidak valid" };
+  }
+  const isVideoFeatured = input.isVideoFeatured;
+  if (isVideoFeatured !== undefined && typeof isVideoFeatured !== "boolean") return { error: "Status featured video tidak valid" };
+
   return {
     data: {
       title: title.value,
       excerpt: excerpt.value,
       content: content.value,
       coverImageUrl: coverImageUrl.value,
+      videoUrl: videoUrl.value,
+      videoProvider: videoProvider.value,
+      videoDurationSeconds: videoDurationSeconds as number | null | undefined,
+      isVideoFeatured: isVideoFeatured as boolean | undefined,
       categoryId: categoryId.value,
       status: status as ArticleStatus | undefined,
       publishedAt,

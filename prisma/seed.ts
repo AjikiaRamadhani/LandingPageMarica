@@ -456,6 +456,213 @@ async function main() {
   await prisma.productImage.upsert({ where: { id: 'seed-image-puzzle' }, update: { url: '/images/product2.png', productId: puzzle.id }, create: { id: 'seed-image-puzzle', url: '/images/product2.png', productId: puzzle.id } });
   await prisma.productImage.upsert({ where: { id: 'seed-image-sensory-kit' }, update: { url: '/images/product3.png', productId: sensoryKit.id }, create: { id: 'seed-image-sensory-kit', url: '/images/product3.png', productId: sensoryKit.id } });
 
+  const documentProductCategories = [
+    { name: 'WORKSHEET', slug: 'worksheet', colorTag: 'green', order: 1 },
+    { name: 'ENSIKLOPEDIA', slug: 'ensiklopedia', colorTag: 'blue', order: 2 },
+    { name: 'Buku Rasa Majalah', slug: 'buku-rasa-majalah', colorTag: 'orange', order: 3 },
+    { name: 'Cerita Bergambar Marica', slug: 'cerita-bergambar-marica', colorTag: 'purple', order: 4 },
+  ] as const;
+
+  const categoriesBySlug = new Map<string, string>();
+  for (const category of documentProductCategories) {
+    const record = await prisma.productCategory.upsert({
+      where: { slug: category.slug },
+      update: {
+        name: category.name,
+        colorTag: category.colorTag,
+        order: category.order,
+        isActive: true,
+      },
+      create: {
+        name: category.name,
+        slug: category.slug,
+        colorTag: category.colorTag,
+        order: category.order,
+        isActive: true,
+      },
+    });
+    categoriesBySlug.set(category.slug, record.id);
+  }
+
+  const documentProducts = [
+    {
+      name: 'Worksheet Ramadhan Activity for Kids',
+      slug: 'worksheet-ramadhan-activity-for-kids',
+      category: 'worksheet',
+      price: 49000,
+      description:
+        'Lembar kerja interaktif bertema Ramadhan dengan jurnal ibadah harian, aktivitas mewarnai, labirin, dan tantangan kebaikan untuk membantu anak memahami makna puasa dengan cara yang menyenangkan.',
+    },
+    {
+      name: 'Buku Ensiklopedia Bangun Ruang',
+      slug: 'buku-ensiklopedia-bangun-ruang',
+      category: 'ensiklopedia',
+      price: 49000,
+      description:
+        'Buku visual interaktif untuk membantu anak memahami konsep bangun ruang dan membangun fondasi matematika dengan cara yang nyata dan menyenangkan.',
+    },
+    {
+      name: 'Buku Ensiklopedia Mengenal Bilangan',
+      slug: 'buku-ensiklopedia-mengenal-bilangan',
+      category: 'ensiklopedia',
+      price: 29000,
+      description:
+        'Buku visual dengan ilustrasi dan penjelasan interaktif untuk mengenalkan angka kepada anak melalui petualangan belajar yang seru dan mudah dipahami.',
+    },
+    {
+      name: 'Buku Ensiklopedia Belajar Panjang & Perkalian',
+      slug: 'buku-ensiklopedia-belajar-panjang-perkalian',
+      category: 'ensiklopedia',
+      price: 29000,
+      description:
+        'Buku visual yang mengubah konsep panjang dan perkalian menjadi aktivitas belajar yang seru sehingga anak lebih mudah memahami logika hitungan.',
+    },
+    {
+      name: 'Terbang Ke Luar Angkasa',
+      slug: 'terbang-ke-luar-angkasa',
+      category: 'buku-rasa-majalah',
+      price: 29000,
+      description:
+        'Majalah edukasi visual berisi fakta astronomi dan ilustrasi memukau yang mengajak anak menjelajahi galaksi dan mengenal dunia luar angkasa.',
+    },
+    {
+      name: 'Penemuan Robot Masa Depan',
+      slug: 'penemuan-robot-masa-depan',
+      category: 'buku-rasa-majalah',
+      price: 29000,
+      description:
+        'Majalah visual tentang inovasi robotika yang memicu kreativitas dan imajinasi anak untuk menjadi penemu hebat di masa depan.',
+    },
+    {
+      name: 'Kreasi Bangun Ruang',
+      slug: 'kreasi-bangun-ruang',
+      category: 'buku-rasa-majalah',
+      price: 29000,
+      description:
+        'Buku aktivitas interaktif untuk melatih kecerdasan spasial anak melalui kegiatan melipat, menempel, dan merakit bentuk tiga dimensi.',
+    },
+    {
+      name: 'Ayo Mengenal Anatomi',
+      slug: 'ayo-mengenal-anatomi',
+      category: 'buku-rasa-majalah',
+      price: 29000,
+      description:
+        'Majalah visual yang mengenalkan organ dan sistem tubuh manusia melalui ilustrasi detail agar belajar biologi terasa seperti petualangan.',
+    },
+    {
+      name: 'Ibadah Ke Tanah Suci',
+      slug: 'ibadah-ke-tanah-suci',
+      category: 'buku-rasa-majalah',
+      price: 29000,
+      description:
+        'Majalah visual interaktif yang mengenalkan tata cara haji dan umrah serta menanamkan rasa cinta kepada Baitullah sejak dini.',
+    },
+    {
+      name: 'Petualangan Di Dunia Dinosaurus',
+      slug: 'petualangan-di-dunia-dinosaurus',
+      category: 'buku-rasa-majalah',
+      price: 29000,
+      description:
+        'Majalah visual berisi fakta seru dan ilustrasi dinosaurus yang mengajak anak menjelajahi dunia prasejarah.',
+    },
+    {
+      name: 'Jelajahi Dunia Dengan Transportasi (Bonus Video)',
+      slug: 'jelajahi-dunia-dengan-transportasi',
+      category: 'buku-rasa-majalah',
+      price: 29000,
+      description:
+        'Majalah visual tentang berbagai kendaraan di dunia yang dilengkapi bonus video interaktif untuk membuat pengalaman belajar semakin nyata.',
+    },
+    {
+      name: 'Memilih Keputusan Terbaik',
+      slug: 'memilih-keputusan-terbaik',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Cerita visual yang melatih kemampuan berpikir kritis dan karakter anak melalui skenario pengambilan keputusan dalam kehidupan sehari-hari.',
+    },
+    {
+      name: 'Pemilihan Hewan Terbaik (Bonus Video)',
+      slug: 'pemilihan-hewan-terbaik',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Cerita visual tentang keunikan fauna yang dilengkapi bonus video interaktif untuk membantu anak mengenal karakter dan kelebihan setiap hewan.',
+    },
+    {
+      name: 'Sahabat Baru dari Zaman Purba',
+      slug: 'sahabat-baru-dari-zaman-purba',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Cerita visual tentang persahabatan dengan makhluk purbakala yang memicu imajinasi dan empati anak.',
+    },
+    {
+      name: 'CIT CIT CIT',
+      slug: 'cit-cit-cit',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Kisah Mari dan Caca tentang mengembalikan anak burung ke sarangnya sekaligus mengajarkan kasih sayang dan kepedulian terhadap makhluk hidup.',
+    },
+    {
+      name: 'Kunjungan ke Rumah Bibi Megi (Bonus Video)',
+      slug: 'kunjungan-ke-rumah-bibi-megi',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Cerita visual dengan bonus video yang mengajarkan etika bertamu dan kebersamaan melalui kisah keluarga yang ceria.',
+    },
+    {
+      name: 'Petualangan Mari Menuju Rumah Jaja (Bonus Video)',
+      slug: 'petualangan-mari-menuju-rumah-jaja',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Cerita visual dengan bonus video yang melatih kemandirian dan kecerdasan spasial melalui rute perjalanan penuh warna.',
+    },
+    {
+      name: 'Perjalanan Tarsius Kecil',
+      slug: 'perjalanan-tarsius-kecil',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Cerita visual tentang petualangan tarsius di hutan yang mengenalkan keajaiban satwa langka Indonesia dan pentingnya menjaga alam.',
+    },
+    {
+      name: 'Merawat Bunga Matahari',
+      slug: 'merawat-bunga-matahari',
+      category: 'cerita-bergambar-marica',
+      price: 19000,
+      description:
+        'Cerita visual dengan panduan praktis yang mengajarkan tanggung jawab, cara menanam, dan kecintaan terhadap alam.',
+    },
+  ] as const;
+
+  for (const item of documentProducts) {
+    await prisma.product.upsert({
+      where: { slug: item.slug },
+      update: {
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        stock: 100,
+        categoryId: categoriesBySlug.get(item.category),
+        isActive: true,
+      },
+      create: {
+        name: item.name,
+        slug: item.slug,
+        description: item.description,
+        price: item.price,
+        stock: 100,
+        categoryId: categoriesBySlug.get(item.category),
+        highlights: [],
+        isActive: true,
+      },
+    });
+  }
+
   // 20. Articles & Categories
   await prisma.comment.deleteMany();
   await prisma.article.deleteMany();
@@ -532,6 +739,24 @@ async function main() {
       status: 'PUBLISHED',
     },
   });
+  await prisma.subscriptionPlan.upsert({
+    where: { slug: 'edu-kit-bulanan' },
+    update: { name: 'Edu-Kit Bulanan', description: 'Paket aktivitas edukatif yang dikirim setiap bulan.', price: 199000, interval: 'MONTHLY', isActive: true },
+    create: { slug: 'edu-kit-bulanan', name: 'Edu-Kit Bulanan', description: 'Paket aktivitas edukatif yang dikirim setiap bulan.', price: 199000, interval: 'MONTHLY', isActive: true },
+  });
+  await prisma.subscriptionPlan.upsert({
+    where: { slug: 'edu-kit-triwulan' },
+    update: { name: 'Edu-Kit Triwulan', description: 'Paket aktivitas edukatif untuk tiga bulan dengan harga spesial.', price: 549000, interval: 'QUARTERLY', isActive: true },
+    create: { slug: 'edu-kit-triwulan', name: 'Edu-Kit Triwulan', description: 'Paket aktivitas edukatif untuk tiga bulan dengan harga spesial.', price: 549000, interval: 'QUARTERLY', isActive: true },
+  });
+  const subscriptionActivities = [
+    { slug: 'eksperimen-warna-di-rumah', title: 'Eksperimen Warna di Rumah', description: 'Panduan aktivitas sederhana untuk mengenalkan pencampuran warna menggunakan bahan yang aman di rumah.', contentType: 'GUIDE', videoUrl: 'https://www.youtube.com/watch?v=marica-demo-warna', guideUrl: '/activity-guides/eksperimen-warna-di-rumah.pdf', thumbnailUrl: '/images/activity-color-mixing.png', ageMin: 4, ageMax: 8, sortOrder: 1, isPublished: true },
+    { slug: 'misi-mencari-bentuk', title: 'Misi Mencari Bentuk', description: 'Aktivitas observasi untuk melatih kemampuan mengenali bentuk dan memecahkan tantangan kecil bersama orang tua.', contentType: 'VIDEO', videoUrl: 'https://www.youtube.com/watch?v=marica-demo-bentuk', guideUrl: null, thumbnailUrl: '/images/activity-shapes.png', ageMin: 3, ageMax: 7, sortOrder: 2, isPublished: true },
+    { slug: 'cerita-sebelum-tidur', title: 'Cerita Sebelum Tidur: Berani Mencoba', description: 'Cerita singkat dan pertanyaan refleksi untuk membangun keberanian anak mencoba hal baru.', contentType: 'GUIDE', videoUrl: null, guideUrl: '/activity-guides/cerita-berani-mencoba.pdf', thumbnailUrl: '/images/activity-story.png', ageMin: 3, ageMax: 6, sortOrder: 3, isPublished: true },
+  ];
+  for (const activity of subscriptionActivities) {
+    await prisma.subscriptionActivity.upsert({ where: { slug: activity.slug }, update: activity, create: activity });
+  }
 }
 
 main()
