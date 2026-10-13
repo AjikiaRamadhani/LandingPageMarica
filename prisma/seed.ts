@@ -749,6 +749,14 @@ async function main() {
     update: { name: 'Edu-Kit Triwulan', description: 'Paket aktivitas edukatif untuk tiga bulan dengan harga spesial.', price: 549000, interval: 'QUARTERLY', isActive: true },
     create: { slug: 'edu-kit-triwulan', name: 'Edu-Kit Triwulan', description: 'Paket aktivitas edukatif untuk tiga bulan dengan harga spesial.', price: 549000, interval: 'QUARTERLY', isActive: true },
   });
+  const subscriptionActivities = [
+    { slug: 'eksperimen-warna-di-rumah', title: 'Eksperimen Warna di Rumah', description: 'Panduan aktivitas sederhana untuk mengenalkan pencampuran warna menggunakan bahan yang aman di rumah.', contentType: 'GUIDE', videoUrl: 'https://www.youtube.com/watch?v=marica-demo-warna', guideUrl: '/activity-guides/eksperimen-warna-di-rumah.pdf', thumbnailUrl: '/images/activity-color-mixing.png', ageMin: 4, ageMax: 8, sortOrder: 1, isPublished: true },
+    { slug: 'misi-mencari-bentuk', title: 'Misi Mencari Bentuk', description: 'Aktivitas observasi untuk melatih kemampuan mengenali bentuk dan memecahkan tantangan kecil bersama orang tua.', contentType: 'VIDEO', videoUrl: 'https://www.youtube.com/watch?v=marica-demo-bentuk', guideUrl: null, thumbnailUrl: '/images/activity-shapes.png', ageMin: 3, ageMax: 7, sortOrder: 2, isPublished: true },
+    { slug: 'cerita-sebelum-tidur', title: 'Cerita Sebelum Tidur: Berani Mencoba', description: 'Cerita singkat dan pertanyaan refleksi untuk membangun keberanian anak mencoba hal baru.', contentType: 'GUIDE', videoUrl: null, guideUrl: '/activity-guides/cerita-berani-mencoba.pdf', thumbnailUrl: '/images/activity-story.png', ageMin: 3, ageMax: 6, sortOrder: 3, isPublished: true },
+  ];
+  for (const activity of subscriptionActivities) {
+    await prisma.subscriptionActivity.upsert({ where: { slug: activity.slug }, update: activity, create: activity });
+  }
 }
 
 main()
