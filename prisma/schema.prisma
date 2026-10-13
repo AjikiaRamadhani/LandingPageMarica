@@ -43,6 +43,7 @@ model User {
   playpassTickets             PlaypassTicket[]      @relation("PlaypassCustomer")
   playpassBookings            PlaypassBooking[]
   preOrderReservations        PreOrderReservation[]
+  childProfiles               ChildProfile[]
   subscriptions               Subscription[]
   issuedPlaypassTickets       PlaypassTicket[]      @relation("PlaypassCashier")
   tableFeeSessions            TableFeeSession[]     @relation("TableFeeCustomer")
@@ -54,6 +55,48 @@ model User {
   updatedAt                   DateTime              @updatedAt
 
   @@map("users")
+}
+
+model ChildProfile {
+  id                   String         @id @default(cuid())
+  userId               String
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                 String
+  birthDate            DateTime?
+  gender               String?
+  learningLevel        String?
+  learningStyle        String?
+  interests            String[]       @default([])
+  favoriteThemes       String[]       @default([])
+  allergies            String?
+  personalizationNotes String?        @db.Text
+  isActive             Boolean        @default(true)
+  subscriptions        Subscription[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([userId, isActive])
+  @@map("child_profiles")
+}
+
+model SubscriptionActivity {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  description  String   @db.Text
+  contentType  String
+  videoUrl     String?
+  guideUrl     String?
+  thumbnailUrl String?
+  ageMin       Int?
+  ageMax       Int?
+  sortOrder    Int      @default(0)
+  isPublished  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isPublished, sortOrder])
+  @@map("subscription_activities")
 }
 
 model Account {
@@ -283,22 +326,26 @@ model ArticleCategory {
 }
 
 model Article {
-  id            String           @id @default(cuid())
-  title         String
-  slug          String           @unique
-  excerpt       String?
-  content       String           @db.Text // rich text HTML dari editor
-  coverImageUrl String?
-  status        ArticleStatus    @default(DRAFT)
-  publishedAt   DateTime?
-  views         Int              @default(0)
-  categoryId    String?
-  category      ArticleCategory? @relation(fields: [categoryId], references: [id])
-  authorId      String?
-  author        User?            @relation(fields: [authorId], references: [id])
-  comments      Comment[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id                   String           @id @default(cuid())
+  title                String
+  slug                 String           @unique
+  excerpt              String?
+  content              String           @db.Text // rich text HTML dari editor
+  coverImageUrl        String?
+  videoUrl             String?
+  videoProvider        String?
+  videoDurationSeconds Int?
+  isVideoFeatured      Boolean          @default(false)
+  status               ArticleStatus    @default(DRAFT)
+  publishedAt          DateTime?
+  views                Int              @default(0)
+  categoryId           String?
+  category             ArticleCategory? @relation(fields: [categoryId], references: [id])
+  authorId             String?
+  author               User?            @relation(fields: [authorId], references: [id])
+  comments             Comment[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   @@map("articles")
 }
@@ -587,6 +634,8 @@ model Subscription {
   user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   planId             String
   plan               SubscriptionPlan       @relation(fields: [planId], references: [id])
+  childProfileId     String?
+  childProfile       ChildProfile?          @relation(fields: [childProfileId], references: [id], onDelete: SetNull)
   status             SubscriptionStatus     @default(PENDING_PAYMENT)
   startDate          DateTime               @default(now())
   nextBillingAt      DateTime
@@ -606,6 +655,7 @@ model Subscription {
 
   @@index([userId, status])
   @@index([status, nextBillingAt])
+  @@index([childProfileId])
   @@map("subscriptions")
 }
 

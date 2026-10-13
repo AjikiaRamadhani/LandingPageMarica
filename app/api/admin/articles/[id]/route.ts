@@ -64,7 +64,7 @@ export async function PUT(
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const { title, excerpt, content, coverImageUrl, categoryId, status, publishedAt } = validation.data;
+    const { title, excerpt, content, coverImageUrl, videoUrl, videoProvider, videoDurationSeconds, isVideoFeatured, categoryId, status, publishedAt } = validation.data;
 
     const existing = await prisma.article.findUnique({ where: { id } });
     if (!existing) {
@@ -99,6 +99,10 @@ export async function PUT(
         ...(excerpt !== undefined ? { excerpt } : {}),
         ...(content !== undefined ? { content } : {}),
         ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
+        ...(videoUrl !== undefined ? { videoUrl } : {}),
+        ...(videoProvider !== undefined ? { videoProvider } : {}),
+        ...(videoDurationSeconds !== undefined ? { videoDurationSeconds } : {}),
+        ...(isVideoFeatured !== undefined ? { isVideoFeatured } : {}),
         ...(categoryId !== undefined ? { categoryId } : {}),
         ...(status !== undefined ? { status } : {}),
         publishedAt: nextPublishedAt,

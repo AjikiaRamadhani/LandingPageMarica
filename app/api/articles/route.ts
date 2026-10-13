@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Number(searchParams.get("limit") ?? 10));
     const categorySlug = searchParams.get("category");
     const search = searchParams.get("search");
+    const media = searchParams.get("media");
 
     const where = {
       status: "PUBLISHED" as const,
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
             ],
           }
         : {}),
+      ...(media === "video" ? { videoUrl: { not: null } } : {}),
     };
 
     const [articles, total] = await Promise.all([
