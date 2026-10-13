@@ -43,6 +43,7 @@ model User {
   playpassTickets             PlaypassTicket[]      @relation("PlaypassCustomer")
   playpassBookings            PlaypassBooking[]
   preOrderReservations        PreOrderReservation[]
+  subscriptions               Subscription[]
   issuedPlaypassTickets       PlaypassTicket[]      @relation("PlaypassCashier")
   tableFeeSessions            TableFeeSession[]     @relation("TableFeeCustomer")
   openedTableFeeSessions      TableFeeSession[]     @relation("TableFeeCashier")
@@ -530,6 +531,127 @@ model PreOrderReservation {
   @@index([userId, createdAt])
   @@index([campaignId, status])
   @@map("pre_order_reservations")
+}
+
+enum SubscriptionPlanInterval {
+  MONTHLY
+  QUARTERLY
+}
+
+enum SubscriptionStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionCycleStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  SKIPPED
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionDeliveryStatus {
+  SCHEDULED
+  PREPARING
+  SHIPPED
+  DELIVERED
+  SKIPPED
+  CANCELLED
+}
+
+model SubscriptionPlan {
+  id            String                   @id @default(cuid())
+  slug          String                   @unique
+  name          String
+  description   String                   @db.Text
+  price         Int
+  interval      SubscriptionPlanInterval
+  isActive      Boolean                  @default(true)
+  subscriptions Subscription[]
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                 String                 @id @default(cuid())
+  subscriptionNumber String                 @unique
+  userId             String
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId             String
+  plan               SubscriptionPlan       @relation(fields: [planId], references: [id])
+  status             SubscriptionStatus     @default(PENDING_PAYMENT)
+  startDate          DateTime               @default(now())
+  nextBillingAt      DateTime
+  nextDeliveryAt     DateTime
+  pausedUntil        DateTime?
+  cancelledAt        DateTime?
+  shippingName       String
+  shippingPhone      String
+  shippingAddress    String                 @db.Text
+  shippingCity       String
+  shippingProvince   String
+  shippingPostalCode String
+  cycles             SubscriptionCycle[]
+  deliveries         SubscriptionDelivery[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([userId, status])
+  @@index([status, nextBillingAt])
+  @@map("subscriptions")
+}
+
+model SubscriptionCycle {
+  id                    String                  @id @default(cuid())
+  cycleNumber           String                  @unique
+  subscriptionId        String
+  subscription          Subscription            @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  periodStart           DateTime
+  periodEnd             DateTime
+  billingDueAt          DateTime
+  amount                Int
+  status                SubscriptionCycleStatus @default(PENDING_PAYMENT)
+  midtransOrderId       String?                 @unique
+  midtransSnapToken     String?
+  midtransTransactionId String?
+  paidAt                DateTime?
+  delivery              SubscriptionDelivery?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  @@index([subscriptionId, periodStart])
+  @@index([status, billingDueAt])
+  @@map("subscription_cycles")
+}
+
+model SubscriptionDelivery {
+  id              String                     @id @default(cuid())
+  deliveryNumber  String                     @unique
+  subscriptionId  String
+  subscription    Subscription               @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  cycleId         String                     @unique
+  cycle           SubscriptionCycle          @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  status          SubscriptionDeliveryStatus @default(SCHEDULED)
+  scheduledAt     DateTime
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  trackingNumber  String?
+  courier         String?
+  fulfillmentNote String?                    @db.Text
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([subscriptionId, scheduledAt])
+  @@index([status, scheduledAt])
+  @@map("subscription_deliveries")
 }
 
 // ============================================

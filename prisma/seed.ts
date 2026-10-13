@@ -739,6 +739,16 @@ async function main() {
       status: 'PUBLISHED',
     },
   });
+  await prisma.subscriptionPlan.upsert({
+    where: { slug: 'edu-kit-bulanan' },
+    update: { name: 'Edu-Kit Bulanan', description: 'Paket aktivitas edukatif yang dikirim setiap bulan.', price: 199000, interval: 'MONTHLY', isActive: true },
+    create: { slug: 'edu-kit-bulanan', name: 'Edu-Kit Bulanan', description: 'Paket aktivitas edukatif yang dikirim setiap bulan.', price: 199000, interval: 'MONTHLY', isActive: true },
+  });
+  await prisma.subscriptionPlan.upsert({
+    where: { slug: 'edu-kit-triwulan' },
+    update: { name: 'Edu-Kit Triwulan', description: 'Paket aktivitas edukatif untuk tiga bulan dengan harga spesial.', price: 549000, interval: 'QUARTERLY', isActive: true },
+    create: { slug: 'edu-kit-triwulan', name: 'Edu-Kit Triwulan', description: 'Paket aktivitas edukatif untuk tiga bulan dengan harga spesial.', price: 549000, interval: 'QUARTERLY', isActive: true },
+  });
 }
 
 main()
