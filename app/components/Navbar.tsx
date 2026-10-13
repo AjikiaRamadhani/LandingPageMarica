@@ -87,6 +87,7 @@ const simpleMenus = {
     { label: "Reservasi Meja", href: "/reservasi" },
   ],
   more: [
+    { label: "Subscription Edu-Kit", href: "/subscription" },
     { label: "Rilis Eksklusif", href: "/preorder" },
     { label: "Sekolah & Bisnis", href: "/b2b" },
   ],
