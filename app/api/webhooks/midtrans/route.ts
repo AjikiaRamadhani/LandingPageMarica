@@ -183,6 +183,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "OK" });
     }
 
+    if (order_id.startsWith("SUBC-")) {
+      const cycle = await prisma.subscriptionCycle.findUnique({ where: { midtransOrderId: order_id }, include: { subscription: { include: { plan: true } } } });
+      if (!cycle) return NextResponse.json({ error: "Subscription cycle not found" }, { status: 404 });
+      if (Number(gross_amount) !== cycle.amount) return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
+      if (transaction_status === "capture" || transaction_status === "settlement") {
+        await prisma.$transaction(async (transaction) => {
+          const paid = await transaction.subscriptionCycle.updateMany({ where: { id: cycle.id, status: "PENDING_PAYMENT" }, data: { status: "PAID", midtransTransactionId: transaction_id, paidAt: new Date() } });
+          if (!paid.count) return;
+          await transaction.subscription.update({ where: { id: cycle.subscriptionId }, data: { status: "ACTIVE", nextBillingAt: cycle.periodEnd, nextDeliveryAt: cycle.periodStart } });
+          await transaction.subscriptionDelivery.updateMany({ where: { cycleId: cycle.id, status: "SCHEDULED" }, data: { status: "PREPARING" } });
+        });
+      } else if (transaction_status === "deny" || transaction_status === "cancel" || transaction_status === "expire") {
+        await prisma.$transaction(async (transaction) => {
+          const changed = await transaction.subscriptionCycle.updateMany({ where: { id: cycle.id, status: "PENDING_PAYMENT" }, data: { status: transaction_status === "expire" ? "EXPIRED" : "CANCELLED" } });
+          if (changed.count) await transaction.subscription.update({ where: { id: cycle.subscriptionId }, data: { status: "PAST_DUE" } });
+        });
+      }
+      return NextResponse.json({ message: "OK" });
+    }
+
     const order = await prisma.order.findUnique({
       where: { midtransOrderId: order_id },
       include: { items: true },
