@@ -24,6 +24,7 @@ type SubscriptionPlan = {
   price: number;
   interval: "MONTHLY" | "QUARTERLY";
 };
+type ChildProfile = { id: string; name: string; isActive: boolean };
 
 type ShippingForm = {
   shippingName: string;
@@ -72,6 +73,8 @@ export default function SubscriptionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [childProfileId, setChildProfileId] = useState("");
 
   useEffect(() => {
     if (!planId) return;
@@ -90,6 +93,7 @@ export default function SubscriptionDetailPage() {
         setError(loadError instanceof Error ? loadError.message : "Paket gagal dimuat");
       })
       .finally(() => setIsLoading(false));
+    fetch("/api/children", { cache: "no-store" }).then(async (response) => response.ok ? response.json() : []).then((data) => setChildren(Array.isArray(data) ? data.filter((child) => child.isActive) : [])).catch(() => setChildren([]));
   }, [planId]);
 
   const submitSubscription = async (event: FormEvent<HTMLFormElement>) => {
@@ -102,7 +106,7 @@ export default function SubscriptionDetailPage() {
       const response = await fetch("/api/subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: plan.id, ...form }),
+        body: JSON.stringify({ planId: plan.id, childProfileId: childProfileId || undefined, ...form }),
       });
       const data = await response.json().catch(() => null);
       if (response.status === 401) {
@@ -245,6 +249,7 @@ export default function SubscriptionDetailPage() {
               </div>
             </div>
             <form onSubmit={submitSubscription} className="mt-7 grid gap-4 sm:grid-cols-2">
+              <label className="text-sm font-semibold sm:col-span-2">Profil anak <span className="font-normal text-marica-ink-soft">(opsional)</span><select value={childProfileId} onChange={(event) => setChildProfileId(event.target.value)} className="mt-2 w-full rounded-xl border border-marica-ink/15 bg-white px-4 py-3 text-sm font-normal"><option value="">Pilih nanti</option>{children.map((child) => <option key={child.id} value={child.id}>{child.name}</option>)}</select><span className="mt-1 block text-xs font-normal text-marica-ink-soft">Profil anak dipakai untuk personalisasi Edu-Kit.</span></label>
               {([
                 ["shippingName", "Nama penerima", "Budi atau nama orang tua"],
                 ["shippingPhone", "Nomor WhatsApp", "08xxxxxxxxxx"],

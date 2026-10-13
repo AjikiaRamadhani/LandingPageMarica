@@ -73,6 +73,12 @@ const navItems = [
     enabled: true,
   },
   {
+    label: "Subscriptions",
+    href: "/admin/subscriptions",
+    icon: CalendarDays,
+    enabled: true,
+  },
+  {
     label: "Pengaturan",
     href: "/admin/pengaturan",
     icon: Settings,

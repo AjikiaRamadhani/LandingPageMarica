@@ -20,7 +20,9 @@ const hasBookingDelegates =
 const hasSubscriptionDelegates =
   cachedPrisma &&
   typeof cachedPrisma.subscriptionPlan !== "undefined" &&
-  typeof cachedPrisma.subscription !== "undefined";
+  typeof cachedPrisma.subscription !== "undefined" &&
+  typeof cachedPrisma.childProfile !== "undefined" &&
+  typeof cachedPrisma.subscriptionActivity !== "undefined";
 
 export const prisma =
   (hasBookingDelegates && hasSubscriptionDelegates ? cachedPrisma : undefined) ??

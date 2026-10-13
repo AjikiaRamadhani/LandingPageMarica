@@ -88,6 +88,7 @@ const simpleMenus = {
   ],
   more: [
     { label: "Subscription Edu-Kit", href: "/subscription" },
+    { label: "Video Showcase", href: "/video" },
     { label: "Rilis Eksklusif", href: "/preorder" },
     { label: "Sekolah & Bisnis", href: "/b2b" },
   ],
