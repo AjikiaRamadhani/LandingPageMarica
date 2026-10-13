@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       return tx.preOrderReservation.create({ data: { reservationNumber: number, campaignId: campaign.id, userId, customerName: session.user.name ?? "Pelanggan Marica", customerEmail: userEmail, customerWhatsapp: whatsapp.value ?? null, quantity: quantity.value, totalPrice: campaign.price * quantity.value } });
     });
     const transaction = await snap.createTransaction({ transaction_details: { order_id: number, gross_amount: reservation.totalPrice }, customer_details: { first_name: reservation.customerName, email: reservation.customerEmail, phone: reservation.customerWhatsapp ?? undefined }, item_details: [{ id: campaign.product.id, price: campaign.price, quantity: reservation.quantity, name: campaign.title.slice(0, 50) }] });
-    const updated = await prisma.preOrderReservation.update({ where: { id: reservation.id }, data: { midtransOrderId: number, midtransSnapToken: transaction.token } });
+    const updated = await prisma.preOrderReservation.update({ where: { id: reservation.id }, data: { midtransOrderId: number, midtransSnapToken: transaction.token ?? transaction.redirect_url } });
     return NextResponse.json({ reservation: updated, snapToken: transaction.token, redirectUrl: transaction.redirect_url }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "PREORDER_SOLD_OUT") return NextResponse.json({ error: "Sisa kuota pre-order tidak mencukupi" }, { status: 409 });

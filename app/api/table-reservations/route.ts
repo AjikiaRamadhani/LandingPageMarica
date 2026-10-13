@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     const transaction = await snap.createTransaction({ transaction_details: { order_id: bookingNumber, gross_amount: totalPrice }, customer_details: { first_name: reservation.customerName, email: reservation.customerEmail, phone: reservation.customerPhone ?? undefined }, item_details: [{ id: availability.package.id, price: availability.package.price, quantity: 1, name: availability.package.name.slice(0, 50) }, ...fnb.items.map((item) => ({ id: item.fnbProductId, price: item.unitPrice, quantity: item.quantity, name: `F&B ${item.fnbProductId}` }))] });
-    const updated = await prisma.tableReservation.update({ where: { id: reservation.id }, data: { midtransOrderId: bookingNumber, midtransSnapToken: transaction.token } });
+    const updated = await prisma.tableReservation.update({ where: { id: reservation.id }, data: { midtransOrderId: bookingNumber, midtransSnapToken: transaction.token ?? transaction.redirect_url } });
     auditAction({ action: "table_reservation_created", status: "success", payload: { reservationNumber: bookingNumber, packageId, userId: session.user.id } });
     return NextResponse.json({ reservation: updated, snapToken: transaction.token, redirectUrl: transaction.redirect_url }, { status: 201 });
   } catch (error) {

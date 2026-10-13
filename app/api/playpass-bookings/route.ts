@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         ...fnb.items.map((item) => ({ id: item.fnbProductId, price: item.unitPrice, quantity: item.quantity, name: `F&B ${item.fnbProductId}` })),
       ],
     });
-    const updated = await prisma.playpassBooking.update({ where: { id: booking.id }, data: { midtransOrderId: number, midtransSnapToken: transaction.token } });
+    const updated = await prisma.playpassBooking.update({ where: { id: booking.id }, data: { midtransOrderId: number, midtransSnapToken: transaction.token ?? transaction.redirect_url } });
     auditAction({ action: "playpass_booking_created", status: "success", payload: { bookingNumber: number, packageId, userId: session.user.id } });
     return NextResponse.json({ booking: updated, snapToken: transaction.token, redirectUrl: transaction.redirect_url }, { status: 201 });
   } catch (error) {

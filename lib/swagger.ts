@@ -277,6 +277,7 @@ export const getApiDocs = () => {
   add("/api/shipping/reverse-geocode", "get", "Reverse geocode coordinates", "Shipping", { parameters: [queryParam("latitude", "Latitude."), queryParam("longitude", "Longitude.")], success: objectSchema, errorCodes: ["400", "500"] });
   add("/api/webhooks/midtrans", "get", "Check Midtrans webhook status", "Webhooks", { success: objectSchema, errorCodes: ["500"] });
   add("/api/webhooks/midtrans", "post", "Process Midtrans notification", "Webhooks", { requestBody: objectSchema, success: objectSchema, errorCodes: ["400", "500"] });
+  add("/api/webhooks/winpay", "post", "Process WinPay Checkout Page callback", "Webhooks", { requestBody: objectSchema, success: objectSchema, errorCodes: ["400", "500"] });
 
   // Admin API.
   add("/api/admin/analytics", "get", "Get admin analytics", "Admin", { admin: true, success: objectSchema, errorCodes: ["401", "403", "500"] });

@@ -369,6 +369,7 @@ export async function POST(request: Request) {
         },
         customer_details: {
           first_name: shippingNameValue,
+          email: session.user.email ?? undefined,
           phone: shippingPhoneValue,
           shipping_address: {
             address: shippingAddressValue,
@@ -381,7 +382,9 @@ export async function POST(request: Request) {
 
       await prisma.order.update({
         where: { id: order.id },
-        data: { midtransSnapToken: transaction.token },
+        // Kolom lama dipakai sebagai payment reference agar kompatibel dengan
+        // order existing: token Midtrans atau URL Checkout Page/WhatsApp.
+        data: { midtransSnapToken: transaction.token ?? transaction.redirect_url },
       });
     } catch (error) {
       await prisma.$transaction(async (tx) => {

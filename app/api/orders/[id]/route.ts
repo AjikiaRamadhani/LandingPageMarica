@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { coreApi } from "@/lib/midtrans";
+import { coreApi, snap } from "@/lib/midtrans";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
 import { refundRedeemedPointsInTransaction } from "@/lib/points";
 import { addProductAvailability } from "@/lib/order-product-availability";
@@ -112,7 +112,7 @@ export async function POST(
     const { id } = await params;
     const order = await prisma.order.findUnique({
       where: { id },
-      include: { items: true },
+      include: { items: true, user: { select: { email: true } } },
     });
 
     if (!order || order.userId !== session.user.id) {
@@ -123,8 +123,26 @@ export async function POST(
       return NextResponse.json(await addProductAvailability([order]).then(([item]) => item));
     }
 
+    const hasLegacyWhatsAppFallback = order.midtransSnapToken?.startsWith("https://wa.me/") ?? false;
+    if (!order.midtransSnapToken || hasLegacyWhatsAppFallback) {
+      const paymentReference = order.midtransOrderId || order.orderNumber;
+      const transaction = await snap.createTransaction({
+        transaction_details: { order_id: paymentReference, gross_amount: order.total },
+        customer_details: { first_name: order.shippingName, email: order.user.email ?? undefined, phone: order.shippingPhone },
+        item_details: order.items.map((item) => ({ id: item.productId || item.id, price: item.price, quantity: item.quantity, name: item.productName.slice(0, 50) })),
+      });
+      const refreshed = await prisma.order.update({ where: { id: order.id }, data: { midtransOrderId: paymentReference, midtransSnapToken: transaction.token ?? transaction.redirect_url }, include: { items: true } });
+      return NextResponse.json(await addProductAvailability([refreshed]).then(([item]) => item));
+    }
+
     if (!order.midtransOrderId) {
       return NextResponse.json({ error: "Referensi pembayaran tidak ditemukan" }, { status: 400 });
+    }
+
+    // WinPay Checkout Page dan fallback WhatsApp tidak memiliki Snap token.
+    // Statusnya menunggu callback WinPay atau konfirmasi manual via WhatsApp.
+    if (order.midtransSnapToken?.startsWith("http")) {
+      return NextResponse.json(await addProductAvailability([order]).then(([item]) => item));
     }
 
     const transactionApi = (
