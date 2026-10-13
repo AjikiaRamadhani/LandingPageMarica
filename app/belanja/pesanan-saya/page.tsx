@@ -98,15 +98,27 @@ export default function PesananSayaPage() {
 
   const handleBayarSekarang = async (order: ApiOrder) => {
     setPayError(null);
-    if (!order.midtransSnapToken) {
-      setPayError(
-        "Token pembayaran untuk pesanan ini tidak ditemukan. Coba muat ulang halaman.",
-      );
+    let paymentReference = order.midtransSnapToken ?? "";
+    setPayingOrderId(order.id);
+    const hasLegacyWhatsAppFallback = paymentReference.startsWith("https://wa.me/");
+    if (!paymentReference || hasLegacyWhatsAppFallback) {
+      try {
+        const response = await fetch(`/api/orders/${order.id}`, { method: "POST" });
+        const refreshed = await response.json();
+        if (!response.ok || !refreshed.midtransSnapToken) throw new Error(refreshed.error ?? "Referensi pembayaran belum tersedia");
+        paymentReference = refreshed.midtransSnapToken as string;
+      } catch (err) {
+        setPayError(err instanceof Error ? err.message : "Gagal menyiapkan pembayaran");
+        setPayingOrderId(null);
+        return;
+      }
+    }
+    if (paymentReference.startsWith("http")) {
+      window.location.href = paymentReference;
       return;
     }
-    setPayingOrderId(order.id);
     try {
-      await payWithSnap(order.midtransSnapToken, {
+      await payWithSnap(paymentReference, {
         onSuccess: () => {
           void fetch(`/api/orders/${order.id}`, { method: "POST" })
             .catch(() => undefined)

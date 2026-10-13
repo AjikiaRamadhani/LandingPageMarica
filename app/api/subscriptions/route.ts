@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       return { subscription: createdSubscription, cycle: createdCycle };
     });
     const transaction = await snap.createTransaction({ transaction_details: { order_id: cycleNumber, gross_amount: plan.price }, customer_details: { first_name: fields.shippingName.value as string, email, phone: fields.shippingPhone.value as string }, item_details: [{ id: plan.id, price: plan.price, quantity: 1, name: plan.name.slice(0, 50) }] });
-    const updatedCycle = await prisma.subscriptionCycle.update({ where: { id: cycle.id }, data: { midtransOrderId: cycleNumber, midtransSnapToken: transaction.token } });
+    const updatedCycle = await prisma.subscriptionCycle.update({ where: { id: cycle.id }, data: { midtransOrderId: cycleNumber, midtransSnapToken: transaction.token ?? transaction.redirect_url } });
     return NextResponse.json({ subscription, cycle: updatedCycle, snapToken: transaction.token, redirectUrl: transaction.redirect_url }, { status: 201 });
   } catch (error) {
     console.error("[POST /api/subscriptions]", error);

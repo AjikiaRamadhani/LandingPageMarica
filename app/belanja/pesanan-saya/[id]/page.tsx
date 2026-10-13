@@ -72,14 +72,38 @@ export default function OrderDetailPage() {
   }, [params.id]);
 
   const handlePay = async () => {
-    if (!order?.midtransSnapToken) {
-      setError("Token pembayaran tidak ditemukan. Silakan muat ulang halaman.");
+    if (!order) {
+      setError("Detail pesanan belum siap dimuat.");
       return;
     }
     setIsPaying(true);
     setError(null);
+    let paymentReference = order.midtransSnapToken;
+    const hasLegacyWhatsAppFallback = paymentReference?.startsWith("https://wa.me/") ?? false;
+    if (!paymentReference || hasLegacyWhatsAppFallback) {
+      try {
+        const response = await fetch(`/api/orders/${order.id}`, { method: "POST" });
+        const refreshed = await response.json();
+        if (!response.ok || !refreshed.midtransSnapToken) throw new Error(refreshed.error ?? "Referensi pembayaran belum tersedia");
+        paymentReference = refreshed.midtransSnapToken;
+        setOrder(refreshed as ApiOrder);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal menyiapkan pembayaran");
+        setIsPaying(false);
+        return;
+      }
+    }
+    if (!paymentReference) {
+      setError("Referensi pembayaran tidak ditemukan. Silakan coba checkout ulang.");
+      setIsPaying(false);
+      return;
+    }
+    if (paymentReference.startsWith("http")) {
+      window.location.href = paymentReference;
+      return;
+    }
     try {
-      await payWithSnap(order.midtransSnapToken, {
+      await payWithSnap(paymentReference, {
         onSuccess: () => {
           void fetch(`/api/orders/${order.id}`, { method: "POST" })
             .catch(() => undefined)
