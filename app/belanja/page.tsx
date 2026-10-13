@@ -272,6 +272,12 @@ function BelanjaPageContent() {
   const selectedSortLabel =
     SORT_OPTIONS.find((option) => option.value === sort)?.label ?? "Terbaru";
 
+  const goToPage = (nextPage: number) => {
+    if (nextPage === page) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    setPage(nextPage);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <Navbar />
@@ -470,9 +476,7 @@ function BelanjaPageContent() {
                   <button
                     type="button"
                     disabled={page <= 1}
-                    onClick={() =>
-                      setPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => goToPage(Math.max(1, page - 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-marica-ink/10 bg-white text-marica-ink-soft transition hover:bg-marica-cream disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Halaman sebelumnya"
                   >
@@ -491,7 +495,7 @@ function BelanjaPageContent() {
                       <button
                         key={n}
                         type="button"
-                        onClick={() => setPage(n)}
+                        onClick={() => goToPage(n)}
                         className={`flex h-9 w-9 items-center justify-center rounded-full font-body text-sm font-semibold transition ${
                           n === page
                             ? "bg-marica-amber-dark text-white shadow-sm"
@@ -506,11 +510,7 @@ function BelanjaPageContent() {
                   <button
                     type="button"
                     disabled={page >= totalPages}
-                    onClick={() =>
-                      setPage((p) =>
-                        Math.min(totalPages, p + 1),
-                      )
-                    }
+                    onClick={() => goToPage(Math.min(totalPages, page + 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-marica-ink/10 bg-white text-marica-ink-soft transition hover:bg-marica-cream disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Halaman berikutnya"
                   >

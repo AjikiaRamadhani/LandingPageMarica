@@ -99,6 +99,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
+  const isShoppingPage =
+    pathname === "/belanja" || pathname?.startsWith("/belanja/");
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -115,6 +117,7 @@ export default function Navbar() {
   >([]);
   const [points, setPoints] = useState(0);
   const [profile, setProfile] = useState<ApiUserProfile | null>(null);
+  const solidHeader = scrolled || isShoppingPage;
 
   // Session yang sudah terlanjur terbuka bisa belum membawa role terbaru di
   // client. Profil API membaca role langsung dari database, jadi dipakai
@@ -454,7 +457,7 @@ export default function Navbar() {
       {/* layer 1: cream-to-transparent gradient, blends into Hero at the top of the page */}
       <motion.div
         aria-hidden
-        animate={{ opacity: scrolled ? 0 : 1 }}
+        animate={{ opacity: solidHeader ? 0 : 1 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-b from-marica-cream via-marica-cream/70 to-transparent"
       />
@@ -462,7 +465,7 @@ export default function Navbar() {
       {/* layer 2: solid, blurred, with shadow — fades in once the page is scrolled so the header stays readable over any section */}
       <motion.div
         aria-hidden
-        animate={{ opacity: scrolled ? 1 : 0 }}
+        animate={{ opacity: solidHeader ? 1 : 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="pointer-events-none absolute inset-0 -z-10 bg-white/90 shadow-[0_8px_24px_rgba(120,60,10,0.1)] backdrop-blur-md"
       />
