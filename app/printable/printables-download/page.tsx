@@ -145,6 +145,10 @@ function DownloadForm({
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [delivery, setDelivery] = useState<{
+    email: "sent" | "failed";
+    whatsapp: "accepted" | "failed" | "not_configured";
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "", age: "" });
 
@@ -210,7 +214,14 @@ function DownloadForm({
           childAge: Number.parseInt(form.age, 10),
         }),
       });
-      const result = (await response.json()) as { downloadUrl?: string; error?: string };
+      const result = (await response.json()) as {
+        downloadUrl?: string;
+        error?: string;
+        delivery?: {
+          email: "sent" | "failed";
+          whatsapp: "accepted" | "failed" | "not_configured";
+        };
+      };
 
       if (response.status === 401) {
         router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
@@ -222,6 +233,7 @@ function DownloadForm({
       }
 
       setDownloadUrl(result.downloadUrl);
+      setDelivery(result.delivery ?? null);
       setStatus("success");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Terjadi kesalahan");
@@ -272,6 +284,17 @@ function DownloadForm({
           <p className="mt-1 font-body text-sm text-marica-ink-soft">
             Download &ldquo;{printableTitle}&rdquo; sudah siap.
           </p>
+          {delivery && (
+            <p className="mt-2 max-w-md font-body text-xs leading-5 text-marica-ink-soft" aria-live="polite">
+              Email: {delivery.email === "sent" ? "terkirim" : "belum berhasil"}.
+              {" "}WhatsApp: {delivery.whatsapp === "accepted"
+                ? "diterima provider"
+                : delivery.whatsapp === "not_configured"
+                  ? "layanan Marica belum tersedia"
+                  : "belum berhasil"}.
+              {delivery.whatsapp !== "accepted" && " Link PDF tetap bisa dibuka melalui tombol di bawah."}
+            </p>
+          )}
           {downloadUrl && (
             <a
               href={downloadUrl}
@@ -295,7 +318,9 @@ function DownloadForm({
         >
           <div>
             <h2 className="font-display text-lg font-semibold text-marica-ink">Informasi Pengiriman</h2>
-            <p className="mt-1 font-body text-xs leading-5 text-marica-ink-soft">Data profilmu akan terisi otomatis dan masih bisa disesuaikan.</p>
+            <p className="mt-1 font-body text-xs leading-5 text-marica-ink-soft">
+              Data profilmu akan terisi otomatis. Link download akan dikirim ke email dan nomor WhatsApp ini.
+            </p>
           </div>
 
           {error && <p className="rounded-xl bg-red-50 px-4 py-3 font-body text-sm text-red-700">{error}</p>}
@@ -337,6 +362,9 @@ function DownloadForm({
                 className="w-full px-4 py-2.5 font-body text-sm text-marica-ink placeholder:text-marica-ink-soft/60 outline-none"
               />
             </div>
+            <p className="mt-1 text-xs text-marica-ink-soft">
+              Kami akan mengirim link PDF ke nomor ini melalui WhatsApp.
+            </p>
           </Field>
 
           <Field label="Usia Anak">

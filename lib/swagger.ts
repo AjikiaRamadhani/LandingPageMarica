@@ -7,12 +7,13 @@ const jsonContent = (schema: Schema) => ({ content: { "application/json": { sche
 
 const errors: Record<string, Schema> = {
   "400": { description: "Bad request: payload atau parameter tidak valid." },
-  "401": { description: "Unauthorized: session login diperlukan." },
-  "403": { description: "Forbidden: role admin diperlukan." },
+  "401": { description: "Unauthorized: session login atau kredensial layanan valid diperlukan." },
+  "403": { description: "Forbidden: role atau game tidak diizinkan." },
   "404": { description: "Resource tidak ditemukan." },
   "429": { description: "Too many requests." },
   "500": { description: "Internal server error." },
   "502": { description: "Bad gateway: layanan email atau provider eksternal gagal." },
+  "503": { description: "Service unavailable: integrasi belum dikonfigurasi." },
 };
 
 const pathParam = (name: string, description: string): Schema => ({
@@ -43,6 +44,7 @@ const operation = (
     successStatus?: string;
     successDescription?: string;
     errorCodes?: string[];
+    security?: Schema[];
   } = {},
 ) => ({
   summary,
@@ -50,7 +52,11 @@ const operation = (
   tags: [tag],
   ...(options.parameters ? { parameters: options.parameters } : {}),
   ...(options.requestBody ? { requestBody: jsonContent(options.requestBody) } : {}),
-  ...(options.auth || options.admin ? { security: [{ SessionCookie: [] }] } : {}),
+  ...(options.security
+    ? { security: options.security }
+    : options.auth || options.admin
+      ? { security: [{ SessionCookie: [] }] }
+      : {}),
   responses: {
     [options.successStatus ?? "200"]: {
       description: options.successDescription ?? "Request berhasil.",
@@ -239,7 +245,7 @@ export const getApiDocs = () => {
   // Printables, articles, newsletter, and authentication.
   add("/api/printables", "get", "List active printables", "Printables", { success: arraySchema(), errorCodes: ["500"] });
   add("/api/printables/{id}", "get", "Get printable detail", "Printables", { parameters: [pathParam("id", "Printable ID or slug.")], success: objectSchema, errorCodes: ["404", "500"] });
-  add("/api/printables/{id}/download", "post", "Download printable", "Printables", { parameters: [pathParam("id", "Printable ID or slug.")], requestBody: { type: "object", required: ["name", "email"], properties: { name: { type: "string" }, email: { type: "string", format: "email" }, whatsapp: { type: "string" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "404", "500"] });
+  add("/api/printables/{id}/download", "post", "Download printable and send its link to email and WhatsApp", "Printables", { auth: true, parameters: [pathParam("id", "Printable ID or slug.")], requestBody: { type: "object", required: ["name", "email", "whatsapp"], properties: { name: { type: "string" }, email: { type: "string", format: "email" }, whatsapp: { type: "string", description: "Nomor WhatsApp dalam format internasional atau nomor Indonesia lokal." }, childAge: { type: "integer", minimum: 0, maximum: 18 } } }, success: { type: "object", properties: { message: { type: "string" }, downloadUrl: { type: "string", format: "uri" }, expiresIn: { type: "integer" }, delivery: { type: "object", properties: { email: { type: "string", enum: ["sent", "failed"] }, whatsapp: { type: "string", enum: ["accepted", "failed", "not_configured"] } } } } }, successStatus: "200", errorCodes: ["400", "401", "404", "429", "500", "503"] });
   add("/api/articles", "get", "List published articles", "Articles", { parameters: [queryParam("page", "Page number."), queryParam("limit", "Items per page."), queryParam("search", "Search article title."), queryParam("media", "Use video to return articles with video metadata.")], success: objectSchema, errorCodes: ["500"] });
   add("/api/articles/videos", "get", "List published article videos for the showcase", "Articles", { parameters: [queryParam("limit", "Maximum number of videos.")], success: arraySchema(), errorCodes: ["500"] });
   add("/api/articles/{slug}", "get", "Get published article", "Articles", { parameters: [pathParam("slug", "Article slug.")], success: objectSchema, errorCodes: ["404", "500"] });
@@ -267,6 +273,8 @@ export const getApiDocs = () => {
   add("/api/children/{id}", "patch", "Update a child profile and personalization preferences", "Child Profiles", { auth: true, parameters: [pathParam("id", "Child profile ID.")], requestBody: { type: "object", properties: { name: { type: "string", maxLength: 120 }, birthDate: { type: "string", format: "date", nullable: true }, gender: { type: "string", nullable: true }, learningLevel: { type: "string", nullable: true }, learningStyle: { type: "string", nullable: true }, interests: { type: "array", items: { type: "string" } }, favoriteThemes: { type: "array", items: { type: "string" } }, allergies: { type: "string", nullable: true }, personalizationNotes: { type: "string", nullable: true }, isActive: { type: "boolean" } } }, success: objectSchema, errorCodes: ["400", "401", "404", "500"] });
   add("/api/children/{id}", "delete", "Delete a child profile", "Child Profiles", { auth: true, parameters: [pathParam("id", "Child profile ID.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
   add("/api/points", "get", "Get current user points", "Rewards", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
+  add("/api/games/launch", "post", "Create a short-lived launch URL for a logged-in user and web game", "Games", { auth: true, requestBody: { type: "object", required: ["gameId"], properties: { gameId: { type: "string", enum: ["pacu-jalur", "panjat-pinang", "dino-escape", "angkasa-rasa"] } } }, success: { type: "object", required: ["launchUrl", "expiresAt"], properties: { launchUrl: { type: "string", format: "uri", description: "External game URL with a short-lived launch token in the URL fragment." }, expiresAt: { type: "string", format: "date-time" } } }, errorCodes: ["400", "401", "404", "429", "500", "503"] });
+  add("/api/games/{gameId}/complete", "post", "Award 50 points for a server-verified game completion; capped at 1,000 game points per user per Jakarta calendar day", "Games", { parameters: [pathParam("gameId", "One of the supported web game IDs.")], security: [{ GameApiKey: [] }], requestBody: { type: "object", required: ["launchToken"], properties: { launchToken: { type: "string", maxLength: 4096, description: "Unexpired token received from the launch URL fragment. The game server must submit it only after verifying completion." } } }, success: { type: "object", properties: { awarded: { type: "boolean" }, reason: { type: "string", enum: ["already_awarded", "daily_limit_reached"] }, pointsAwarded: { type: "integer" }, pointsToday: { type: "integer" }, dailyLimit: { type: "integer" }, balance: { type: "integer" } } }, errorCodes: ["400", "401", "403", "404", "500", "503"] });
   add("/api/vouchers", "get", "List voucher catalog and owned vouchers", "Rewards", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
   add("/api/vouchers", "post", "Exchange points for a voucher", "Rewards", { auth: true, requestBody: { type: "object", required: ["voucherId"], properties: { voucherId: { type: "string" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "409", "500"] });
   add("/api/auth/register", "post", "Register user", "Authentication", { requestBody: { type: "object", required: ["name", "email", "password"], properties: { name: { type: "string" }, email: { type: "string", format: "email" }, password: { type: "string", format: "password" }, confirmPassword: { type: "string", format: "password" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "409", "429", "500"] });
@@ -380,6 +388,7 @@ export const getApiDocs = () => {
       { name: "Table reservation", description: "Reservasi meja/space, slot, dan check-in." },
       { name: "F&B", description: "Menu makanan/minuman dan pre-order booking." },
       { name: "Printables", description: "Materi aktivitas dan download." },
+      { name: "Games", description: "Sesi game eksternal dan callback penyelesaian game terverifikasi." },
       { name: "Articles", description: "Artikel dan komentar." },
       { name: "Shipping", description: "Destinasi dan ongkos kirim." },
       { name: "Marketing", description: "Newsletter." },
@@ -398,6 +407,12 @@ export const getApiDocs = () => {
           in: "cookie",
           name: "authjs.session-token",
           description: "Session cookie Auth.js. Pada HTTPS production dapat menggunakan __Secure-authjs.session-token.",
+        },
+        GameApiKey: {
+          type: "apiKey",
+          in: "header",
+          name: "x-game-api-key",
+          description: "Kunci server-to-server khusus untuk setiap game. Jangan pernah disimpan di browser atau aplikasi mobile.",
         },
       },
     },

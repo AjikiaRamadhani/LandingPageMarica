@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { isRateLimited } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendPrintableDownloadEmail } from "@/lib/printable-mailer";
+import {
+  normalizeWhatsAppPhone,
+  sendPrintableDownloadWhatsApp,
+  WhatsAppCloudConfigurationError,
+} from "@/lib/whatsapp-cloud";
 
 const DOWNLOAD_URL_TTL_SECONDS = 10 * 60;
 const PRINTABLE_BUCKET = "printables";
@@ -44,8 +49,21 @@ export async function POST(
     const whatsapp = normalizeOptionalText(body.whatsapp);
     const childAge = body.childAge === undefined ? null : Number(body.childAge);
 
-    if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "Nama dan email wajib diisi dengan benar" }, { status: 400 });
+    if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !whatsapp) {
+      return NextResponse.json(
+        { error: "Nama, email, dan nomor WhatsApp wajib diisi dengan benar" },
+        { status: 400 },
+      );
+    }
+
+    let whatsappPhone: string;
+    try {
+      whatsappPhone = normalizeWhatsAppPhone(whatsapp);
+    } catch {
+      return NextResponse.json(
+        { error: "Nomor WhatsApp tidak valid" },
+        { status: 400 },
+      );
     }
 
     if (childAge !== null && (!Number.isInteger(childAge) || childAge < 0 || childAge > 18)) {
@@ -124,6 +142,7 @@ export async function POST(
       }
     });
 
+    let emailDelivery: "sent" | "failed" = "sent";
     try {
       await sendPrintableDownloadEmail({
         email,
@@ -134,12 +153,33 @@ export async function POST(
       });
     } catch (emailError) {
       console.error("[Printable email delivery]", emailError);
+      emailDelivery = "failed";
+    }
+
+    let whatsappDelivery: "accepted" | "failed" | "not_configured" = "accepted";
+    try {
+      await sendPrintableDownloadWhatsApp({
+        phone: whatsappPhone,
+        name,
+        printableTitle: printable.title,
+        downloadUrl: data.signedUrl,
+      });
+    } catch (whatsappError) {
+      console.error("[Printable WhatsApp delivery]", whatsappError);
+      whatsappDelivery =
+        whatsappError instanceof WhatsAppCloudConfigurationError
+          ? "not_configured"
+          : "failed";
     }
 
     return NextResponse.json({
       message: "Download siap",
       downloadUrl: data.signedUrl,
       expiresIn: DOWNLOAD_URL_TTL_SECONDS,
+      delivery: {
+        email: emailDelivery,
+        whatsapp: whatsappDelivery,
+      },
     });
   } catch (error) {
     console.error("[POST /api/printables/[id]/download]", error);
