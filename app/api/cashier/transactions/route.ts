@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/access-control";
 import { validateInteger, validateOptionalText, validateText } from "@/lib/request-validation";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
+import { changeInventoryQuantity, lockInventoryProducts } from "@/lib/inventory-stock";
 
 const paymentMethods = ["CASH", "CARD", "QRIS"] as const;
 type PaymentMethod = (typeof paymentMethods)[number];
@@ -95,12 +96,7 @@ export async function POST(request: Request) {
         if (!customer) throw new Error("CUSTOMER_NOT_FOUND");
       }
 
-      const products = await tx.$queryRaw<Array<{ id: string; name: string; price: number; stock: number }>>`
-        SELECT id, name, price, stock
-        FROM "products"
-        WHERE id = ANY (${productIds}) AND "isActive" = true
-        FOR UPDATE
-      `;
+      const products = await lockInventoryProducts(tx, productIds, "MARICA_STORE");
       const productMap = new Map(products.map((product) => [product.id, product]));
       for (const [productId, quantity] of productQuantities) {
         const product = productMap.get(productId);
@@ -148,8 +144,9 @@ export async function POST(request: Request) {
       });
 
       for (const item of lineItems) {
-        await tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity }, soldCount: { increment: item.quantity } } });
-        await tx.inventoryMovement.create({ data: { productId: item.productId, posTransactionId: created.id, type: "SALE", quantityDelta: -item.quantity, reason: `Penjualan POS ${transactionNumber}`, referenceId: transactionNumber, createdById: session.user.id } });
+        await changeInventoryQuantity(tx, item.productId, "MARICA_STORE", -item.quantity);
+        await tx.product.update({ where: { id: item.productId }, data: { soldCount: { increment: item.quantity } } });
+        await tx.inventoryMovement.create({ data: { productId: item.productId, posTransactionId: created.id, location: "MARICA_STORE", type: "SALE", quantityDelta: -item.quantity, reason: `Penjualan POS ${transactionNumber}`, referenceId: transactionNumber, createdById: session.user.id } });
       }
 
       if (userVoucherCheck.value) {

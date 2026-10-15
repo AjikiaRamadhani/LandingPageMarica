@@ -58,6 +58,10 @@ export async function GET(request: Request) {
         include: {
           category: { select: { id: true, name: true, slug: true, colorTag: true } },
           author: { select: { id: true, name: true } },
+          productPlacements: {
+            orderBy: { sortOrder: "asc" },
+            include: { product: { select: { id: true, name: true, slug: true, price: true, isActive: true, images: { orderBy: { order: "asc" as const }, take: 1 } } } },
+          },
         },
       }),
       prisma.article.count({ where }),
@@ -87,12 +91,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const { title, excerpt, content, coverImageUrl, videoUrl, videoProvider, videoDurationSeconds, isVideoFeatured, categoryId, status, publishedAt } = validation.data;
+    const { title, excerpt, content, coverImageUrl, videoUrl, videoProvider, videoDurationSeconds, isVideoFeatured, categoryId, status, publishedAt, productIds } = validation.data;
     if (!title || !content) {
       return NextResponse.json({ error: "Judul dan konten wajib diisi" }, { status: 400 });
     }
     if (categoryId && !(await prisma.articleCategory.findUnique({ where: { id: categoryId } }))) {
       return NextResponse.json({ error: "Kategori tidak ditemukan" }, { status: 400 });
+    }
+    if (
+      productIds &&
+      (await prisma.product.count({ where: { id: { in: productIds }, isActive: true } })) !== productIds.length
+    ) {
+      return NextResponse.json({ error: "Satu atau lebih produk tidak ditemukan atau tidak aktif" }, { status: 400 });
     }
 
     const slug = await generateUniqueSlug(title);
@@ -113,9 +123,16 @@ export async function POST(request: Request) {
         status: finalStatus,
         publishedAt: finalStatus === "PUBLISHED" ? new Date(publishedAt ?? Date.now()) : null,
         authorId: session.user.id,
+        productPlacements: productIds
+          ? { create: productIds.map((productId, sortOrder) => ({ productId, sortOrder })) }
+          : undefined,
       },
       include: {
         category: { select: { id: true, name: true, slug: true, colorTag: true } },
+        productPlacements: {
+          orderBy: { sortOrder: "asc" },
+          include: { product: { select: { id: true, name: true, slug: true, price: true, isActive: true, images: { orderBy: { order: "asc" }, take: 1 } } } },
+        },
       },
     });
 

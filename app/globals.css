@@ -70,6 +70,19 @@ body {
   overflow-x: clip;
 }
 
+/* Keep custom utility colors readable even when a generated utility is purged. */
+.text-marica-ink {
+  color: #1c1b1b;
+}
+
+.text-marica-ink-soft {
+  color: #55524d;
+}
+
+.text-marica-amber-text {
+  color: #7a4e04;
+}
+
 .section-soft-bg {
   background-image: linear-gradient(180deg, #fdf8f0 0%, #f6f0e8 14%, #f3eadb 100%);
 }

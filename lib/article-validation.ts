@@ -13,6 +13,7 @@ export type ArticlePayload = {
   categoryId?: string | null;
   status?: ArticleStatus;
   publishedAt?: string | null;
+  productIds?: string[];
 };
 
 const MAX_TITLE_LENGTH = 200;
@@ -50,6 +51,7 @@ export function validateArticlePayload(
   const videoUrl = optionalText(input.videoUrl, "URL video", MAX_URL_LENGTH);
   const videoProvider = optionalText(input.videoProvider, "Provider video", 40);
   const categoryId = optionalText(input.categoryId, "Kategori", 100);
+  const productIds = input.productIds;
 
   if (title.error || excerpt.error || content.error || coverImageUrl.error || videoUrl.error || videoProvider.error || categoryId.error) {
     return { error: title.error ?? excerpt.error ?? content.error ?? coverImageUrl.error ?? videoUrl.error ?? videoProvider.error ?? categoryId.error };
@@ -81,6 +83,15 @@ export function validateArticlePayload(
   }
   const isVideoFeatured = input.isVideoFeatured;
   if (isVideoFeatured !== undefined && typeof isVideoFeatured !== "boolean") return { error: "Status featured video tidak valid" };
+  if (
+    productIds !== undefined &&
+    (!Array.isArray(productIds) ||
+      productIds.length > 8 ||
+      productIds.some((id) => typeof id !== "string" || !id.trim() || id.length > 100) ||
+      new Set(productIds).size !== productIds.length)
+  ) {
+    return { error: "Daftar produk artikel tidak valid (maksimal 8 produk unik)" };
+  }
 
   return {
     data: {
@@ -95,6 +106,7 @@ export function validateArticlePayload(
       categoryId: categoryId.value,
       status: status as ArticleStatus | undefined,
       publishedAt,
+      ...(productIds !== undefined ? { productIds: productIds as string[] } : {}),
     },
   };
 }

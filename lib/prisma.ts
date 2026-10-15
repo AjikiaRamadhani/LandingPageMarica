@@ -1,4 +1,4 @@
-import { PrismaClient } from "@/app/generated/prisma/client.js";
+import { PrismaClient } from "@/app/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {
@@ -11,7 +11,7 @@ const adapter = new PrismaPg({
 
 // Saat schema/client digenerate ulang dalam mode development, Next.js dapat
 // mempertahankan instance lama di globalThis. Pastikan cache tersebut sudah
-// memiliki delegate yang ditambahkan oleh schema booking terbaru.
+// memiliki delegate dari schema terbaru.
 const cachedPrisma = globalForPrisma.maricaPrisma;
 const hasBookingDelegates =
   cachedPrisma &&
@@ -23,9 +23,16 @@ const hasSubscriptionDelegates =
   typeof cachedPrisma.subscription !== "undefined" &&
   typeof cachedPrisma.childProfile !== "undefined" &&
   typeof cachedPrisma.subscriptionActivity !== "undefined";
+const hasInventoryDelegates =
+  cachedPrisma &&
+  typeof cachedPrisma.productInventory !== "undefined";
 
 export const prisma =
-  (hasBookingDelegates && hasSubscriptionDelegates ? cachedPrisma : undefined) ??
+  (hasBookingDelegates &&
+  hasSubscriptionDelegates &&
+  hasInventoryDelegates
+    ? cachedPrisma
+    : undefined) ??
   new PrismaClient({
     adapter,
     log:

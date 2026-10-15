@@ -187,6 +187,10 @@ export default function EdugamesPage() {
             </div>
           </div>
 
+          <p className="mx-auto mt-6 max-w-2xl rounded-xl bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+            Game dibuka di situs eksternal. Poin game belum tersedia karena situs game belum terhubung ke sistem Marica.
+          </p>
+
           {filteredGames.length > 0 ? (
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredGames.map((game) => (

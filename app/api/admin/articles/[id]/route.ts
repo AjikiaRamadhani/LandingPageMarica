@@ -32,6 +32,10 @@ export async function GET(
       where: { id },
       include: {
         category: { select: { id: true, name: true, slug: true, colorTag: true } },
+        productPlacements: {
+          orderBy: { sortOrder: "asc" },
+          include: { product: { select: { id: true, name: true, slug: true, price: true, isActive: true, images: { orderBy: { order: "asc" }, take: 1 } } } },
+        },
       },
     });
 
@@ -64,7 +68,7 @@ export async function PUT(
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const { title, excerpt, content, coverImageUrl, videoUrl, videoProvider, videoDurationSeconds, isVideoFeatured, categoryId, status, publishedAt } = validation.data;
+    const { title, excerpt, content, coverImageUrl, videoUrl, videoProvider, videoDurationSeconds, isVideoFeatured, categoryId, status, publishedAt, productIds } = validation.data;
 
     const existing = await prisma.article.findUnique({ where: { id } });
     if (!existing) {
@@ -76,6 +80,12 @@ export async function PUT(
       !(await prisma.articleCategory.findUnique({ where: { id: categoryId } }))
     ) {
       return NextResponse.json({ error: "Kategori tidak ditemukan" }, { status: 400 });
+    }
+    if (
+      productIds &&
+      (await prisma.product.count({ where: { id: { in: productIds }, isActive: true } })) !== productIds.length
+    ) {
+      return NextResponse.json({ error: "Satu atau lebih produk tidak ditemukan atau tidak aktif" }, { status: 400 });
     }
 
     const nextStatus = status ?? existing.status;
@@ -106,9 +116,21 @@ export async function PUT(
         ...(categoryId !== undefined ? { categoryId } : {}),
         ...(status !== undefined ? { status } : {}),
         publishedAt: nextPublishedAt,
+        ...(productIds !== undefined
+          ? {
+              productPlacements: {
+                deleteMany: {},
+                create: productIds.map((productId, sortOrder) => ({ productId, sortOrder })),
+              },
+            }
+          : {}),
       },
       include: {
         category: { select: { id: true, name: true, slug: true, colorTag: true } },
+        productPlacements: {
+          orderBy: { sortOrder: "asc" },
+          include: { product: { select: { id: true, name: true, slug: true, price: true, isActive: true, images: { orderBy: { order: "asc" }, take: 1 } } } },
+        },
       },
     });
 

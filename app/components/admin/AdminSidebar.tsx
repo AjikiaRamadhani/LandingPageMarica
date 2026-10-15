@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Newspaper,
   ShoppingBag,
+  Warehouse,
   FileDown,
   ClipboardList,
   CalendarDays,
@@ -24,6 +25,10 @@ import {
   LogOut,
   ArrowLeft,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  History,
+  WalletCards,
 } from "lucide-react";
 
 // Struktur daftar navigasi utama
@@ -40,6 +45,12 @@ const navItems = [
     label: "Produk",
     href: "/admin/belanja",
     icon: ShoppingBag,
+    enabled: true,
+  },
+  {
+    label: "Inventaris",
+    href: "/admin/inventory",
+    icon: Warehouse,
     enabled: true,
   },
   {
@@ -89,12 +100,10 @@ const navItems = [
 function AccountMenu({
   name,
   email,
-  role,
   onNavigate,
 }: {
   name?: string | null;
   email?: string | null;
-  role?: string;
   onNavigate?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -384,8 +393,9 @@ function SidebarContent({
           .map((item) => {
             const isActive =
               item.enabled &&
-              pathname.startsWith(item.href) &&
-              item.href !== "/admin"
+              (item.href === "/kasir"
+                ? pathname === "/kasir"
+                : pathname.startsWith(item.href) && item.href !== "/admin")
                 ? true
                 : pathname === item.href;
             const Icon = item.icon;
@@ -408,12 +418,12 @@ function SidebarContent({
             }
 
             return (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={onNavigate}
-                className="relative"
-              >
+              <div key={item.label} className="grid gap-1">
+                <Link
+                  href={item.href}
+                  onClick={onNavigate}
+                  className="relative"
+                >
                 {isActive && (
                   <motion.span
                     layoutId="admin-nav-active"
@@ -431,7 +441,44 @@ function SidebarContent({
                   <Icon className="h-4.5 w-4.5" />
                   {item.label}
                 </span>
-              </Link>
+                </Link>
+                {role === "KASIR" && item.href === "/kasir" && (
+                  <>
+                    <Link
+                      href="/kasir/riwayat"
+                      onClick={onNavigate}
+                      className="relative"
+                    >
+                      {pathname === "/kasir/riwayat" && (
+                        <motion.span
+                          layoutId="admin-nav-active"
+                          className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                        />
+                      )}
+                      <span className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium ${pathname === "/kasir/riwayat" ? "text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"}`}>
+                        <History className="h-4.5 w-4.5" />
+                        Riwayat penjaga
+                      </span>
+                    </Link>
+                    <Link
+                      href="/kasir/keuangan"
+                      onClick={onNavigate}
+                      className="relative"
+                    >
+                      {pathname === "/kasir/keuangan" && (
+                        <motion.span
+                          layoutId="admin-nav-active"
+                          className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                        />
+                      )}
+                      <span className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium ${pathname === "/kasir/keuangan" ? "text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"}`}>
+                        <WalletCards className="h-4.5 w-4.5" />
+                        Keuangan
+                      </span>
+                    </Link>
+                  </>
+                )}
+              </div>
             );
           })}
       </nav>
@@ -439,7 +486,6 @@ function SidebarContent({
       <AccountMenu
         name={name}
         email={email}
-        role={role}
         onNavigate={onNavigate}
       />
     </>
@@ -450,16 +496,24 @@ export default function AdminSidebar({
   name,
   email,
   role,
+  onCollapsedChange,
 }: {
   name?: string | null;
   email?: string | null;
   role?: string;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    onCollapsedChange?.(isCollapsed);
+  }, [isCollapsed, onCollapsedChange]);
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-black/5 bg-white px-4 py-3 md:hidden">
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-black/5 bg-white px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <Image
             src="/images/logo.png"
@@ -495,7 +549,7 @@ export default function AdminSidebar({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
             />
             <motion.aside
               key="admin-sidebar-drawer"
@@ -503,7 +557,7 @@ export default function AdminSidebar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col bg-white shadow-2xl md:hidden"
+              className="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col bg-white shadow-2xl lg:hidden"
             >
               <div className="flex items-center justify-end px-3 pt-3">
                 <button
@@ -526,8 +580,49 @@ export default function AdminSidebar({
         )}
       </AnimatePresence>
 
-      <aside className="fixed inset-y-0 left-0 z-30 hidden h-dvh w-64 shrink-0 flex-col border-r border-black/5 bg-white md:flex">
-        <SidebarContent name={name} email={email} role={role} />
+      <aside className={`fixed inset-y-0 left-0 z-30 hidden h-dvh shrink-0 flex-col border-r border-black/5 bg-white shadow-sm transition-[width] duration-200 lg:flex ${isCollapsed ? "w-16" : "w-64"}`}>
+        <button
+          type="button"
+          onClick={() => setIsCollapsed((value) => !value)}
+          aria-label={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar ke kiri"}
+          title={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar ke kiri"}
+          className="absolute -right-3 top-6 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white text-marica-ink-soft shadow-sm transition hover:bg-marica-amber/10 hover:text-marica-amber-text"
+        >
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
+        <div className={isCollapsed ? "flex h-full flex-col items-center pt-5" : "flex h-full flex-col"}>
+          {isCollapsed && (
+            <>
+              <Link
+                href="/kasir"
+                aria-label="Kasir"
+                className={`rounded-xl p-2 ${
+                  pathname === "/kasir"
+                    ? "bg-marica-amber-dark text-white"
+                    : "text-marica-ink-soft hover:bg-marica-sky-light/60"
+                }`}
+              >
+                <ShoppingBag className="h-5 w-5" />
+              </Link>
+              {role === "KASIR" && (
+                <Link href="/kasir/riwayat" aria-label="Riwayat penjaga" className={`mt-2 rounded-xl p-2 ${pathname === "/kasir/riwayat" ? "bg-marica-amber-dark text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60"}`}>
+                  <History className="h-5 w-5" />
+                </Link>
+              )}
+              {role === "KASIR" && (
+                <Link href="/kasir/keuangan" aria-label="Keuangan" className={`mt-2 rounded-xl p-2 ${pathname === "/kasir/keuangan" ? "bg-marica-amber-dark text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60"}`}>
+                  <WalletCards className="h-5 w-5" />
+                </Link>
+              )}
+              <div className="mt-auto mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-marica-amber-dark font-body text-sm font-semibold text-white">
+                {(name ?? email ?? "A").trim().charAt(0).toUpperCase()}
+              </div>
+            </>
+          )}
+          {!isCollapsed && (
+          <SidebarContent name={name} email={email} role={role} />
+          )}
+        </div>
       </aside>
     </>
   );

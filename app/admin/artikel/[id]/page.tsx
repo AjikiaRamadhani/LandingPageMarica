@@ -17,7 +17,26 @@ export default async function AdminEditArtikelPage({
   // AdminLayout (app/admin/layout.tsx) sudah memastikan hanya admin yang
   // sampai sini, jadi query langsung lewat Prisma di server component ini
   // aman tanpa perlu requireAdmin lagi.
-  const article = await prisma.article.findUnique({ where: { id } });
+  const article = await prisma.article.findUnique({
+    where: { id },
+    include: {
+      productPlacements: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              price: true,
+              isActive: true,
+              images: { orderBy: { order: "asc" }, take: 1 },
+            },
+          },
+        },
+      },
+    },
+  });
 
   if (!article) {
     notFound();
@@ -34,6 +53,7 @@ export default async function AdminEditArtikelPage({
         categoryId: article.categoryId,
         status: article.status,
         publishedAt: article.publishedAt ? article.publishedAt.toISOString() : null,
+        productPlacements: article.productPlacements,
       }}
     />
   );
