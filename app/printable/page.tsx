@@ -12,7 +12,6 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import {
   CATEGORY_STYLES,
-  PRINTABLES,
   type Activity,
   type CategoryKey,
   type Printable,
@@ -29,10 +28,14 @@ const cardVariants: Variants = {
 };
 
 export default function PrintablePage() {
-  const [printables, setPrintables] = useState<Printable[]>(PRINTABLES);
+  const [printables, setPrintables] = useState<Printable[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    let cancelled = false;
+
     fetch("/api/printables")
       .then((response) =>
         response.ok
@@ -51,6 +54,7 @@ export default function PrintablePage() {
             thumbnailUrl: string | null;
           }>,
         ) => {
+          if (cancelled) return;
           setPrintables(
             data.map((item) => {
               const category = toCategoryKey(item.subject);
@@ -59,22 +63,38 @@ export default function PrintablePage() {
                   ? `${item.ageMin}-${item.ageMax} Thn`
                   : "Semua usia";
               return {
-                ...PRINTABLES[0],
                 id: item.slug,
                 title: item.title,
                 description: item.description,
-                longDescription: item.description,
                 category,
                 categoryLabel: item.subject,
                 age,
-                thumbnailUrl: item.thumbnailUrl,
                 href: `/printable/printables-download?item=${encodeURIComponent(item.slug)}`,
+                longDescription: item.description,
+                format: "PDF (A4)",
+                fileSizeMb: 0,
+                points: 0,
+                thumbnailUrl: item.thumbnailUrl,
               };
             }),
           );
         },
       )
-      .catch((error) => console.error("[PrintablePage]", error));
+      .catch((loadError) => {
+        if (cancelled) return;
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Gagal memuat printable",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -100,6 +120,21 @@ export default function PrintablePage() {
 
           {/* Printable grid */}
           <div className="mt-10">
+            {isLoading && (
+              <p className="text-center font-body text-sm text-marica-ink-soft">
+                Memuat printable...
+              </p>
+            )}
+            {error && (
+              <p className="text-center font-body text-sm text-marica-rose-deep">
+                {error}
+              </p>
+            )}
+            {!isLoading && !error && printables.length === 0 && (
+              <p className="text-center font-body text-sm text-marica-ink-soft">
+                Belum ada printable yang tersedia.
+              </p>
+            )}
             <motion.div
               variants={reduceMotion ? undefined : gridVariants}
               initial="hidden"

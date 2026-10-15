@@ -496,11 +496,13 @@ export default function AdminSidebar({
   name,
   email,
   role,
+  collapsible = false,
   onCollapsedChange,
 }: {
   name?: string | null;
   email?: string | null;
   role?: string;
+  collapsible?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -580,18 +582,20 @@ export default function AdminSidebar({
         )}
       </AnimatePresence>
 
-      <aside className={`fixed inset-y-0 left-0 z-30 hidden h-dvh shrink-0 flex-col border-r border-black/5 bg-white shadow-sm transition-[width] duration-200 lg:flex ${isCollapsed ? "w-16" : "w-64"}`}>
-        <button
-          type="button"
-          onClick={() => setIsCollapsed((value) => !value)}
-          aria-label={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar ke kiri"}
-          title={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar ke kiri"}
-          className="absolute -right-3 top-6 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white text-marica-ink-soft shadow-sm transition hover:bg-marica-amber/10 hover:text-marica-amber-text"
-        >
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
-        <div className={isCollapsed ? "flex h-full flex-col items-center pt-5" : "flex h-full flex-col"}>
-          {isCollapsed && (
+      <aside className={`fixed inset-y-0 left-0 z-30 hidden h-dvh shrink-0 flex-col border-r border-black/5 bg-white shadow-sm lg:flex ${collapsible ? "transition-[width] duration-200" : ""} ${collapsible && isCollapsed ? "w-16" : "w-64"}`}>
+        {collapsible && (
+          <button
+            type="button"
+            onClick={() => setIsCollapsed((value) => !value)}
+            aria-label={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar ke kiri"}
+            title={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar ke kiri"}
+            className="absolute -right-3 top-6 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white text-marica-ink-soft shadow-sm transition hover:bg-marica-amber/10 hover:text-marica-amber-text"
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        )}
+        <div className={collapsible && isCollapsed ? "flex h-full flex-col items-center pt-5" : "flex h-full flex-col"}>
+          {collapsible && isCollapsed && (
             <>
               <Link
                 href="/kasir"
@@ -619,8 +623,8 @@ export default function AdminSidebar({
               </div>
             </>
           )}
-          {!isCollapsed && (
-          <SidebarContent name={name} email={email} role={role} />
+          {(!collapsible || !isCollapsed) && (
+            <SidebarContent name={name} email={email} role={role} />
           )}
         </div>
       </aside>
