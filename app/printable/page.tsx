@@ -7,7 +7,7 @@ import {
   useReducedMotion,
   type Variants,
 } from "framer-motion";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import {
@@ -29,7 +29,9 @@ const cardVariants: Variants = {
 };
 
 export default function PrintablePage() {
-  const [printables, setPrintables] = useState<Printable[]>(PRINTABLES);
+  const [printables, setPrintables] = useState<Printable[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -74,7 +76,11 @@ export default function PrintablePage() {
           );
         },
       )
-      .catch((error) => console.error("[PrintablePage]", error));
+      .catch((fetchError) => {
+        console.error("[PrintablePage]", fetchError);
+        setError("Printable belum dapat dimuat. Silakan coba lagi.");
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -100,20 +106,33 @@ export default function PrintablePage() {
 
           {/* Printable grid */}
           <div className="mt-10">
-            <motion.div
-              variants={reduceMotion ? undefined : gridVariants}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-            >
-              {printables.map((activity) => (
-                <ActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  reduceMotion={!!reduceMotion}
-                />
-              ))}
-            </motion.div>
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2 py-16 text-sm text-marica-ink-soft">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Memuat printable...
+              </div>
+            ) : error ? (
+              <p className="py-16 text-center text-sm text-red-700">{error}</p>
+            ) : printables.length === 0 ? (
+              <p className="py-16 text-center text-sm text-marica-ink-soft">
+                Belum ada printable yang tersedia.
+              </p>
+            ) : (
+              <motion.div
+                variants={reduceMotion ? undefined : gridVariants}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {printables.map((activity) => (
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    reduceMotion={!!reduceMotion}
+                  />
+                ))}
+              </motion.div>
+            )}
           </div>
         </section>
       </main>
