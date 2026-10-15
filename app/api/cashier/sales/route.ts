@@ -6,7 +6,7 @@ import { validateOptionalText } from "@/lib/request-validation";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
 import { changeInventoryQuantity, lockInventoryProducts } from "@/lib/inventory-stock";
 
-const paymentMethods = ["CASH", "CARD", "QRIS"] as const;
+const paymentMethods = ["CASH"] as const;
 type SaleItem = { type?: "PRODUCT" | "PLAYPASS" | "TABLE_FEE"; productId?: string; packageId?: string; tableNumber?: string; quantity?: number };
 function saleNumber() { return `SALE-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`; }
 
@@ -16,16 +16,33 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const page = Math.max(1, Number(params.get("page") ?? 1));
   const limit = Math.min(100, Math.max(1, Number(params.get("limit") ?? 25)));
-  const [sales, total, completedSummary] = await Promise.all([
+  const activeShift = await prisma.posShift.findFirst({
+    where: { cashierId: session.user.id, status: "OPEN" },
+    select: { id: true },
+  });
+  const [sales, total, completedSummary, currentShiftSummary] = await Promise.all([
     prisma.cashierTransaction.findMany({ where: { cashierId: session.user.id }, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit, include: { items: true, customer: { select: { id: true, name: true, email: true, whatsapp: true } }, shift: true } }),
     prisma.cashierTransaction.count({ where: { cashierId: session.user.id } }),
-    prisma.cashierTransaction.aggregate({ where: { cashierId: session.user.id, status: "COMPLETED" }, _count: { _all: true }, _sum: { total: true } }),
+    prisma.cashierTransaction.aggregate({ where: { cashierId: session.user.id, status: "COMPLETED", paymentMethod: "CASH" }, _count: { _all: true }, _sum: { total: true } }),
+    prisma.cashierTransaction.aggregate({
+      where: {
+        cashierId: session.user.id,
+        shiftId: activeShift?.id ?? "__no_active_shift__",
+        status: "COMPLETED",
+        paymentMethod: "CASH",
+      },
+      _count: { _all: true },
+      _sum: { total: true },
+    }),
   ]);
   return NextResponse.json({
     sales,
     summary: {
       completedTransactions: completedSummary._count._all,
       completedRevenue: completedSummary._sum.total ?? 0,
+      cashRevenue: completedSummary._sum.total ?? 0,
+      currentShiftTransactions: currentShiftSummary._count._all,
+      currentShiftCashRevenue: currentShiftSummary._sum.total ?? 0,
     },
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });

@@ -28,6 +28,7 @@ import {
   ChevronLeft,
   ChevronRight,
   History,
+  WalletCards,
 } from "lucide-react";
 
 // Struktur daftar navigasi utama
@@ -442,22 +443,40 @@ function SidebarContent({
                 </span>
                 </Link>
                 {role === "KASIR" && item.href === "/kasir" && (
-                  <Link
-                    href="/kasir/riwayat"
-                    onClick={onNavigate}
-                    className="relative"
-                  >
-                    {pathname === "/kasir/riwayat" && (
-                      <motion.span
-                        layoutId="admin-nav-active"
-                        className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
-                      />
-                    )}
-                    <span className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium ${pathname === "/kasir/riwayat" ? "text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"}`}>
-                      <History className="h-4.5 w-4.5" />
-                      Riwayat penjaga
-                    </span>
-                  </Link>
+                  <>
+                    <Link
+                      href="/kasir/riwayat"
+                      onClick={onNavigate}
+                      className="relative"
+                    >
+                      {pathname === "/kasir/riwayat" && (
+                        <motion.span
+                          layoutId="admin-nav-active"
+                          className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                        />
+                      )}
+                      <span className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium ${pathname === "/kasir/riwayat" ? "text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"}`}>
+                        <History className="h-4.5 w-4.5" />
+                        Riwayat penjaga
+                      </span>
+                    </Link>
+                    <Link
+                      href="/kasir/keuangan"
+                      onClick={onNavigate}
+                      className="relative"
+                    >
+                      {pathname === "/kasir/keuangan" && (
+                        <motion.span
+                          layoutId="admin-nav-active"
+                          className="absolute inset-0 rounded-xl bg-marica-amber-dark shadow-sm"
+                        />
+                      )}
+                      <span className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-body text-sm font-medium ${pathname === "/kasir/keuangan" ? "text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60 hover:text-marica-ink"}`}>
+                        <WalletCards className="h-4.5 w-4.5" />
+                        Keuangan
+                      </span>
+                    </Link>
+                  </>
                 )}
               </div>
             );
@@ -588,6 +607,11 @@ export default function AdminSidebar({
               {role === "KASIR" && (
                 <Link href="/kasir/riwayat" aria-label="Riwayat penjaga" className={`mt-2 rounded-xl p-2 ${pathname === "/kasir/riwayat" ? "bg-marica-amber-dark text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60"}`}>
                   <History className="h-5 w-5" />
+                </Link>
+              )}
+              {role === "KASIR" && (
+                <Link href="/kasir/keuangan" aria-label="Keuangan" className={`mt-2 rounded-xl p-2 ${pathname === "/kasir/keuangan" ? "bg-marica-amber-dark text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60"}`}>
+                  <WalletCards className="h-5 w-5" />
                 </Link>
               )}
               <div className="mt-auto mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-marica-amber-dark font-body text-sm font-semibold text-white">

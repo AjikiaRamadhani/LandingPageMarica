@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   LayoutGrid,
   Minus,
   Package,
@@ -31,7 +30,13 @@ type Product = {
   isActive: boolean;
   images?: { url: string }[];
 };
-type SalesSummary = { completedTransactions: number; completedRevenue: number };
+type SalesSummary = {
+  completedTransactions: number;
+  completedRevenue: number;
+  cashRevenue: number;
+  currentShiftTransactions: number;
+  currentShiftCashRevenue: number;
+};
 type PackageItem = {
   id: string;
   name: string;
@@ -41,7 +46,12 @@ type PackageItem = {
 };
 type MemberVoucher = {
   id: string;
-  voucher: { code: string; title: string; discountAmount: number; expiresAt?: string | null };
+  voucher: {
+    code: string;
+    title: string;
+    discountAmount: number;
+    expiresAt?: string | null;
+  };
 };
 type Member = {
   id: string;
@@ -126,14 +136,14 @@ export default function PosPage() {
   const [memberQuery, setMemberQuery] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [member, setMember] = useState<Member | null>(null);
-  const [selectedVoucherId, setSelectedVoucherId] = useState<string | null>(null);
+  const [selectedVoucherId, setSelectedVoucherId] = useState<string | null>(
+    null,
+  );
   const [shift, setShift] = useState<Shift | null>(null);
   const [openingCash, setOpeningCash] = useState("");
   const [closingCash, setClosingCash] = useState("");
   const [paidAmount, setPaidAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD" | "QRIS">(
-    "CASH",
-  );
+  const [paymentMethod] = useState<"CASH">("CASH");
   const [tableNumber, setTableNumber] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,6 +155,9 @@ export default function PosPage() {
   const [salesSummary, setSalesSummary] = useState<SalesSummary>({
     completedTransactions: 0,
     completedRevenue: 0,
+    cashRevenue: 0,
+    currentShiftTransactions: 0,
+    currentShiftCashRevenue: 0,
   });
   const [activeTables, setActiveTables] = useState<ActiveTable[]>([]);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
@@ -222,7 +235,16 @@ export default function PosPage() {
           setTableFees(Array.isArray(tableFeeData) ? tableFeeData : []);
           setShift(shiftData.shift ?? null);
           setSales(Array.isArray(salesData.sales) ? salesData.sales : []);
-          setSalesSummary(salesData.summary ?? { completedTransactions: 0, completedRevenue: 0 });
+          setSalesSummary({
+            completedTransactions:
+              salesData.summary?.completedTransactions ?? 0,
+            completedRevenue: salesData.summary?.completedRevenue ?? 0,
+            cashRevenue: salesData.summary?.cashRevenue ?? 0,
+            currentShiftTransactions:
+              salesData.summary?.currentShiftTransactions ?? 0,
+            currentShiftCashRevenue:
+              salesData.summary?.currentShiftCashRevenue ?? 0,
+          });
           setActiveTables(
             Array.isArray(tableData.sessions) ? tableData.sessions : [],
           );
@@ -263,7 +285,10 @@ export default function PosPage() {
             setMembers([]);
             setNotice({
               type: "error",
-              text: error instanceof Error ? error.message : "Gagal mencari member.",
+              text:
+                error instanceof Error
+                  ? error.message
+                  : "Gagal mencari member.",
             });
           }
         })
@@ -283,8 +308,12 @@ export default function PosPage() {
     () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [cart],
   );
-  const selectedVoucher = member?.vouchers?.find((item) => item.id === selectedVoucherId);
-  const voucherDiscount = selectedVoucher ? Math.min(selectedVoucher.voucher.discountAmount, subtotal) : 0;
+  const selectedVoucher = member?.vouchers?.find(
+    (item) => item.id === selectedVoucherId,
+  );
+  const voucherDiscount = selectedVoucher
+    ? Math.min(selectedVoucher.voucher.discountAmount, subtotal)
+    : 0;
   const total = subtotal - voucherDiscount;
   const paid = parseAmount(paidAmount);
   const change = Math.max(0, paid - total);
@@ -294,16 +323,24 @@ export default function PosPage() {
     item.name.toLowerCase().includes(query.toLowerCase()),
   );
   const catalogPageSize = 6;
-  const catalogPageCount = Math.max(1, Math.ceil(filteredCatalog.length / catalogPageSize));
+  const catalogPageCount = Math.max(
+    1,
+    Math.ceil(filteredCatalog.length / catalogPageSize),
+  );
   const visibleCatalog = filteredCatalog.slice(
     (Math.min(catalogPage, catalogPageCount) - 1) * catalogPageSize,
     Math.min(catalogPage, catalogPageCount) * catalogPageSize,
   );
   const filteredSales = sales.filter((sale) =>
-    sale.transactionNumber.toLowerCase().includes(salesQuery.trim().toLowerCase()),
+    sale.transactionNumber
+      .toLowerCase()
+      .includes(salesQuery.trim().toLowerCase()),
   );
   const salesPageSize = 10;
-  const salesPageCount = Math.max(1, Math.ceil(filteredSales.length / salesPageSize));
+  const salesPageCount = Math.max(
+    1,
+    Math.ceil(filteredSales.length / salesPageSize),
+  );
   const visibleSales = filteredSales.slice(
     (Math.min(salesPage, salesPageCount) - 1) * salesPageSize,
     Math.min(salesPage, salesPageCount) * salesPageSize,
@@ -487,6 +524,13 @@ export default function PosPage() {
     setSalesSummary((current) => ({
       completedTransactions: current.completedTransactions + 1,
       completedRevenue: current.completedRevenue + (data.total ?? total),
+      cashRevenue:
+        current.cashRevenue +
+        (paymentMethod === "CASH" ? (data.total ?? total) : 0),
+      currentShiftTransactions: current.currentShiftTransactions + 1,
+      currentShiftCashRevenue:
+        current.currentShiftCashRevenue +
+        (paymentMethod === "CASH" ? (data.total ?? total) : 0),
     }));
     if (includesTableFee) {
       void refreshActiveTables().catch(() => undefined);
@@ -498,7 +542,10 @@ export default function PosPage() {
   }
 
   async function updateTableSession(id: string, action: "complete" | "cancel") {
-    if (action === "cancel" && !window.confirm("Batalkan sesi Table Fee ini?")) {
+    if (
+      action === "cancel" &&
+      !window.confirm("Batalkan sesi Table Fee ini?")
+    ) {
       return;
     }
     setIsUpdatingTable(id);
@@ -507,16 +554,23 @@ export default function PosPage() {
         method: "POST",
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error ?? "Sesi meja gagal diperbarui.");
+      if (!response.ok)
+        throw new Error(data.error ?? "Sesi meja gagal diperbarui.");
       await refreshActiveTables();
       setNotice({
         type: "success",
-        text: action === "complete" ? "Sesi meja berhasil diselesaikan." : "Sesi meja berhasil dibatalkan.",
+        text:
+          action === "complete"
+            ? "Sesi meja berhasil diselesaikan."
+            : "Sesi meja berhasil dibatalkan.",
       });
     } catch (error) {
       setNotice({
         type: "error",
-        text: error instanceof Error ? error.message : "Sesi meja gagal diperbarui.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Sesi meja gagal diperbarui.",
       });
     } finally {
       setIsUpdatingTable(null);
@@ -585,6 +639,19 @@ export default function PosPage() {
     setSalesSummary((current) => ({
       completedTransactions: Math.max(0, current.completedTransactions - 1),
       completedRevenue: Math.max(0, current.completedRevenue - sale.total),
+      cashRevenue: Math.max(
+        0,
+        current.cashRevenue - (sale.paymentMethod === "CASH" ? sale.total : 0),
+      ),
+      currentShiftTransactions: Math.max(
+        0,
+        current.currentShiftTransactions - 1,
+      ),
+      currentShiftCashRevenue: Math.max(
+        0,
+        current.currentShiftCashRevenue -
+          (sale.paymentMethod === "CASH" ? sale.total : 0),
+      ),
     }));
     setNotice({
       type: "success",
@@ -614,7 +681,14 @@ export default function PosPage() {
       | { code: string; title: string; discountAmount: number }
       | null
       | undefined;
-    const itemRows = (data.items as Array<{ name: string; quantity: number; price: number; subtotal: number }>)
+    const itemRows = (
+      data.items as Array<{
+        name: string;
+        quantity: number;
+        price: number;
+        subtotal: number;
+      }>
+    )
       .map(
         (item) => `<tr>
           <td>
@@ -634,8 +708,9 @@ export default function PosPage() {
           <div class="voucher-row applied"><span>Potongan diterapkan</span><span>-${escapeHtml(money(data.discountAmount ?? 0))}</span></div>
         </section>`
       : "";
-    const paymentLabel = ({ CASH: "Tunai", CARD: "Kartu", QRIS: "QRIS" } as Record<string, string>)[data.paymentMethod] ?? data.paymentMethod;
-    const statusLabel = data.status === "VOIDED" ? "DIBATALKAN / VOID" : "LUNAS";
+    const paymentLabel = "Tunai";
+    const statusLabel =
+      data.status === "VOIDED" ? "DIBATALKAN / VOID" : "LUNAS";
 
     popup.document.write(
       `<html><head><meta charset="utf-8"><title>${escapeHtml(data.transactionNumber)}</title><style>
@@ -724,21 +799,21 @@ export default function PosPage() {
   }
 
   return (
-    <div className="mx-auto min-h-full max-w-375 pb-10">
-      <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="mx-auto min-h-full max-w-[1600px] pb-8">
+      <header className="mb-4 flex flex-col gap-3 rounded-[1.75rem] border border-marica-amber/25 bg-white/80 p-4 shadow-[0_12px_30px_rgba(120,60,10,0.06)] backdrop-blur sm:p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="font-body text-xs font-bold uppercase tracking-[0.18em] text-marica-amber-text">
-            Marica Point of Sale
+          <p className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-marica-amber-text">
+            Marica · Point of Sale
           </p>
-          <h1 className="mt-1 font-display text-3xl font-semibold text-marica-ink">
-            Sales POS
+          <h1 className="mt-1 font-display text-2xl font-semibold text-marica-ink sm:text-3xl">
+            Kasir Marica
           </h1>
-          <p className="mt-1 font-body text-sm text-marica-ink-soft">
-            Layani transaksi produk dan aktivitas dalam satu pembayaran.
+          <p className="mt-1 font-body text-xs text-marica-ink-soft sm:text-sm">
+            Kelola transaksi produk, aktivitas, dan akses pengunjung.
           </p>
         </div>
         <div
-          className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${shift ? "border-marica-green/30 bg-marica-green/10" : "border-marica-rose-deep/20 bg-white"}`}
+          className={`flex items-center gap-3 self-start rounded-2xl border px-4 py-2.5 lg:self-auto ${shift ? "border-marica-green/30 bg-marica-green/10" : "border-marica-rose-deep/20 bg-marica-rose-deep/5"}`}
         >
           <span
             className={`h-2.5 w-2.5 rounded-full ${shift ? "bg-marica-green" : "bg-marica-rose-deep"}`}
@@ -805,7 +880,7 @@ export default function PosPage() {
       {!shift ? (
         <form
           onSubmit={openShift}
-          className="mb-6 flex flex-col gap-4 rounded-3xl border border-marica-amber/30 bg-linear-to-r from-marica-amber/20 via-white to-marica-rose/15 p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between"
+          className="mb-4 flex flex-col gap-3 rounded-2xl border border-marica-amber/30 bg-linear-to-r from-marica-amber/20 via-white to-marica-rose/15 p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between"
         >
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.16em] text-marica-amber-text">
@@ -829,7 +904,9 @@ export default function PosPage() {
               inputMode="numeric"
               type="text"
               value={openingCash}
-              onChange={(event) => setOpeningCash(formatAmountInput(event.target.value))}
+              onChange={(event) =>
+                setOpeningCash(formatAmountInput(event.target.value))
+              }
               placeholder="Kas awal"
               className="w-36 rounded-xl border border-black/10 bg-white px-3 py-3 font-body text-sm outline-none focus:border-marica-amber-dark focus:ring-4 focus:ring-marica-amber/15"
             />
@@ -841,7 +918,7 @@ export default function PosPage() {
       ) : (
         <form
           onSubmit={closeShift}
-          className="mb-6 flex flex-col gap-4 rounded-3xl border border-marica-green/25 bg-marica-green/10 p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between"
+          className="mb-4 flex flex-col gap-3 rounded-2xl border border-marica-green/25 bg-marica-green/10 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between"
         >
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.16em] text-green-700">
@@ -866,7 +943,9 @@ export default function PosPage() {
               inputMode="numeric"
               type="text"
               value={closingCash}
-              onChange={(event) => setClosingCash(formatAmountInput(event.target.value))}
+              onChange={(event) =>
+                setClosingCash(formatAmountInput(event.target.value))
+              }
               placeholder="Kas akhir"
               className="w-36 rounded-xl border border-black/10 bg-white px-3 py-3 font-body text-sm outline-none focus:border-marica-green focus:ring-4 focus:ring-marica-green/15"
             />
@@ -880,15 +959,18 @@ export default function PosPage() {
         </form>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-        <section id="kasir-transaksi" className="min-w-0 rounded-3xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
+        <section
+          id="kasir-transaksi"
+          className="min-w-0 rounded-[1.75rem] border border-marica-amber/20 bg-white/85 p-4 shadow-[0_12px_30px_rgba(120,60,10,0.06)] sm:p-5"
+        >
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
-                Katalog
+              <p className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-marica-amber-text">
+                Katalog penjualan
               </p>
-              <h2 className="mt-1 font-display text-xl font-semibold text-marica-ink">
-                Pilih item penjualan
+              <h2 className="mt-1 font-display text-xl font-semibold text-marica-ink sm:text-2xl">
+                Pilih item
               </h2>
             </div>
             <div className="relative w-full md:max-w-xs">
@@ -900,11 +982,11 @@ export default function PosPage() {
                   setCatalogPage(1);
                 }}
                 placeholder="Cari produk atau paket..."
-                className="w-full rounded-xl border border-black/10 bg-marica-sky-light/20 py-2.5 pl-9 pr-3 font-body text-sm outline-none focus:border-marica-amber-dark focus:ring-4 focus:ring-marica-amber/15"
+                className="w-full rounded-xl border border-marica-amber/25 bg-marica-cream/35 py-2.5 pl-9 pr-3 font-body text-sm outline-none transition focus:border-marica-amber-dark focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
               />
             </div>
           </div>
-          <div className="mt-5 flex gap-2 overflow-x-auto border-b border-black/5 pb-3">
+          <div className="mt-4 flex gap-1 overflow-x-auto rounded-2xl bg-marica-cream/70 p-1">
             {(
               [
                 ["PRODUCT", "Produk", Package],
@@ -919,7 +1001,7 @@ export default function PosPage() {
                   setTab(value);
                   setCatalogPage(1);
                 }}
-                className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 font-body text-sm font-semibold transition ${tab === value ? "bg-marica-amber-dark text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60"}`}
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 font-body text-xs font-bold transition sm:text-sm ${tab === value ? "bg-marica-amber-dark text-white shadow-sm" : "text-marica-ink-soft hover:bg-white/80"}`}
               >
                 <Icon className="h-4 w-4" />
                 {label}
@@ -927,7 +1009,7 @@ export default function PosPage() {
             ))}
           </div>
           {tab === "TABLE_FEE" && (
-            <div className="mt-4 flex items-center gap-3 rounded-xl bg-marica-amber/10 p-3">
+            <div className="mt-3 flex items-center gap-3 rounded-xl bg-marica-amber/10 p-3">
               <LayoutGrid className="h-5 w-5 text-marica-amber-text" />
               <label
                 className="flex-1 font-body text-sm font-semibold text-marica-ink"
@@ -954,7 +1036,7 @@ export default function PosPage() {
               />
             </div>
           )}
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {isLoading ? (
               <p className="col-span-full py-12 text-center font-body text-sm text-marica-ink-soft">
                 Memuat katalog...
@@ -974,64 +1056,66 @@ export default function PosPage() {
                       "stock" in item && (item.stock <= 0 || !item.isActive)
                     }
                     onClick={() => addItem(item)}
-                    className="group overflow-hidden rounded-2xl border border-black/8 bg-white text-left transition hover:-translate-y-0.5 hover:border-marica-amber/60 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-45"
+                    className="group overflow-hidden rounded-2xl border border-marica-amber/15 bg-white text-left transition hover:-translate-y-0.5 hover:border-marica-amber/60 hover:shadow-[0_10px_24px_rgba(120,60,10,0.1)] disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                  <div className="relative flex h-44 items-center justify-center overflow-hidden bg-linear-to-br from-marica-cream via-white to-marica-amber/10 p-3">
-                    {imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={imageUrl}
-                        alt={item.name}
-                        loading="lazy"
-                        decoding="async"
-                        onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                          event.currentTarget.nextElementSibling?.classList.remove("hidden");
-                        }}
-                        className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <span className="flex h-full w-full flex-col items-center justify-center rounded-2xl bg-linear-to-br from-marica-amber/15 via-marica-cream to-marica-rose/20 px-4 text-center text-marica-amber-text">
-                        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/80 font-display text-3xl font-semibold shadow-sm">
-                          {item.name.trim().charAt(0).toUpperCase()}
+                    <div className="relative flex h-32 items-center justify-center overflow-hidden bg-linear-to-br from-marica-cream via-white to-marica-amber/10 p-3 sm:h-36">
+                      {imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={imageUrl}
+                          alt={item.name}
+                          loading="lazy"
+                          decoding="async"
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                            event.currentTarget.nextElementSibling?.classList.remove(
+                              "hidden",
+                            );
+                          }}
+                          className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full flex-col items-center justify-center rounded-2xl bg-linear-to-br from-marica-amber/15 via-marica-cream to-marica-rose/20 px-4 text-center text-marica-amber-text">
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/80 font-display text-3xl font-semibold shadow-sm">
+                            {item.name.trim().charAt(0).toUpperCase()}
+                          </span>
+                          <span className="mt-3 line-clamp-2 font-display text-sm font-semibold uppercase tracking-wide">
+                            {item.name}
+                          </span>
                         </span>
-                        <span className="mt-3 line-clamp-2 font-display text-sm font-semibold uppercase tracking-wide">
-                          {item.name}
+                      )}
+                      {imageUrl && (
+                        <span className="hidden h-full w-full flex-col items-center justify-center rounded-2xl bg-linear-to-br from-marica-amber/15 via-marica-cream to-marica-rose/20 px-4 text-center text-marica-amber-text">
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/80 font-display text-3xl font-semibold shadow-sm">
+                            {item.name.trim().charAt(0).toUpperCase()}
+                          </span>
+                          <span className="mt-3 line-clamp-2 font-display text-sm font-semibold uppercase tracking-wide">
+                            {item.name}
+                          </span>
                         </span>
+                      )}
+                      <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-marica-amber-text shadow-sm">
+                        <Plus className="h-4 w-4 transition group-hover:scale-110" />
                       </span>
-                    )}
-                    {imageUrl && (
-                      <span className="hidden h-full w-full flex-col items-center justify-center rounded-2xl bg-linear-to-br from-marica-amber/15 via-marica-cream to-marica-rose/20 px-4 text-center text-marica-amber-text">
-                        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/80 font-display text-3xl font-semibold shadow-sm">
-                          {item.name.trim().charAt(0).toUpperCase()}
-                        </span>
-                        <span className="mt-3 line-clamp-2 font-display text-sm font-semibold uppercase tracking-wide">
-                          {item.name}
-                        </span>
-                      </span>
-                    )}
-                    <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-marica-amber-text shadow-sm">
-                      <Plus className="h-4 w-4 transition group-hover:scale-110" />
-                    </span>
-                  </div>
-                  <div className="p-4">
-                    <p className="line-clamp-2 min-h-10 font-body text-sm font-bold text-marica-ink">
-                      {item.name}
-                    </p>
-                    <p className="mt-2 font-display text-lg font-semibold text-marica-amber-text">
-                      {money(item.price)}
-                    </p>
-                    {"stock" in item && (
-                      <p className="mt-1 font-body text-xs text-marica-ink-soft">
-                        Stok {item.stock}
+                    </div>
+                    <div className="p-3">
+                      <p className="line-clamp-2 min-h-10 font-body text-sm font-bold text-marica-ink">
+                        {item.name}
                       </p>
-                    )}
-                    {"durationMinutes" in item && (
-                      <p className="mt-1 font-body text-xs text-marica-ink-soft">
-                        {item.durationMinutes} menit
+                      <p className="mt-1 font-display text-base font-semibold text-marica-amber-text">
+                        {money(item.price)}
                       </p>
-                    )}
-                  </div>
+                      {"stock" in item && (
+                        <p className="mt-1 font-body text-xs text-marica-ink-soft">
+                          Stok {item.stock}
+                        </p>
+                      )}
+                      {"durationMinutes" in item && (
+                        <p className="mt-1 font-body text-xs text-marica-ink-soft">
+                          {item.durationMinutes} menit
+                        </p>
+                      )}
+                    </div>
                   </button>
                 );
               })
@@ -1039,10 +1123,19 @@ export default function PosPage() {
           </div>
           {!isLoading && catalogPageCount > 1 && (
             <div className="mt-5 flex items-center justify-center gap-2">
-              <button type="button" onClick={() => setCatalogPage((page) => Math.max(1, page - 1))} disabled={catalogPage === 1} aria-label="Produk sebelumnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+              <button
+                type="button"
+                onClick={() => setCatalogPage((page) => Math.max(1, page - 1))}
+                disabled={catalogPage === 1}
+                aria-label="Produk sebelumnya"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40"
+              >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              {Array.from({ length: catalogPageCount }, (_, index) => index + 1).map((page) => (
+              {Array.from(
+                { length: catalogPageCount },
+                (_, index) => index + 1,
+              ).map((page) => (
                 <button
                   key={page}
                   type="button"
@@ -1054,33 +1147,41 @@ export default function PosPage() {
                   {page}
                 </button>
               ))}
-              <button type="button" onClick={() => setCatalogPage((page) => Math.min(catalogPageCount, page + 1))} disabled={catalogPage === catalogPageCount} aria-label="Produk berikutnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+              <button
+                type="button"
+                onClick={() =>
+                  setCatalogPage((page) => Math.min(catalogPageCount, page + 1))
+                }
+                disabled={catalogPage === catalogPageCount}
+                aria-label="Produk berikutnya"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40"
+              >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}
         </section>
 
-        <aside className="flex min-h-150 flex-col rounded-3xl border border-black/5 bg-white shadow-sm">
-          <div className="border-b border-black/5 p-5">
+        <aside className="flex min-h-[36rem] flex-col rounded-[1.75rem] border border-marica-amber/25 bg-white shadow-[0_16px_40px_rgba(120,60,10,0.1)] xl:sticky xl:top-6 xl:max-h-[calc(100dvh-3rem)]">
+          <div className="border-b border-marica-amber/15 bg-linear-to-br from-marica-amber/20 via-marica-cream/80 to-white p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
                   Pesanan aktif
                 </p>
                 <h2 className="mt-1 font-display text-xl font-semibold text-marica-ink">
-                  Keranjang
+                  Ringkasan pesanan
                 </h2>
               </div>
-              <span className="rounded-full bg-marica-amber/15 px-2.5 py-1 font-body text-xs font-bold text-marica-amber-text">
+              <span className="rounded-full bg-white/80 px-2.5 py-1 font-body text-xs font-bold text-marica-amber-text shadow-sm">
                 {cart.reduce((sum, item) => sum + item.quantity, 0)} item
               </span>
             </div>
           </div>
-          <div className="flex-1 p-5">
-            <div className="space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+            <div className="space-y-2.5">
               {cart.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-black/10 py-12 text-center">
+                <div className="rounded-2xl border border-dashed border-marica-amber/25 bg-marica-cream/25 py-10 text-center">
                   <ShoppingCart className="mx-auto h-8 w-8 text-marica-ink-soft/25" />
                   <p className="mt-3 font-body text-sm text-marica-ink-soft">
                     Keranjang masih kosong
@@ -1090,7 +1191,7 @@ export default function PosPage() {
                 cart.map((item) => (
                   <div
                     key={item.key}
-                    className="rounded-xl bg-marica-sky-light/25 p-3"
+                    className="rounded-xl border border-marica-amber/15 bg-marica-cream/20 p-3"
                   >
                     <div className="flex justify-between gap-3">
                       <div className="min-w-0">
@@ -1123,7 +1224,7 @@ export default function PosPage() {
                           type="button"
                           onClick={() => updateQuantity(item.key, -1)}
                           aria-label="Kurangi jumlah"
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-marica-ink-soft"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-marica-amber/15 bg-white text-marica-ink-soft transition hover:bg-marica-amber/10"
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
@@ -1134,7 +1235,7 @@ export default function PosPage() {
                           type="button"
                           onClick={() => updateQuantity(item.key, 1)}
                           aria-label="Tambah jumlah"
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-marica-ink-soft"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-marica-amber/15 bg-white text-marica-ink-soft transition hover:bg-marica-amber/10"
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
@@ -1147,7 +1248,7 @@ export default function PosPage() {
                 ))
               )}
             </div>
-            <div className="mt-5 border-t border-black/5 pt-5">
+            <div className="mt-4 border-t border-marica-amber/15 pt-4">
               <div className="flex items-center gap-2">
                 <UserRound className="h-4 w-4 text-marica-amber-text" />
                 <p className="font-body text-sm font-bold text-marica-ink">
@@ -1189,11 +1290,16 @@ export default function PosPage() {
                         <button
                           type="button"
                           key={voucher.id}
-                          onClick={() => setSelectedVoucherId((current) => current === voucher.id ? null : voucher.id)}
+                          onClick={() =>
+                            setSelectedVoucherId((current) =>
+                              current === voucher.id ? null : voucher.id,
+                            )
+                          }
                           className={`mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1 text-left font-body text-xs text-green-800 ${selectedVoucherId === voucher.id ? "bg-white ring-2 ring-green-600/30" : "hover:bg-white/60"}`}
                         >
                           <span>
-                            {selectedVoucherId === voucher.id ? "✓ " : ""}{voucher.voucher.code} · {voucher.voucher.title}
+                            {selectedVoucherId === voucher.id ? "✓ " : ""}
+                            {voucher.voucher.code} · {voucher.voucher.title}
                           </span>
                           <span>{money(voucher.voucher.discountAmount)}</span>
                         </button>
@@ -1255,36 +1361,21 @@ export default function PosPage() {
               </div>
             )}
           </div>
-          <form onSubmit={submitSale} className="border-t border-black/5 p-5">
-            <div className="mb-4 flex items-end justify-between">
+          <form
+            onSubmit={submitSale}
+            className="border-t border-marica-amber/15 bg-marica-cream/25 p-4 sm:p-5"
+          >
+            <div className="mb-3 flex items-end justify-between">
               <span className="font-body text-sm font-semibold text-marica-ink-soft">
                 Total pembayaran
               </span>
-              <strong className="font-display text-2xl text-marica-amber-text">
+              <strong className="font-display text-2xl text-marica-amber-text sm:text-3xl">
                 {money(total)}
               </strong>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  ["CASH", "Tunai", Banknote],
-                  ["CARD", "Kartu", CreditCard],
-                  ["QRIS", "QRIS", QrCode],
-                ] as const
-              ).map(([value, label, Icon]) => (
-                <button
-                  type="button"
-                  key={value}
-                  onClick={() => {
-                    setPaymentMethod(value);
-                    if (value !== "CASH") setPaidAmount(formatAmountInput(String(total)));
-                  }}
-                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 font-body text-xs font-bold ${paymentMethod === value ? "border-marica-amber-dark bg-marica-amber/10 text-marica-amber-text" : "border-black/10 text-marica-ink-soft"}`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 rounded-xl border border-marica-amber-dark bg-marica-amber/10 px-3 py-2.5 font-body text-xs font-bold text-marica-amber-text">
+              <Banknote className="h-4 w-4" />
+              Pembayaran tunai
             </div>
             <label
               className="mt-3 block font-body text-xs font-semibold text-marica-ink-soft"
@@ -1299,7 +1390,9 @@ export default function PosPage() {
               inputMode="numeric"
               type="text"
               value={paidAmount}
-              onChange={(event) => setPaidAmount(formatAmountInput(event.target.value))}
+              onChange={(event) =>
+                setPaidAmount(formatAmountInput(event.target.value))
+              }
               placeholder={money(total)}
               className="mt-1 w-full rounded-xl border border-marica-amber/50 px-3 py-3 font-body text-base font-bold outline-none focus:ring-4 focus:ring-marica-amber/15"
             />
@@ -1311,7 +1404,7 @@ export default function PosPage() {
             </div>
             <button
               disabled={isSubmitting || !shift || cart.length === 0}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-marica-amber-dark py-3.5 font-body text-sm font-bold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-marica-amber-dark py-3.5 font-body text-sm font-bold text-white shadow-[0_8px_18px_rgba(222,143,12,0.25)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
             >
               {isSubmitting ? (
                 "Memproses..."
@@ -1326,7 +1419,10 @@ export default function PosPage() {
         </aside>
       </div>
 
-      <section id="kasir-checkin" className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+      <section
+        id="kasir-checkin"
+        className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6"
+      >
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
@@ -1344,7 +1440,7 @@ export default function PosPage() {
               [
                 ["EVENT", "Event / Workshop"],
                 ["PLAYPASS", "Playpass"],
-                  ["TABLE_RESERVATION", "Reservasi meja"],
+                ["TABLE_RESERVATION", "Reservasi meja"],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -1398,7 +1494,10 @@ export default function PosPage() {
         )}
       </section>
 
-      <section id="kasir-meja" className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+      <section
+        id="kasir-meja"
+        className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6"
+      >
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
@@ -1443,7 +1542,9 @@ export default function PosPage() {
                   <button
                     type="button"
                     disabled={isUpdatingTable === table.id}
-                    onClick={() => void updateTableSession(table.id, "complete")}
+                    onClick={() =>
+                      void updateTableSession(table.id, "complete")
+                    }
                     className="flex-1 rounded-lg bg-marica-amber-dark px-3 py-2 font-body text-xs font-bold text-white transition hover:bg-marica-amber-text disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Selesaikan
@@ -1463,7 +1564,10 @@ export default function PosPage() {
         )}
       </section>
 
-      <section id="kasir-riwayat-transaksi" className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+      <section
+        id="kasir-riwayat-transaksi"
+        className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6"
+      >
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
@@ -1573,16 +1677,39 @@ export default function PosPage() {
           </table>
         </div>
         {salesPageCount > 1 && (
-          <div className="mt-5 flex items-center justify-center gap-2">
-            <button type="button" onClick={() => setSalesPage((page) => Math.max(1, page - 1))} disabled={salesPage === 1} aria-label="Transaksi sebelumnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSalesPage((page) => Math.max(1, page - 1))}
+              disabled={salesPage === 1}
+              aria-label="Transaksi sebelumnya"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40"
+            >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            {Array.from({ length: salesPageCount }, (_, index) => index + 1).map((page) => (
-              <button key={page} type="button" onClick={() => setSalesPage(page)} aria-current={salesPage === page ? "page" : undefined} className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-3 font-body text-sm font-bold ${salesPage === page ? "bg-marica-amber-dark text-white" : "border border-black/10 text-marica-ink-soft"}`}>
+            {Array.from(
+              { length: salesPageCount },
+              (_, index) => index + 1,
+            ).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setSalesPage(page)}
+                aria-current={salesPage === page ? "page" : undefined}
+                className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-3 font-body text-sm font-bold ${salesPage === page ? "bg-marica-amber-dark text-white" : "border border-black/10 text-marica-ink-soft"}`}
+              >
                 {page}
               </button>
             ))}
-            <button type="button" onClick={() => setSalesPage((page) => Math.min(salesPageCount, page + 1))} disabled={salesPage === salesPageCount} aria-label="Transaksi berikutnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+            <button
+              type="button"
+              onClick={() =>
+                setSalesPage((page) => Math.min(salesPageCount, page + 1))
+              }
+              disabled={salesPage === salesPageCount}
+              aria-label="Transaksi berikutnya"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40"
+            >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
