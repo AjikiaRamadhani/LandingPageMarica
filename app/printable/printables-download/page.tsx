@@ -149,6 +149,7 @@ function DownloadForm({
     email: "sent" | "failed";
     whatsapp: "accepted" | "failed" | "not_configured";
   } | null>(null);
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", whatsapp: "", age: "" });
 
@@ -221,6 +222,7 @@ function DownloadForm({
           email: "sent" | "failed";
           whatsapp: "accepted" | "failed" | "not_configured";
         };
+        whatsappUrl?: string;
       };
 
       if (response.status === 401) {
@@ -234,6 +236,7 @@ function DownloadForm({
 
       setDownloadUrl(result.downloadUrl);
       setDelivery(result.delivery ?? null);
+      setWhatsappUrl(result.whatsappUrl ?? null);
       setStatus("success");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Terjadi kesalahan");
@@ -280,30 +283,42 @@ function DownloadForm({
           className="flex flex-col items-center py-6 text-center"
         >
           <CheckCircle2 className="h-12 w-12 text-marica-green" />
-          <h3 className="mt-4 font-display text-lg font-semibold text-marica-ink">Berhasil dikirim!</h3>
+          <h3 className="mt-4 font-display text-lg font-semibold text-marica-ink">Printable siap diunduh!</h3>
           <p className="mt-1 font-body text-sm text-marica-ink-soft">
             Download &ldquo;{printableTitle}&rdquo; sudah siap.
           </p>
           {delivery && (
             <p className="mt-2 max-w-md font-body text-xs leading-5 text-marica-ink-soft" aria-live="polite">
               Email: {delivery.email === "sent" ? "terkirim" : "belum berhasil"}.
-              {" "}WhatsApp: {delivery.whatsapp === "accepted"
+              {" "}Meta WhatsApp: {delivery.whatsapp === "accepted"
                 ? "diterima provider"
                 : delivery.whatsapp === "not_configured"
-                  ? "layanan Marica belum tersedia"
+                  ? "belum dikonfigurasi"
                   : "belum berhasil"}.
-              {delivery.whatsapp !== "accepted" && " Link PDF tetap bisa dibuka melalui tombol di bawah."}
+              {" "}Link WhatsApp siap dibagikan melalui tombol di bawah.
             </p>
           )}
           {downloadUrl && (
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white"
-            >
-              <Download className="h-4 w-4" /> Buka PDF
-            </a>
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-marica-amber-dark px-5 py-3 font-body text-sm font-semibold text-white"
+              >
+                <Download className="h-4 w-4" /> Buka PDF
+              </a>
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-marica-green/30 bg-marica-green/10 px-5 py-3 font-body text-sm font-semibold text-marica-green"
+                >
+                  Kirim lewat WhatsApp
+                </a>
+              )}
+            </div>
           )}
         </motion.div>
       ) : (
@@ -319,7 +334,7 @@ function DownloadForm({
           <div>
             <h2 className="font-display text-lg font-semibold text-marica-ink">Informasi Pengiriman</h2>
             <p className="mt-1 font-body text-xs leading-5 text-marica-ink-soft">
-              Data profilmu akan terisi otomatis. Link download akan dikirim ke email dan nomor WhatsApp ini.
+            Data profilmu akan terisi otomatis. Link download akan dikirim ke email dan bisa dibagikan lewat WhatsApp.
             </p>
           </div>
 
@@ -363,7 +378,7 @@ function DownloadForm({
               />
             </div>
             <p className="mt-1 text-xs text-marica-ink-soft">
-              Kami akan mengirim link PDF ke nomor ini melalui WhatsApp.
+              Setelah berhasil, kamu bisa membagikan link PDF ke nomor ini melalui WhatsApp.
             </p>
           </Field>
 

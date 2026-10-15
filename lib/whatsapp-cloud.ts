@@ -18,6 +18,21 @@ export function normalizeWhatsAppPhone(value: string) {
   return internationalNumber;
 }
 
+export function buildPrintableWhatsAppUrl(input: {
+  phone: string;
+  name: string;
+  printableTitle: string;
+  downloadUrl: string;
+}) {
+  const phone = normalizeWhatsAppPhone(input.phone);
+  const message = [
+    `Halo, saya ${input.name}.`,
+    `Ini link printable "${input.printableTitle}" dari Marica:`,
+    input.downloadUrl,
+  ].join("\n");
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
+
 export async function sendPrintableDownloadWhatsApp(input: {
   phone: string;
   name: string;

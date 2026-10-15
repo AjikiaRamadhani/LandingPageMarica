@@ -6,8 +6,10 @@ import Image from "next/image";
 import { ArrowRight, ExternalLink, Search, Sparkles, Star, Users } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import FeedbackPopup from "../components/FeedbackPopup";
 
 type Edugame = {
+  gameId?: "pacu-jalur" | "panjat-pinang" | "dino-escape" | "angkasa-rasa";
   title: string;
   description: string;
   age: string;
@@ -20,6 +22,7 @@ type Edugame = {
 
 const games: Edugame[] = [
   {
+    gameId: "pacu-jalur",
     title: "Marica Pacu Jalur",
     description: "Berlomba menyusuri sungai sambil mengenal budaya dan tradisi Indonesia.",
     age: "5–8 Tahun",
@@ -30,6 +33,7 @@ const games: Edugame[] = [
     href: "https://pacujalur.marica.id/",
   },
   {
+    gameId: "panjat-pinang",
     title: "Panjat Pinang",
     description: "Latih ketangkasan dan kerja sama melalui permainan seru khas Indonesia.",
     age: "5–8 Tahun",
@@ -40,6 +44,7 @@ const games: Edugame[] = [
     href: "https://panjatpinang.marica.id/",
   },
   {
+    gameId: "dino-escape",
     title: "Dino Escape",
     description: "Bantu dinosaurus melewati tantangan dan melatih fokus dalam petualangan prasejarah.",
     age: "5–9 Tahun",
@@ -50,6 +55,7 @@ const games: Edugame[] = [
     href: "https://dino.marica.id/",
   },
   {
+    gameId: "angkasa-rasa",
     title: "Marica Angkasa Rasa",
     description: "Jelajahi luar angkasa sambil menemukan tantangan angka dan benda-benda menarik.",
     age: "5–9 Tahun",
@@ -94,6 +100,7 @@ const games: Edugame[] = [
 export default function EdugamesPage() {
   const [search, setSearch] = useState("");
   const [skill, setSkill] = useState("Semua");
+  const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const skills = ["Semua", ...new Set(games.map((game) => game.skill))];
   const filteredGames = useMemo(() => {
@@ -107,6 +114,36 @@ export default function EdugamesPage() {
       return matchesSearch && matchesSkill;
     });
   }, [search, skill]);
+
+  async function handleGameVisit(game: Edugame) {
+    window.open(game.href, "_blank", "noopener,noreferrer");
+    try {
+      const response = await fetch("/api/games/visit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: game.gameId }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        awarded?: boolean;
+        reason?: "already_awarded" | "daily_limit_reached";
+        pointsAwarded?: number;
+        error?: string;
+      };
+      if (response.status === 401) {
+        setFeedback({ message: "Login terlebih dahulu agar kunjungan game mendapatkan poin.", type: "error" });
+      } else if (!response.ok) {
+        setFeedback({ message: result.error ?? "Kunjungan game belum tercatat.", type: "error" });
+      } else if (result.awarded) {
+        setFeedback({ message: `Kamu mendapatkan +${result.pointsAwarded ?? 5} Marica Points untuk kunjungan game ini.`, type: "success" });
+      } else if (result.reason === "daily_limit_reached") {
+        setFeedback({ message: "Batas poin kunjungan game hari ini sudah tercapai.", type: "success" });
+      } else {
+        setFeedback({ message: "Kunjungan game ini sudah dihitung hari ini.", type: "success" });
+      }
+    } catch {
+      setFeedback({ message: "Game terbuka, tetapi kunjungan belum sempat tercatat.", type: "error" });
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#fffaf3] font-body text-marica-ink">
@@ -187,10 +224,6 @@ export default function EdugamesPage() {
             </div>
           </div>
 
-          <p className="mx-auto mt-6 max-w-2xl rounded-xl bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
-            Game dibuka di situs eksternal. Poin game belum tersedia karena situs game belum terhubung ke sistem Marica.
-          </p>
-
           {filteredGames.length > 0 ? (
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredGames.map((game) => (
@@ -222,15 +255,24 @@ export default function EdugamesPage() {
                       <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> Bersama orang tua</span>
                       <span className="flex items-center gap-1"><Star className="h-3.5 w-3.5 text-marica-amber-dark" /> {game.duration}</span>
                     </div>
-                    <a
-                      href={game.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105"
-                    >
-                      {game.platform === "Mobile" ? "Buka Google Play" : "Mainkan di Website"}{" "}
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
+                    {game.gameId ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleGameVisit(game)}
+                        className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105"
+                      >
+                        Mainkan di Website <ExternalLink className="h-3.5 w-3.5" />
+                      </button>
+                    ) : (
+                      <a
+                        href={game.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-marica-amber-dark px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105"
+                      >
+                        Buka Google Play <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    )}
                   </div>
                 </article>
               ))}
@@ -257,6 +299,11 @@ export default function EdugamesPage() {
         </section>
       </main>
       <Footer />
+      <FeedbackPopup
+        message={feedback?.message}
+        type={feedback?.type}
+        onClose={() => setFeedback(null)}
+      />
     </div>
   );
 }
