@@ -15,11 +15,19 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const page = Math.max(1, Number(params.get("page") ?? 1));
   const limit = Math.min(100, Math.max(1, Number(params.get("limit") ?? 25)));
-  const [sales, total] = await Promise.all([
+  const [sales, total, completedSummary] = await Promise.all([
     prisma.cashierTransaction.findMany({ where: { cashierId: session.user.id }, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit, include: { items: true, customer: { select: { id: true, name: true, email: true, whatsapp: true } }, shift: true } }),
     prisma.cashierTransaction.count({ where: { cashierId: session.user.id } }),
+    prisma.cashierTransaction.aggregate({ where: { cashierId: session.user.id, status: "COMPLETED" }, _count: { _all: true }, _sum: { total: true } }),
   ]);
-  return NextResponse.json({ sales, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  return NextResponse.json({
+    sales,
+    summary: {
+      completedTransactions: completedSummary._count._all,
+      completedRevenue: completedSummary._sum.total ?? 0,
+    },
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  });
 }
 
 export async function POST(request: Request) {
