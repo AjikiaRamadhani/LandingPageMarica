@@ -815,8 +815,23 @@ export default function PosPage() {
               Buka shift kasir
             </h2>
             <p className="mt-1 font-body text-sm text-marica-ink-soft">
-              Setorkan kas awal sebelum menerima transaksi.
+              Masukkan uang modal/kembalian yang disiapkan di laci.
             </p>
+            <details className="group relative mt-2 max-w-lg text-sm">
+              <summary className="w-fit cursor-pointer list-none font-body text-xs font-semibold text-marica-amber-text underline decoration-dotted underline-offset-4">
+                Panduan kas awal
+              </summary>
+              <div className="absolute left-0 top-full z-20 mt-2 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-marica-amber/30 bg-white p-4 text-left shadow-xl">
+                <p className="font-body text-xs leading-relaxed text-marica-ink-soft">
+                  Kas awal adalah uang tunai modal di laci untuk membantu
+                  memberi kembalian. Masukkan jumlah uang yang benar-benar
+                  disiapkan, misalnya Rp200.000. Kas awal Rp0 tetap
+                  diperbolehkan, tetapi siapkan uang pecahan atau minta
+                  pembayaran pas/non-tunai jika belum ada uang untuk
+                  kembalian.
+                </p>
+              </div>
+            </details>
           </div>
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="opening-cash">
@@ -854,6 +869,21 @@ export default function PosPage() {
               Dibuka {new Date(shift.openedAt).toLocaleString("id-ID")}. Tutup
               shift setelah kas dihitung.
             </p>
+            <details className="group relative mt-2 max-w-lg text-sm">
+              <summary className="w-fit cursor-pointer list-none font-body text-xs font-semibold text-green-700 underline decoration-dotted underline-offset-4">
+                Panduan kas akhir
+              </summary>
+              <div className="absolute left-0 top-full z-20 mt-2 w-[min(20rem,calc(100vw-3rem))] rounded-2xl border border-marica-green/25 bg-white p-4 text-left shadow-xl">
+                <p className="font-body text-xs leading-relaxed text-marica-ink-soft">
+                  Hitung uang tunai fisik di laci, lalu masukkan jumlah
+                  sebenarnya. Perkiraan sistem = kas awal + penjualan tunai
+                  (transaksi QRIS/kartu tidak dihitung). Contoh: kas awal
+                  Rp200.000 dan penjualan tunai Rp150.000 berarti perkiraan
+                  kas akhir Rp350.000. Selisih menunjukkan perbedaan hitungan
+                  fisik dengan perkiraan.
+                </p>
+              </div>
+            </details>
           </div>
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="closing-cash">
