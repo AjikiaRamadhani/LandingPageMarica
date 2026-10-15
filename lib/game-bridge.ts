@@ -2,6 +2,8 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 export const GAME_POINTS_PER_COMPLETION = 50;
 export const DAILY_GAME_POINTS_LIMIT = 1_000;
+export const GAME_VISIT_POINTS = 5;
+export const DAILY_GAME_VISIT_LIMIT = 20;
 export const GAME_LAUNCH_TOKEN_TTL_SECONDS = 10 * 60;
 
 export const WEB_GAMES = {

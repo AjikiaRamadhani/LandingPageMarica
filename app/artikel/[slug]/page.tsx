@@ -2,11 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { CalendarDays, Share2 } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import ArticleComments from "../../components/Articlecomments";
 import Footer from "../../components/Footer";
 import NewsletterForm from "../../components/Newsletterform";
+import ShareButton from "../../components/ShareButton";
 import { auth } from "@/lib/auth";
 import { categoryBadgeStyle, resolveCategoryColor } from "@/lib/category-color";
 
@@ -160,12 +161,7 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
               <CalendarDays className="h-4 w-4" />
               {formatDate(article.publishedAt)}
             </span>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 font-body text-sm font-medium text-marica-ink-soft shadow-sm hover:text-marica-ink"
-            >
-              <Share2 className="h-4 w-4" /> Bagikan
-            </button>
+            <ShareButton title={article.title} />
           </div>
 
           <div

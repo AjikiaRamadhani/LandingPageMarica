@@ -5,6 +5,7 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendPrintableDownloadEmail } from "@/lib/printable-mailer";
 import {
+  buildPrintableWhatsAppUrl,
   normalizeWhatsAppPhone,
   sendPrintableDownloadWhatsApp,
   WhatsAppCloudConfigurationError,
@@ -157,6 +158,12 @@ export async function POST(
     }
 
     let whatsappDelivery: "accepted" | "failed" | "not_configured" = "accepted";
+    const whatsappUrl = buildPrintableWhatsAppUrl({
+      phone: whatsappPhone,
+      name,
+      printableTitle: printable.title,
+      downloadUrl: data.signedUrl,
+    });
     try {
       await sendPrintableDownloadWhatsApp({
         phone: whatsappPhone,
@@ -180,6 +187,7 @@ export async function POST(
         email: emailDelivery,
         whatsapp: whatsappDelivery,
       },
+      whatsappUrl,
     });
   } catch (error) {
     console.error("[POST /api/printables/[id]/download]", error);

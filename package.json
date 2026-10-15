@@ -7,7 +7,8 @@
     "build": "prisma generate && next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test:points": "tsx --test tests/points.test.ts"
+    "test:points": "tsx --test tests/points.test.ts",
+    "test:smoke": "tsx --test tests/smoke.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
