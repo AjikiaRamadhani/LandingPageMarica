@@ -23,10 +23,16 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma Client
-        run: npx prisma generate
+        run: |
+          rm -rf app/generated/prisma
+          npx prisma generate --schema=prisma/schema.prisma
+          node -e "const fs=require('fs'); const d=fs.readFileSync('app/generated/prisma/index.d.ts','utf8'); for (const name of ['b2BInquiry','playpassBooking','subscription','subscriptionActivity','childProfile']) { if (!d.includes('get '+name+'()')) throw new Error('Prisma delegate missing: '+name); }"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       - name: Build
-        run: npm run build --webpack
+        run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
