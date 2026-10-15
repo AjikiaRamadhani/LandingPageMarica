@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { CalendarDays, Share2 } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import ArticleComments from "../../components/Articlecomments";
@@ -9,6 +10,7 @@ import Footer from "../../components/Footer";
 import NewsletterForm from "../../components/Newsletterform";
 import { auth } from "@/lib/auth";
 import { categoryBadgeStyle, resolveCategoryColor } from "@/lib/category-color";
+import { prisma } from "@/lib/prisma";
 
 // Sebelumnya halaman ini pakai data statis dari `lib/artikel-data.ts`
 // (getArticleBySlug/getRelatedArticles). Sekarang datanya diambil dari
@@ -49,6 +51,82 @@ type ApiArticleListItem = {
 type ArticlesListResponse = { articles: ApiArticleListItem[] };
 
 type Params = Promise<{ slug: string }>;
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.marica.id";
+
+function createSeoDescription(excerpt: string | null, content: string) {
+  const plainText = content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const description = excerpt?.trim() || plainText;
+  return description.length > 160
+    ? `${description.slice(0, 157).trimEnd()}...`
+    : description;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await prisma.article.findFirst({
+    where: { slug, status: "PUBLISHED" },
+    select: {
+      title: true,
+      slug: true,
+      excerpt: true,
+      content: true,
+      coverImageUrl: true,
+      publishedAt: true,
+      updatedAt: true,
+      category: { select: { name: true } },
+      author: { select: { name: true } },
+    },
+  });
+
+  if (!article) {
+    return {
+      title: "Artikel tidak ditemukan",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const description = createSeoDescription(article.excerpt, article.content);
+  const url = `${siteUrl}/artikel/${article.slug}`;
+  const image = article.coverImageUrl || FALLBACK_COVER;
+
+  return {
+    title: article.title,
+    description,
+    keywords: [
+      "artikel Marica",
+      "edukasi anak",
+      "parenting",
+      ...(article.category ? [article.category.name] : []),
+    ],
+    authors: article.author?.name ? [{ name: article.author.name }] : undefined,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      locale: "id_ID",
+      url,
+      siteName: "Marica",
+      title: article.title,
+      description,
+      publishedTime: article.publishedAt?.toISOString(),
+      modifiedTime: article.updatedAt.toISOString(),
+      authors: article.author?.name ? [article.author.name] : undefined,
+      section: article.category?.name,
+      images: [{ url: image, alt: article.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description,
+      images: [image],
+    },
+    robots: { index: true, follow: true },
+  };
+}
 
 // Server Component butuh URL absolut untuk fetch ke API sendiri (fetch
 // relatif seperti "/api/..." tidak bisa dipakai di server). Base URL
