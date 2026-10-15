@@ -9,15 +9,18 @@ type ShiftHistory = {
   openedAt: string;
   closedAt: string | null;
   status: "OPEN" | "CLOSED";
-  cashier: { name: string | null; email: string | null };
+  cashier: { name: string | null; email: string | null; role: string };
   transactionCount: number;
   transactionTotal: number;
 };
+
+type ActiveShift = Pick<ShiftHistory, "openingCash" | "openedAt" | "cashier">;
 
 const money = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 export default function CashierHistoryPage() {
   const [history, setHistory] = useState<ShiftHistory[]>([]);
+  const [activeShift, setActiveShift] = useState<ActiveShift | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
@@ -28,6 +31,7 @@ export default function CashierHistoryPage() {
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error ?? "Riwayat gagal dimuat.");
+        setActiveShift(data.shift ?? null);
         setHistory(Array.isArray(data.history) ? data.history : []);
         setTotalPages(data.pagination?.totalPages ?? 1);
       })
@@ -50,6 +54,31 @@ export default function CashierHistoryPage() {
           Rekap shift dan transaksi penjaga kasir.
         </p>
       </header>
+      {activeShift && (
+        <section className="mb-6 rounded-3xl border border-marica-amber/30 bg-marica-amber/10 p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
+                Shift aktif
+              </p>
+              <p className="mt-1 font-body text-base font-bold text-marica-ink">
+                {activeShift.cashier.name ?? activeShift.cashier.email ?? "Penjaga"}
+              </p>
+              <p className="font-body text-sm text-marica-ink-soft">
+                Mulai {new Date(activeShift.openedAt).toLocaleString("id-ID")}
+              </p>
+            </div>
+            <div className="text-left sm:text-right">
+              <span className="inline-flex rounded-full bg-marica-amber-dark px-3 py-1 font-body text-xs font-bold text-white">
+                {activeShift.cashier.role}
+              </span>
+              <p className="mt-2 font-body text-sm font-semibold text-marica-ink">
+                Kas awal {money(activeShift.openingCash)}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
       <section className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
         {isLoading ? (
           <p className="py-10 text-center font-body text-sm text-marica-ink-soft">Memuat riwayat...</p>
@@ -62,7 +91,7 @@ export default function CashierHistoryPage() {
             <table className="w-full min-w-180 text-left">
               <thead>
                 <tr className="border-b border-black/5 font-body text-xs uppercase tracking-wide text-marica-ink-soft/60">
-                  <th className="pb-3">Penjaga</th>
+                  <th className="pb-3">Penjaga / role</th>
                   <th className="pb-3">Waktu shift</th>
                   <th className="pb-3">Transaksi</th>
                   <th className="pb-3">Omzet</th>
@@ -74,6 +103,9 @@ export default function CashierHistoryPage() {
                   <tr key={item.id} className="border-b border-black/5 last:border-0">
                     <td className="py-4">
                       <p className="font-body text-sm font-bold text-marica-ink">{item.cashier.name ?? item.cashier.email ?? "Penjaga"}</p>
+                      <span className="mt-1 inline-flex rounded-full bg-marica-sky-light/70 px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-wide text-marica-ink-soft">
+                        {item.cashier.role}
+                      </span>
                       <p className="font-body text-xs text-marica-ink-soft">Kas awal {money(item.openingCash)}</p>
                     </td>
                     <td className="py-4 font-body text-xs text-marica-ink-soft">

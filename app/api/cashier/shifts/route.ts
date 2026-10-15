@@ -10,14 +10,18 @@ export async function GET(request: Request) {
   const limit = Math.min(20, Math.max(1, Number(params.get("limit") ?? 10)));
   const where = { cashierId: session.user.id };
   const [shift, shifts] = await Promise.all([
-    prisma.posShift.findFirst({ where: { ...where, status: "OPEN" }, orderBy: { openedAt: "desc" } }),
+    prisma.posShift.findFirst({
+      where: { ...where, status: "OPEN" },
+      orderBy: { openedAt: "desc" },
+      include: { cashier: { select: { name: true, email: true, role: true } } },
+    }),
     prisma.posShift.findMany({
       where,
       orderBy: { openedAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
       include: {
-        cashier: { select: { name: true, email: true } },
+        cashier: { select: { name: true, email: true, role: true } },
         cashierTransactions: {
           where: { status: "COMPLETED" },
           select: { total: true },
