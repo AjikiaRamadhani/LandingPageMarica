@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/access-control";
 import { calculateEarnedPoints } from "@/lib/points";
+import { changeInventoryQuantity } from "@/lib/inventory-stock";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await requireRole("ADMIN", "KASIR");
@@ -17,8 +18,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
       for (const item of transaction.items) {
         if (item.productId) {
-          await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity }, soldCount: { decrement: item.quantity } } });
-          await tx.inventoryMovement.create({ data: { productId: item.productId, posTransactionId: transaction.id, type: "RETURN", quantityDelta: item.quantity, reason: `Void transaksi POS ${transaction.transactionNumber}`, referenceId: transaction.transactionNumber, createdById: session.user.id } });
+          await changeInventoryQuantity(tx, item.productId, "MARICA_STORE", item.quantity);
+          await tx.product.update({ where: { id: item.productId }, data: { soldCount: { decrement: item.quantity } } });
+          await tx.inventoryMovement.create({ data: { productId: item.productId, posTransactionId: transaction.id, location: "MARICA_STORE", type: "RETURN", quantityDelta: item.quantity, reason: `Void transaksi POS ${transaction.transactionNumber}`, referenceId: transaction.transactionNumber, createdById: session.user.id } });
         }
       }
 

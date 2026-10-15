@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/access-control";
 import { calculateEarnedPoints } from "@/lib/points";
+import { changeInventoryQuantity } from "@/lib/inventory-stock";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await requireRole("ADMIN", "KASIR");
@@ -15,8 +16,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       if (!sale) throw new Error("NOT_FOUND");
       for (const item of sale.items) {
         if (item.type === "PRODUCT" && item.productId) {
-          await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity }, soldCount: { decrement: item.quantity } } });
-          await tx.inventoryMovement.create({ data: { productId: item.productId, type: "RETURN", quantityDelta: item.quantity, reason: `Void mixed sale ${sale.transactionNumber}`, referenceId: sale.id, createdById: session.user.id } });
+          await changeInventoryQuantity(tx, item.productId, "MARICA_STORE", item.quantity);
+          await tx.product.update({ where: { id: item.productId }, data: { soldCount: { decrement: item.quantity } } });
+          await tx.inventoryMovement.create({ data: { productId: item.productId, location: "MARICA_STORE", type: "RETURN", quantityDelta: item.quantity, reason: `Void mixed sale ${sale.transactionNumber}`, referenceId: sale.id, createdById: session.user.id } });
         }
       }
       await tx.playpassTicket.updateMany({ where: { cashierTransactionId: sale.id, status: "ACTIVE" }, data: { status: "CANCELLED" } });

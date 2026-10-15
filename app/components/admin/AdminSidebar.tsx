@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Newspaper,
   ShoppingBag,
+  Warehouse,
   FileDown,
   ClipboardList,
   CalendarDays,
@@ -43,6 +44,12 @@ const navItems = [
     label: "Produk",
     href: "/admin/belanja",
     icon: ShoppingBag,
+    enabled: true,
+  },
+  {
+    label: "Inventaris",
+    href: "/admin/inventory",
+    icon: Warehouse,
     enabled: true,
   },
   {

@@ -20,6 +20,7 @@ export async function GET(request: Request) {
         include: {
           images: { orderBy: { order: "asc" }, take: 1 },
           category: { select: { id: true, name: true, slug: true } },
+          inventories: { select: { location: true, quantity: true } },
         },
       }),
       prisma.product.count({ where: { isActive: true } }),
@@ -27,7 +28,13 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       {
-        products,
+        products: products.map((product) => ({
+          ...product,
+          stock: product.inventories.find((inventory) => inventory.location === "MARICA_STORE")?.quantity ?? 0,
+          inventoryByLocation: Object.fromEntries(
+            product.inventories.map((inventory) => [inventory.location, inventory.quantity]),
+          ),
+        })),
         pagination: {
           page: 1,
           limit,

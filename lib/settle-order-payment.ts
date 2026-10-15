@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
+import { changeInventoryQuantity } from "@/lib/inventory-stock";
 
 type OrderToSettle = {
   id: string;
@@ -45,10 +46,12 @@ export async function settleOrderPayment(
     const lockedProducts = await transaction.$queryRaw<
       Array<{ id: string; stock: number }>
     >`
-      SELECT id, stock
-      FROM "products"
-      WHERE id = ANY (${productIds})
-      FOR UPDATE
+      SELECT p.id, i.quantity AS stock
+      FROM "products" p
+      INNER JOIN "product_inventories" i ON i."productId" = p.id
+      WHERE p.id = ANY (${productIds})
+        AND i.location = 'ONLINE_WAREHOUSE'::"InventoryLocation"
+      FOR UPDATE OF p, i
     `;
 
     const stockMap = new Map(lockedProducts.map((product) => [product.id, product.stock]));
@@ -74,22 +77,24 @@ export async function settleOrderPayment(
 
     if (paidOrder.count === 0) return;
 
-    await Promise.all(
-      validItems.map((item) =>
-        transaction.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: { decrement: item.quantity },
-            soldCount: { increment: item.quantity },
-          },
-        }),
-      ),
-    );
+    for (const item of validItems) {
+      await changeInventoryQuantity(
+        transaction,
+        item.productId,
+        "ONLINE_WAREHOUSE",
+        -item.quantity,
+      );
+      await transaction.product.update({
+        where: { id: item.productId },
+        data: { soldCount: { increment: item.quantity } },
+      });
+    }
 
     await transaction.inventoryMovement.createMany({
       data: validItems.map((item) => ({
         productId: item.productId,
         orderId: order.id,
+        location: "ONLINE_WAREHOUSE" as const,
         type: "SALE" as const,
         quantityDelta: -item.quantity,
         reason: "Midtrans payment settled",

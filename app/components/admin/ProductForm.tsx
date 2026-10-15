@@ -403,7 +403,7 @@ export default function ProductForm({
                 htmlFor="p-stock"
                 className="mb-1.5 block font-body text-sm font-medium text-marica-ink"
               >
-                Stok
+                Stok Gudang Online
               </label>
               <input
                 id="p-stock"
@@ -413,6 +413,9 @@ export default function ProductForm({
                 onChange={(e) => setStock(e.target.value)}
                 className="w-full rounded-xl border border-black/10 bg-marica-sky-light/30 px-4 py-2.5 font-body text-[15px] text-marica-ink outline-none transition focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
               />
+              <p className="mt-1 font-body text-xs text-marica-ink-soft">
+                Stok untuk pesanan online. Atur stok Experience Store dan transfer di menu Inventaris.
+              </p>
             </div>
           </div>
 

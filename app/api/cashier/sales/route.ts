@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/access-control";
 import { validateOptionalText } from "@/lib/request-validation";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
+import { changeInventoryQuantity, lockInventoryProducts } from "@/lib/inventory-stock";
 
 const paymentMethods = ["CASH", "CARD", "QRIS"] as const;
 type SaleItem = { type?: "PRODUCT" | "PLAYPASS" | "TABLE_FEE"; productId?: string; packageId?: string; tableNumber?: string; quantity?: number };
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
         if (!item.productId) throw new Error("ITEM_INVALID");
         productQuantities.set(item.productId, (productQuantities.get(item.productId) ?? 0) + item.quantity!);
       }
-      const products = productQuantities.size ? await tx.$queryRaw<Array<{ id: string; name: string; price: number; stock: number }>>`SELECT id, name, price, stock FROM "products" WHERE id = ANY (${[...productQuantities.keys()]}) AND "isActive" = true FOR UPDATE` : [];
+      const products = await lockInventoryProducts(tx, [...productQuantities.keys()], "MARICA_STORE");
       const productMap = new Map(products.map((product) => [product.id, product]));
       for (const [id, quantity] of productQuantities) { const product = productMap.get(id); if (!product) throw new Error("PRODUCT_NOT_FOUND"); if (product.stock < quantity) throw new Error("STOCK_SHORTAGE"); }
       const playpassIds = items.filter((item) => item.type === "PLAYPASS").map((item) => item.packageId).filter((id): id is string => Boolean(id));
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
         if (changedVoucher.count !== 1) throw new Error("VOUCHER_UNAVAILABLE");
       }
       for (const item of lineItems) {
-        if (item.type === "PRODUCT") { await tx.product.update({ where: { id: item.productId! }, data: { stock: { decrement: item.quantity }, soldCount: { increment: item.quantity } } }); await tx.inventoryMovement.create({ data: { productId: item.productId!, type: "SALE", quantityDelta: -item.quantity, reason: `Mixed sale ${created.transactionNumber}`, referenceId: created.id, createdById: session.user.id } }); }
+        if (item.type === "PRODUCT") { await changeInventoryQuantity(tx, item.productId!, "MARICA_STORE", -item.quantity); await tx.product.update({ where: { id: item.productId! }, data: { soldCount: { increment: item.quantity } } }); await tx.inventoryMovement.create({ data: { productId: item.productId!, location: "MARICA_STORE", type: "SALE", quantityDelta: -item.quantity, reason: `Mixed sale ${created.transactionNumber}`, referenceId: created.id, createdById: session.user.id } }); }
         if (item.type === "PLAYPASS") { const pkg = playpassMap.get(item.playpassPackageId! )!; const now = new Date(); await tx.playpassTicket.create({ data: { ticketNumber: `PP-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`, packageId: pkg.id, cashierTransactionId: created.id, shiftId: shift.id, customerId: body.customerId || null, cashierId: session.user.id, quantity: item.quantity, total: item.subtotal, paymentMethod: body.paymentMethod!, paidAmount: item.subtotal, changeAmount: 0, validFrom: now, expiresAt: new Date(now.getTime() + pkg.durationMinutes * 60000) } }); }
         if (item.type === "TABLE_FEE") { const pkg = tableFeeMap.get(item.tableFeePackageId!)!; const now = new Date(); await tx.tableFeeSession.create({ data: { sessionNumber: `TF-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`, tableNumber: item.tableNumber!, packageId: pkg.id, cashierTransactionId: created.id, shiftId: shift.id, customerId: body.customerId || null, cashierId: session.user.id, total: item.subtotal, paymentMethod: body.paymentMethod!, paidAmount: item.subtotal, changeAmount: 0, startedAt: now, endsAt: new Date(now.getTime() + pkg.durationMinutes * 60000) } }); }
       }

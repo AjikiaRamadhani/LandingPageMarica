@@ -16,6 +16,28 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Inventaris Omni-channel
+
+Stok produk dipisah menjadi `ONLINE_WAREHOUSE` dan `MARICA_STORE`. Migration
+`20261015140000_add_location_inventory_and_article_products` memindahkan seluruh
+stok lama ke Gudang Online dan memulai Experience Store dari nol. Terapkan
+migration database sebelum deploy aplikasi baru:
+
+```bash
+npx prisma migrate deploy
+```
+
+Checkout web memakai stok Gudang Online; transaksi retail POS memakai stok
+Experience Store. Perpindahan stok harus dicatat sebagai transfer melalui menu
+Admin > Inventaris, bukan dengan mengubah jumlah stok gabungan. `Product.stock`
+tetap menjadi salinan stok Gudang Online untuk kompatibilitas checkout dan
+katalog. Laporan Admin > Analytics memasukkan pesanan online yang dibayar dan
+item retail POS dari transaksi `COMPLETED`; transaksi POS `VOIDED` dikecualikan.
+
+Admin dapat memilih hingga delapan produk aktif pada form artikel. Widget
+produk tersebut tampil di bawah konten artikel publik. Detail kontrak API
+inventaris dan artikel tersedia pada dokumentasi Swagger di `/api/swagger`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 ## Printable WhatsApp and external game rewards

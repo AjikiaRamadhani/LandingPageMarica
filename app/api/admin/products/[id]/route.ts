@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { changeInventoryQuantity } from "@/lib/inventory-stock";
 
 export async function GET(
   request: Request,
@@ -19,6 +20,7 @@ export async function GET(
       include: {
         images: { orderBy: { order: "asc" } },
         category: { select: { id: true, name: true, slug: true } },
+        inventories: { select: { location: true, quantity: true } },
       },
     });
 
@@ -94,12 +96,18 @@ export async function PUT(
     }
 
     const product = await prisma.$transaction(async (tx) => {
+      const lockedProducts = await tx.$queryRaw<Array<{ id: string; stock: number }>>`
+        SELECT id, stock FROM "products" WHERE id = ${id} FOR UPDATE
+      `;
+      const lockedProduct = lockedProducts[0];
+      if (!lockedProduct) throw new Error("PRODUCT_NOT_FOUND");
+
       // Kalau images dikirim ulang, replace semua secara atomik bersama update produk.
       if (images) {
         await tx.productImage.deleteMany({ where: { productId: id } });
       }
 
-      const updated = await tx.product.update({
+      await tx.product.update({
         where: { id },
         data: {
           ...(name !== undefined ? { name } : {}),
@@ -107,7 +115,6 @@ export async function PUT(
           ...(highlights !== undefined ? { highlights } : {}),
           ...(price !== undefined ? { price } : {}),
           ...(compareAtPrice !== undefined ? { compareAtPrice } : {}),
-          ...(stock !== undefined ? { stock } : {}),
           ...(sku !== undefined ? { sku } : {}),
           ...(ageMin !== undefined ? { ageMin } : {}),
           ...(ageMax !== undefined ? { ageMax } : {}),
@@ -129,22 +136,35 @@ export async function PUT(
               }
             : {}),
         },
-        include: { images: true, category: true },
+        include: {
+          images: true,
+          category: true,
+          inventories: { select: { location: true, quantity: true } },
+        },
       });
 
-      if (stock !== undefined && stock !== existing.stock) {
+      if (stock !== undefined && stock !== lockedProduct.stock) {
+        await changeInventoryQuantity(tx, id, "ONLINE_WAREHOUSE", stock - lockedProduct.stock);
         await tx.inventoryMovement.create({
           data: {
             productId: id,
+            location: "ONLINE_WAREHOUSE",
             type: "ADJUSTMENT",
-            quantityDelta: stock - existing.stock,
+            quantityDelta: stock - lockedProduct.stock,
             reason: "Admin stock adjustment",
             createdById: session.user.id,
           },
         });
       }
 
-      return updated;
+      return tx.product.findUniqueOrThrow({
+        where: { id },
+        include: {
+          images: true,
+          category: true,
+          inventories: { select: { location: true, quantity: true } },
+        },
+      });
     });
 
     return NextResponse.json(product);
