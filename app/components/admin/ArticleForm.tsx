@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 type ApiCategory = { id: string; name: string; slug: string; colorTag: string | null };
+type ApiProduct = { id: string; name: string; slug: string; price: number; isActive: boolean; images?: { url: string }[] };
 
 export type ArticleFormInitialData = {
   id: string;
@@ -27,6 +28,7 @@ export type ArticleFormInitialData = {
   categoryId: string | null;
   status: "DRAFT" | "PUBLISHED";
   publishedAt: string | null;
+  productPlacements?: { product: ApiProduct }[];
 };
 
 function toDateInputValue(iso: string | null) {
@@ -45,6 +47,14 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
   const [publishedAt, setPublishedAt] = useState(toDateInputValue(initialData?.publishedAt ?? null));
   const [excerpt, setExcerpt] = useState(initialData?.excerpt ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState(initialData?.coverImageUrl ?? "");
+  const [productSearch, setProductSearch] = useState("");
+  const [products, setProducts] = useState<ApiProduct[]>(
+    initialData?.productPlacements?.map((placement) => placement.product) ?? [],
+  );
+  const [productIds, setProductIds] = useState(
+    initialData?.productPlacements?.map((placement) => placement.product.id) ?? [],
+  );
+  const [productLoadError, setProductLoadError] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<ApiCategory[]>([]);
 
@@ -66,6 +76,36 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
       .then((json: ApiCategory[]) => setCategories(Array.isArray(json) ? json : []))
       .catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeout = setTimeout(async () => {
+      setProductLoadError(null);
+      try {
+        const params = new URLSearchParams({ limit: "50", activeOnly: "true" });
+        if (productSearch.trim()) params.set("search", productSearch.trim());
+        const response = await fetch(`/api/admin/products?${params}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const result = (await response.json()) as { products?: ApiProduct[]; error?: string };
+        if (!response.ok) throw new Error(result.error ?? "Gagal memuat produk");
+        setProducts((current) => {
+          const merged = new Map(current.map((product) => [product.id, product]));
+          for (const product of result.products ?? []) merged.set(product.id, product);
+          return [...merged.values()];
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name !== "AbortError") {
+          setProductLoadError(error.message);
+        }
+      }
+    }, 250);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [productSearch]);
 
   // contentEditable diisi sekali dari initialData (edit mode) supaya kursor
   // tidak lompat tiap re-render. Perubahan berikutnya dibaca lewat onInput.
@@ -133,6 +173,7 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
     categoryId: categoryId || null,
     status,
     publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
+    productIds,
   });
 
   const handleSubmit = async (status: "DRAFT" | "PUBLISHED") => {
@@ -170,13 +211,13 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
   };
 
   const toolbarButtons = [
-    { icon: Bold, label: "Tebal", action: () => exec("bold") },
-    { icon: Italic, label: "Miring", action: () => exec("italic") },
-    { icon: Underline, label: "Garis bawah", action: () => exec("underline") },
-    { icon: List, label: "Daftar poin", action: () => exec("insertUnorderedList") },
-    { icon: ListOrdered, label: "Daftar bernomor", action: () => exec("insertOrderedList") },
-    { icon: Link2, label: "Tautan", action: handleInsertLink },
-    { icon: ImageIcon, label: "Sisipkan gambar", action: () => contentImageInputRef.current?.click() },
+    { icon: Bold, label: "Tebal", command: "bold" },
+    { icon: Italic, label: "Miring", command: "italic" },
+    { icon: Underline, label: "Garis bawah", command: "underline" },
+    { icon: List, label: "Daftar poin", command: "insertUnorderedList" },
+    { icon: ListOrdered, label: "Daftar bernomor", command: "insertOrderedList" },
+    { icon: Link2, label: "Tautan", command: "link" },
+    { icon: ImageIcon, label: "Sisipkan gambar", command: "image" },
   ];
 
   return (
@@ -228,6 +269,44 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
                 ))}
               </select>
             </div>
+
+            <section className="rounded-xl border border-black/10 bg-marica-sky-light/20 p-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="font-body text-sm font-semibold text-marica-ink">Widget produk artikel</h2>
+                  <p className="font-body text-xs text-marica-ink-soft">Produk terpilih akan tampil sebagai rekomendasi di bawah artikel (maksimal 8).</p>
+                </div>
+                <span className="font-body text-xs text-marica-ink-soft">{productIds.length}/8 dipilih</span>
+              </div>
+              <input
+                type="search"
+                value={productSearch}
+                onChange={(event) => setProductSearch(event.target.value)}
+                placeholder="Cari produk aktif..."
+                aria-label="Cari produk untuk widget artikel"
+                className="mt-3 w-full rounded-lg border border-black/10 bg-white px-3 py-2 font-body text-sm outline-none focus:border-marica-amber"
+              />
+              {productLoadError && <p role="alert" className="mt-2 font-body text-xs text-marica-rose-deep">{productLoadError}</p>}
+              <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
+                {products
+                  .filter((product) => (product.isActive || productIds.includes(product.id)) && product.name.toLowerCase().includes(productSearch.trim().toLowerCase()))
+                  .map((product) => (
+                    <label key={product.id} className="flex cursor-pointer items-center gap-3 rounded-lg bg-white px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={productIds.includes(product.id)}
+                        disabled={!productIds.includes(product.id) && (!product.isActive || productIds.length >= 8)}
+                        onChange={(event) => setProductIds((current) => event.target.checked
+                          ? [...current, product.id]
+                          : current.filter((id) => id !== product.id))}
+                        className="h-4 w-4 accent-amber-700"
+                      />
+                      <span className="min-w-0 flex-1 truncate font-body text-sm text-marica-ink">{product.name}{!product.isActive ? " (nonaktif - hapus dari widget)" : ""}</span>
+                      <span className="font-body text-xs text-marica-ink-soft">Rp {product.price.toLocaleString("id-ID")}</span>
+                    </label>
+                  ))}
+              </div>
+            </section>
 
             <div>
               <label htmlFor="publishedAt" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
@@ -319,13 +398,17 @@ export default function ArticleForm({ initialData }: { initialData?: ArticleForm
             <label className="mb-1.5 block font-body text-sm font-medium text-marica-ink">Konten Artikel</label>
             <div className="overflow-hidden rounded-xl border border-black/10 bg-white focus-within:border-marica-amber focus-within:ring-4 focus-within:ring-marica-amber/15">
               <div className="flex flex-wrap items-center gap-1 border-b border-black/10 bg-marica-sky-light/20 px-2 py-1.5">
-                {toolbarButtons.map(({ icon: Icon, label, action }) => (
+                {toolbarButtons.map(({ icon: Icon, label, command }) => (
                   <button
                     key={label}
                     type="button"
                     title={label}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={action}
+                    onClick={() => {
+                      if (command === "link") handleInsertLink();
+                      else if (command === "image") contentImageInputRef.current?.click();
+                      else exec(command);
+                    }}
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-marica-ink-soft transition hover:bg-white hover:text-marica-ink active:scale-[0.95] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marica-amber/20"
                   >
                     <Icon className="h-4 w-4" />

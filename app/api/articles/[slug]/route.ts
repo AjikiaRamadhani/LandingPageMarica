@@ -20,6 +20,21 @@ export async function GET(
             user: { select: { id: true, name: true, image: true } },
           },
         },
+        productPlacements: {
+          orderBy: { sortOrder: "asc" },
+          where: { product: { isActive: true } },
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                images: { where: { isVideo: false }, orderBy: { order: "asc" }, take: 1 },
+              },
+            },
+          },
+        },
       },
     });
 

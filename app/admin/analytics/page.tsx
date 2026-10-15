@@ -22,6 +22,8 @@ type AnalyticsData = {
     totalPrintableLeads: number;
     totalEventRevenue: number | string;
     totalProductRevenue: number | string;
+    totalPosRetailRevenue: number | string;
+    totalPosRetailTransactions: number;
   };
   salesTrend: { date: string; revenue: number }[];
   topProducts: { name: string; quantity: number; revenue: number }[];
@@ -29,6 +31,7 @@ type AnalyticsData = {
   orderStatusSummary: Status[];
   bookingStatusSummary: Status[];
   ticketSummary: Status[];
+  salesChannels: { channel: string; revenue: number }[];
 };
 
 type Period = 7 | 30 | 90;
@@ -301,6 +304,33 @@ export default function AdminAnalyticsPage() {
           </div>
         </section>
       </div>
+
+      <section className="mt-5 rounded-2xl border border-marica-rose-deep/10 bg-white p-5 shadow-sm sm:p-6">
+        <p className="font-body text-xs font-semibold uppercase tracking-[0.12em] text-marica-amber-text">
+          Omnichannel
+        </p>
+        <h2 className="mt-1 font-display text-xl font-semibold text-marica-ink">
+          Penjualan per kanal
+        </h2>
+        <div className="mt-4 space-y-4">
+          {data?.salesChannels.map((channel) => {
+            const channelTotal = data.salesChannels.reduce((sum, item) => sum + item.revenue, 0);
+            const percentage = channelTotal > 0 ? (channel.revenue / channelTotal) * 100 : 0;
+            return (
+              <div key={channel.channel}>
+                <div className="mb-1.5 flex items-center justify-between font-body text-sm">
+                  <span className="font-medium text-marica-ink">{channel.channel === "POS" ? "Retail POS" : "Online"}</span>
+                  <span className="text-marica-ink-soft">{formatRupiah(channel.revenue)} · {percentage.toFixed(1)}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-marica-sky-light/50">
+                  <div className="h-full rounded-full bg-marica-amber-dark" style={{ width: `${percentage}%` }} />
+                </div>
+              </div>
+            );
+          })}
+          {data && <p className="font-body text-xs text-marica-ink-soft">{data.metrics.totalPosRetailTransactions.toLocaleString("id-ID")} transaksi POS produk selesai; transaksi void tidak dihitung.</p>}
+        </div>
+      </section>
 
       <section className="mt-5 rounded-2xl border border-marica-rose-deep/10 bg-white p-5 shadow-sm sm:p-6">
         <p className="font-body text-xs font-semibold uppercase tracking-[0.12em] text-marica-amber-text">

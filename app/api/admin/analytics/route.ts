@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
-import type { OrderStatus } from "@/app/generated/prisma/client";
+import type { OrderStatus } from "@/app/generated/prisma/index.js";
+import { aggregatePosRetailSales } from "@/lib/omnichannel-sales";
 
 export async function GET(request: Request) {
   const session = await requireAdmin();
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
       ],
     };
 
-    const [events, bookings, orders, printableLeads, ticketSummary, paidOrders, topProducts, paymentMethods, lowStockProducts] = await Promise.all([
+    const [events, bookings, orders, printableLeads, ticketSummary, paidOrders, topProducts, paymentMethods, lowStockInventories, legacyPosTransactions, cashierTransactions] = await Promise.all([
       prisma.event.count({ where: { isActive: true } }),
       prisma.eventBooking.count({ where: { createdAt: { gte: from, lt: until } } }),
       prisma.order.count({ where: { createdAt: { gte: from, lt: until } } }),
@@ -48,19 +49,45 @@ export async function GET(request: Request) {
         where: { order: paidOrderWhere },
         _sum: { quantity: true, subtotal: true },
         orderBy: { _sum: { subtotal: "desc" } },
-        take: 3,
       }),
       prisma.order.groupBy({
         by: ["paymentMethod"],
         where: paidOrderWhere,
         _count: { paymentMethod: true },
       }),
-      prisma.product.findMany({
-        where: { isActive: true, stock: { lte: 10 } },
-        orderBy: [{ stock: "asc" }, { name: "asc" }],
+      prisma.productInventory.findMany({
+        where: { quantity: { lte: 10 }, product: { isActive: true } },
+        orderBy: [{ quantity: "asc" }, { product: { name: "asc" } }],
         take: 10,
-        select: { id: true, name: true, sku: true, stock: true },
+        include: { product: { select: { id: true, name: true, sku: true } } },
       }),
+      prisma.posTransaction.findMany({
+        where: { status: "COMPLETED", createdAt: { gte: from, lt: until } },
+        select: {
+          createdAt: true,
+          subtotal: true,
+          discountAmount: true,
+          paymentMethod: true,
+          items: { select: { productId: true, quantity: true, subtotal: true } },
+        },
+      }),
+      prisma.cashierTransaction.findMany({
+        where: { status: "COMPLETED", createdAt: { gte: from, lt: until } },
+        select: {
+          createdAt: true,
+          subtotal: true,
+          discountAmount: true,
+          paymentMethod: true,
+          items: {
+            where: { type: "PRODUCT" },
+            select: { productId: true, type: true, quantity: true, subtotal: true },
+          },
+        },
+      }),
+    ]);
+    const posRetail = aggregatePosRetailSales([
+      ...legacyPosTransactions,
+      ...cashierTransactions,
     ]);
 
     const totalRevenue = await prisma.eventBooking.aggregate({
@@ -98,6 +125,47 @@ export async function GET(request: Request) {
       }),
     ]);
 
+    const onlineProductSales = new Map(
+      topProducts.map((item) => [
+        item.productId,
+        {
+          quantity: item._sum.quantity ?? 0,
+          revenue: item._sum.subtotal ?? 0,
+        },
+      ]),
+    );
+    for (const [productId, sale] of posRetail.products) {
+      const existing = onlineProductSales.get(productId) ?? { quantity: 0, revenue: 0 };
+      onlineProductSales.set(productId, {
+        quantity: existing.quantity + sale.quantity,
+        revenue: existing.revenue + sale.revenue,
+      });
+    }
+    const productIds = [...onlineProductSales.keys()].filter((id): id is string => Boolean(id));
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true },
+    });
+    const productNames = new Map(products.map((product) => [product.id, product.name]));
+    const combinedTopProducts = [...onlineProductSales.entries()]
+      .map(([productId, sales]) => ({
+        name: productId ? productNames.get(productId) ?? "Produk tidak ditemukan" : "Produk dihapus",
+        quantity: sales.quantity,
+        revenue: sales.revenue,
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 3);
+
+    const combinedPaymentMethods = new Map<string, number>();
+    for (const method of paymentMethods) {
+      const key = method.paymentMethod ?? "Tidak diketahui";
+      combinedPaymentMethods.set(key, (combinedPaymentMethods.get(key) ?? 0) + (method._count.paymentMethod ?? 0));
+    }
+    for (const [method, count] of posRetail.paymentCounts) {
+      combinedPaymentMethods.set(method, (combinedPaymentMethods.get(method) ?? 0) + count);
+    }
+    const totalOnlineProductRevenue = paidOrdersRevenue._sum?.total ?? 0;
+
     return NextResponse.json({
       period: { days, from: from.toISOString(), until: until.toISOString() },
       metrics: {
@@ -106,7 +174,9 @@ export async function GET(request: Request) {
         totalOrders: orders,
         totalPrintableLeads: printableLeads,
         totalEventRevenue: totalRevenue._sum.totalPrice ?? 0,
-        totalProductRevenue: paidOrdersRevenue._sum?.total ?? 0,
+        totalProductRevenue: totalOnlineProductRevenue + posRetail.revenue,
+        totalPosRetailRevenue: posRetail.revenue,
+        totalPosRetailTransactions: posRetail.transactionCount,
         totalPlaypassRevenue: playpassSummary._sum.total ?? 0,
         totalTableFeeRevenue: tableFeeSummary._sum.total ?? 0,
       },
@@ -133,30 +203,20 @@ export async function GET(request: Request) {
         const orderRevenue = paidOrders
           .filter((item) => (item.paidAt ?? item.createdAt).toISOString().slice(0, 10) === key)
           .reduce((sum, item) => sum + item.total, 0);
-        return { date: key, revenue: orderRevenue };
+        return { date: key, revenue: orderRevenue + (posRetail.dailyRevenue.get(key) ?? 0) };
       }),
-      topProducts: await (async () => {
-        const productIds = topProducts
-          .map((item) => item.productId)
-          .filter((id): id is string => Boolean(id));
-        const products = await prisma.product.findMany({
-          where: { id: { in: productIds } },
-          select: { id: true, name: true },
-        });
-        const productMap = new Map(products.map((product) => [product.id, product.name]));
-        return topProducts.map((item) => ({
-          name: item.productId ? productMap.get(item.productId) ?? "Produk tidak ditemukan" : "Produk dihapus",
-          quantity: item._sum?.quantity ?? 0,
-          revenue: item._sum?.subtotal ?? 0,
-        }));
-      })(),
-      paymentMethodSummary: paymentMethods.map((item) => ({
-        method: item.paymentMethod ?? "Tidak diketahui",
-        count: item._count?.paymentMethod ?? 0,
-      })),
+      topProducts: combinedTopProducts,
+      paymentMethodSummary: [...combinedPaymentMethods].map(([method, count]) => ({ method, count })),
       leadSummary: { total: printableLeads },
-      lowStockProducts,
-      salesChannels: [{ channel: "ONLINE", revenue: paidOrdersRevenue._sum?.total ?? 0 }],
+      lowStockProducts: lowStockInventories.map((inventory) => ({
+        ...inventory.product,
+        location: inventory.location,
+        stock: inventory.quantity,
+      })),
+      salesChannels: [
+        { channel: "ONLINE", revenue: totalOnlineProductRevenue },
+        { channel: "POS", revenue: posRetail.revenue },
+      ],
     });
   } catch (error) {
     console.error("[GET /api/admin/analytics]", error);

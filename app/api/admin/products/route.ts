@@ -28,8 +28,10 @@ export async function GET(request: Request) {
     const limit = Math.min(50, Number(searchParams.get("limit") ?? 10));
     const search = searchParams.get("search");
     const categorySlug = searchParams.get("category");
+    const activeOnly = searchParams.get("activeOnly") === "true";
 
     const where = {
+      ...(activeOnly ? { isActive: true } : {}),
       ...(categorySlug && categorySlug !== "semua" ? { category: { slug: categorySlug } } : {}),
       ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
     };
@@ -135,6 +137,12 @@ export async function POST(request: Request) {
           isBestSeller: isBestSeller ?? false,
           isFeatured: isFeatured ?? false,
           categoryId,
+          inventories: {
+            create: [
+              { location: "ONLINE_WAREHOUSE", quantity: stock ?? 0 },
+              { location: "MARICA_STORE", quantity: 0 },
+            ],
+          },
           images: images
             ? {
                 create: images.map((img, i) => ({
@@ -152,6 +160,7 @@ export async function POST(request: Request) {
         await tx.inventoryMovement.create({
           data: {
             productId: created.id,
+            location: "ONLINE_WAREHOUSE",
             type: "ADJUSTMENT",
             quantityDelta: created.stock,
             reason: "Initial stock",

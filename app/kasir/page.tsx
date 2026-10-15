@@ -70,7 +70,12 @@ type Sale = {
   changeAmount: number;
   paymentMethod: string;
   createdAt: string;
-  items: { itemName: string; quantity: number }[];
+  items: {
+    itemName: string;
+    quantity: number;
+    type?: CartItem["type"];
+    productId?: string | null;
+  }[];
 };
 type ActiveTable = {
   id: string;
@@ -286,6 +291,18 @@ export default function PosPage() {
   function addItem(item: Product | PackageItem) {
     const type = tab;
     const key = `${type}-${item.id}`;
+    if (type === "PRODUCT") {
+      const product = products.find((entry) => entry.id === item.id);
+      const quantityInCart =
+        cart.find((line) => line.key === key)?.quantity ?? 0;
+      if (!product || quantityInCart >= product.stock) {
+        setNotice({
+          type: "error",
+          text: "Stok produk di Marica Store tidak mencukupi.",
+        });
+        return;
+      }
+    }
     if (type === "TABLE_FEE") {
       setCart((current) => [
         ...current,
@@ -322,6 +339,17 @@ export default function PosPage() {
   }
 
   function updateQuantity(key: string, delta: number) {
+    const line = cart.find((item) => item.key === key);
+    if (line?.type === "PRODUCT" && delta > 0) {
+      const product = products.find((item) => item.id === line.itemId);
+      if (product && line.quantity + delta > product.stock) {
+        setNotice({
+          type: "error",
+          text: "Jumlah melebihi stok produk di Marica Store.",
+        });
+        return;
+      }
+    }
     setCart((current) =>
       current.flatMap((item) =>
         item.key !== key
@@ -400,6 +428,24 @@ export default function PosPage() {
       });
       return;
     }
+    const soldQuantities = new Map<string, number>();
+    for (const item of data.items ?? []) {
+      if (item.type === "PRODUCT" && item.productId) {
+        soldQuantities.set(
+          item.productId,
+          (soldQuantities.get(item.productId) ?? 0) + item.quantity,
+        );
+      }
+    }
+    setProducts((current) =>
+      current.map((product) => ({
+        ...product,
+        stock: Math.max(
+          0,
+          product.stock - (soldQuantities.get(product.id) ?? 0),
+        ),
+      })),
+    );
     setCart([]);
     setPaidAmount("");
     setMember(null);
@@ -480,6 +526,21 @@ export default function PosPage() {
       });
       return;
     }
+    const returnedQuantities = new Map<string, number>();
+    for (const item of sale.items) {
+      if (item.type === "PRODUCT" && item.productId) {
+        returnedQuantities.set(
+          item.productId,
+          (returnedQuantities.get(item.productId) ?? 0) + item.quantity,
+        );
+      }
+    }
+    setProducts((current) =>
+      current.map((product) => ({
+        ...product,
+        stock: product.stock + (returnedQuantities.get(product.id) ?? 0),
+      })),
+    );
     setSales((current) =>
       current.map((item) =>
         item.id === sale.id ? { ...item, status: "VOIDED" } : item,

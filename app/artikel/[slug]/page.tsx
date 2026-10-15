@@ -36,6 +36,15 @@ type ApiArticleDetail = {
   views: number;
   category: ApiCategory | null;
   author: { id: string; name: string | null } | null;
+  productPlacements: {
+    product: {
+      id: string;
+      name: string;
+      slug: string;
+      price: number;
+      images: { url: string }[];
+    };
+  }[];
 };
 
 type ApiArticleListItem = {
@@ -183,6 +192,39 @@ export default async function ArtikelDetailPage({ params }: { params: Params }) 
             className="prose prose-neutral mt-8 max-w-none font-body text-marica-ink"
             dangerouslySetInnerHTML={{ __html: article.content }}
           />
+
+          {article.productPlacements.length > 0 && (
+            <section className="mt-10 rounded-3xl bg-white p-5 shadow-sm sm:p-7" aria-labelledby="article-products-heading">
+              <h2 id="article-products-heading" className="font-display text-xl font-bold text-marica-ink">
+                Produk terkait
+              </h2>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {article.productPlacements.map(({ product }) => (
+                  <Link
+                    key={product.id}
+                    href={`/belanja/${product.slug}`}
+                    className="group flex gap-4 rounded-2xl border border-marica-ink/10 p-3 transition hover:border-marica-amber/50 hover:shadow-sm"
+                  >
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-marica-cream">
+                      <Image
+                        src={product.images[0]?.url ?? FALLBACK_COVER}
+                        alt={product.name}
+                        fill
+                        sizes="80px"
+                        className="object-cover transition group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="min-w-0 self-center">
+                      <h3 className="line-clamp-2 font-body text-sm font-semibold text-marica-ink">{product.name}</h3>
+                      <p className="mt-1 font-body text-sm font-bold text-marica-amber-text">
+                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(product.price)}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Komentar sudah fetch langsung ke /api/articles/[slug]/comments
               (data DB asli) — komponen ini tidak diubah. */}
