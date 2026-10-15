@@ -6,6 +6,7 @@ import {
   Banknote,
   Check,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   CreditCard,
   LayoutGrid,
@@ -30,6 +31,7 @@ type Product = {
   isActive: boolean;
   images?: { url: string }[];
 };
+type SalesSummary = { completedTransactions: number; completedRevenue: number };
 type PackageItem = {
   id: string;
   name: string;
@@ -81,6 +83,11 @@ type ActiveTable = {
 };
 
 const money = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
+const parseAmount = (value: string) => Number(value.replace(/[^\d]/g, "")) || 0;
+const formatAmountInput = (value: string) => {
+  const digits = value.replace(/[^\d]/g, "");
+  return digits ? Number(digits).toLocaleString("id-ID") : "";
+};
 
 function normalizeProductImageUrl(value?: string | null) {
   const source = value?.trim();
@@ -103,6 +110,9 @@ function escapeHtml(value: unknown) {
 
 export default function PosPage() {
   const [tab, setTab] = useState<CatalogTab>("PRODUCT");
+  const [catalogPage, setCatalogPage] = useState(1);
+  const [salesPage, setSalesPage] = useState(1);
+  const [salesQuery, setSalesQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [playpasses, setPlaypasses] = useState<PackageItem[]>([]);
   const [tableFees, setTableFees] = useState<PackageItem[]>([]);
@@ -127,6 +137,10 @@ export default function PosPage() {
   const [isVoiding, setIsVoiding] = useState<string | null>(null);
   const [isUpdatingTable, setIsUpdatingTable] = useState<string | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [salesSummary, setSalesSummary] = useState<SalesSummary>({
+    completedTransactions: 0,
+    completedRevenue: 0,
+  });
   const [activeTables, setActiveTables] = useState<ActiveTable[]>([]);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{
@@ -182,7 +196,7 @@ export default function PosPage() {
       fetch("/api/cashier/shifts", { cache: "no-store" }).then((res) =>
         res.json(),
       ),
-      fetch("/api/cashier/sales?limit=20", { cache: "no-store" }).then((res) =>
+      fetch("/api/cashier/sales?limit=100", { cache: "no-store" }).then((res) =>
         res.json(),
       ),
       fetch("/api/cashier/table-fees", { cache: "no-store" }).then((res) =>
@@ -203,6 +217,7 @@ export default function PosPage() {
           setTableFees(Array.isArray(tableFeeData) ? tableFeeData : []);
           setShift(shiftData.shift ?? null);
           setSales(Array.isArray(salesData.sales) ? salesData.sales : []);
+          setSalesSummary(salesData.summary ?? { completedTransactions: 0, completedRevenue: 0 });
           setActiveTables(
             Array.isArray(tableData.sessions) ? tableData.sessions : [],
           );
@@ -266,12 +281,27 @@ export default function PosPage() {
   const selectedVoucher = member?.vouchers?.find((item) => item.id === selectedVoucherId);
   const voucherDiscount = selectedVoucher ? Math.min(selectedVoucher.voucher.discountAmount, subtotal) : 0;
   const total = subtotal - voucherDiscount;
-  const paid = Number(paidAmount) || 0;
+  const paid = parseAmount(paidAmount);
   const change = Math.max(0, paid - total);
   const catalog =
     tab === "PRODUCT" ? products : tab === "PLAYPASS" ? playpasses : tableFees;
   const filteredCatalog = catalog.filter((item) =>
     item.name.toLowerCase().includes(query.toLowerCase()),
+  );
+  const catalogPageSize = 6;
+  const catalogPageCount = Math.max(1, Math.ceil(filteredCatalog.length / catalogPageSize));
+  const visibleCatalog = filteredCatalog.slice(
+    (Math.min(catalogPage, catalogPageCount) - 1) * catalogPageSize,
+    Math.min(catalogPage, catalogPageCount) * catalogPageSize,
+  );
+  const filteredSales = sales.filter((sale) =>
+    sale.transactionNumber.toLowerCase().includes(salesQuery.trim().toLowerCase()),
+  );
+  const salesPageSize = 10;
+  const salesPageCount = Math.max(1, Math.ceil(filteredSales.length / salesPageSize));
+  const visibleSales = filteredSales.slice(
+    (Math.min(salesPage, salesPageCount) - 1) * salesPageSize,
+    Math.min(salesPage, salesPageCount) * salesPageSize,
   );
 
   async function refreshActiveTables() {
@@ -338,7 +368,7 @@ export default function PosPage() {
     const res = await fetch("/api/cashier/shifts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ openingCash: Number(openingCash) }),
+      body: JSON.stringify({ openingCash: parseAmount(openingCash) }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -407,6 +437,11 @@ export default function PosPage() {
     setMemberQuery("");
     setLastSaleId(data.id ?? null);
     setSales((current) => [data, ...current]);
+    setSalesPage(1);
+    setSalesSummary((current) => ({
+      completedTransactions: current.completedTransactions + 1,
+      completedRevenue: current.completedRevenue + (data.total ?? total),
+    }));
     if (includesTableFee) {
       void refreshActiveTables().catch(() => undefined);
     }
@@ -449,7 +484,7 @@ export default function PosPage() {
     const res = await fetch(`/api/cashier/shifts/${shift.id}/close`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ closingCash: Number(closingCash) }),
+      body: JSON.stringify({ closingCash: parseAmount(closingCash) }),
     });
     const data = await res.json();
     setIsClosing(false);
@@ -485,6 +520,11 @@ export default function PosPage() {
         item.id === sale.id ? { ...item, status: "VOIDED" } : item,
       ),
     );
+    setSalesPage(1);
+    setSalesSummary((current) => ({
+      completedTransactions: Math.max(0, current.completedTransactions - 1),
+      completedRevenue: Math.max(0, current.completedRevenue - sale.total),
+    }));
     setNotice({
       type: "success",
       text: `Transaksi ${sale.transactionNumber} berhasil di-void.`,
@@ -725,9 +765,10 @@ export default function PosPage() {
               id="opening-cash"
               required
               min="0"
-              type="number"
+              inputMode="numeric"
+              type="text"
               value={openingCash}
-              onChange={(event) => setOpeningCash(event.target.value)}
+              onChange={(event) => setOpeningCash(formatAmountInput(event.target.value))}
               placeholder="Kas awal"
               className="w-36 rounded-xl border border-black/10 bg-white px-3 py-3 font-body text-sm outline-none focus:border-marica-amber-dark focus:ring-4 focus:ring-marica-amber/15"
             />
@@ -761,9 +802,10 @@ export default function PosPage() {
               id="closing-cash"
               required
               min="0"
-              type="number"
+              inputMode="numeric"
+              type="text"
               value={closingCash}
-              onChange={(event) => setClosingCash(event.target.value)}
+              onChange={(event) => setClosingCash(formatAmountInput(event.target.value))}
               placeholder="Kas akhir"
               className="w-36 rounded-xl border border-black/10 bg-white px-3 py-3 font-body text-sm outline-none focus:border-marica-green focus:ring-4 focus:ring-marica-green/15"
             />
@@ -778,7 +820,7 @@ export default function PosPage() {
       )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-        <section className="min-w-0 rounded-3xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
+        <section id="kasir-transaksi" className="min-w-0 rounded-3xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
@@ -792,7 +834,10 @@ export default function PosPage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-marica-ink-soft/60" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setCatalogPage(1);
+                }}
                 placeholder="Cari produk atau paket..."
                 className="w-full rounded-xl border border-black/10 bg-marica-sky-light/20 py-2.5 pl-9 pr-3 font-body text-sm outline-none focus:border-marica-amber-dark focus:ring-4 focus:ring-marica-amber/15"
               />
@@ -809,7 +854,10 @@ export default function PosPage() {
               <button
                 key={value}
                 type="button"
-                onClick={() => setTab(value)}
+                onClick={() => {
+                  setTab(value);
+                  setCatalogPage(1);
+                }}
                 className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 font-body text-sm font-semibold transition ${tab === value ? "bg-marica-amber-dark text-white" : "text-marica-ink-soft hover:bg-marica-sky-light/60"}`}
               >
                 <Icon className="h-4 w-4" />
@@ -851,7 +899,7 @@ export default function PosPage() {
                 Memuat katalog...
               </p>
             ) : (
-              filteredCatalog.map((item) => {
+              visibleCatalog.map((item) => {
                 const imageUrl =
                   tab === "PRODUCT" && "images" in item
                     ? normalizeProductImageUrl(item.images?.[0]?.url)
@@ -928,6 +976,28 @@ export default function PosPage() {
               })
             )}
           </div>
+          {!isLoading && catalogPageCount > 1 && (
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <button type="button" onClick={() => setCatalogPage((page) => Math.max(1, page - 1))} disabled={catalogPage === 1} aria-label="Produk sebelumnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {Array.from({ length: catalogPageCount }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCatalogPage(page)}
+                  className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-3 font-body text-sm font-bold transition ${catalogPage === page ? "bg-marica-amber-dark text-white" : "border border-black/10 text-marica-ink-soft hover:bg-marica-amber/10"}`}
+                  aria-label={`Halaman katalog ${page}`}
+                  aria-current={catalogPage === page ? "page" : undefined}
+                >
+                  {page}
+                </button>
+              ))}
+              <button type="button" onClick={() => setCatalogPage((page) => Math.min(catalogPageCount, page + 1))} disabled={catalogPage === catalogPageCount} aria-label="Produk berikutnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </section>
 
         <aside className="flex min-h-150 flex-col rounded-3xl border border-black/5 bg-white shadow-sm">
@@ -1146,7 +1216,7 @@ export default function PosPage() {
                   key={value}
                   onClick={() => {
                     setPaymentMethod(value);
-                    if (value !== "CASH") setPaidAmount(String(total));
+                    if (value !== "CASH") setPaidAmount(formatAmountInput(String(total)));
                   }}
                   className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 font-body text-xs font-bold ${paymentMethod === value ? "border-marica-amber-dark bg-marica-amber/10 text-marica-amber-text" : "border-black/10 text-marica-ink-soft"}`}
                 >
@@ -1165,9 +1235,10 @@ export default function PosPage() {
               id="paid-amount"
               required
               min={total}
-              type="number"
+              inputMode="numeric"
+              type="text"
               value={paidAmount}
-              onChange={(event) => setPaidAmount(event.target.value)}
+              onChange={(event) => setPaidAmount(formatAmountInput(event.target.value))}
               placeholder={money(total)}
               className="mt-1 w-full rounded-xl border border-marica-amber/50 px-3 py-3 font-body text-base font-bold outline-none focus:ring-4 focus:ring-marica-amber/15"
             />
@@ -1194,7 +1265,7 @@ export default function PosPage() {
         </aside>
       </div>
 
-      <section className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+      <section id="kasir-checkin" className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
@@ -1266,7 +1337,7 @@ export default function PosPage() {
         )}
       </section>
 
-      <section className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+      <section id="kasir-meja" className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
@@ -1331,7 +1402,7 @@ export default function PosPage() {
         )}
       </section>
 
-      <section className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
+      <section id="kasir-riwayat-transaksi" className="mt-6 rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="font-body text-xs font-bold uppercase tracking-[0.14em] text-marica-amber-text">
@@ -1342,8 +1413,20 @@ export default function PosPage() {
             </h2>
           </div>
           <span className="rounded-full bg-marica-sky-light/60 px-3 py-1 font-body text-xs font-bold text-marica-ink-soft">
-            {sales.length} transaksi
+            {salesSummary.completedTransactions} transaksi selesai
           </span>
+        </div>
+        <div className="relative mt-4 max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-marica-ink-soft/60" />
+          <input
+            value={salesQuery}
+            onChange={(event) => {
+              setSalesQuery(event.target.value);
+              setSalesPage(1);
+            }}
+            placeholder="Cari kode transaksi..."
+            className="w-full rounded-xl border border-black/10 bg-marica-sky-light/20 py-2.5 pl-9 pr-3 font-body text-sm outline-none focus:border-marica-amber-dark focus:ring-4 focus:ring-marica-amber/15"
+          />
         </div>
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-180 text-left">
@@ -1358,7 +1441,7 @@ export default function PosPage() {
               </tr>
             </thead>
             <tbody>
-              {sales.length === 0 ? (
+              {visibleSales.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -1368,7 +1451,7 @@ export default function PosPage() {
                   </td>
                 </tr>
               ) : (
-                sales.map((sale) => (
+                visibleSales.map((sale) => (
                   <tr
                     key={sale.id}
                     className="border-b border-black/5 last:border-0"
@@ -1428,6 +1511,21 @@ export default function PosPage() {
             </tbody>
           </table>
         </div>
+        {salesPageCount > 1 && (
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <button type="button" onClick={() => setSalesPage((page) => Math.max(1, page - 1))} disabled={salesPage === 1} aria-label="Transaksi sebelumnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            {Array.from({ length: salesPageCount }, (_, index) => index + 1).map((page) => (
+              <button key={page} type="button" onClick={() => setSalesPage(page)} aria-current={salesPage === page ? "page" : undefined} className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-3 font-body text-sm font-bold ${salesPage === page ? "bg-marica-amber-dark text-white" : "border border-black/10 text-marica-ink-soft"}`}>
+                {page}
+              </button>
+            ))}
+            <button type="button" onClick={() => setSalesPage((page) => Math.min(salesPageCount, page + 1))} disabled={salesPage === salesPageCount} aria-label="Transaksi berikutnya" className="flex h-9 w-9 items-center justify-center rounded-lg border border-black/10 text-marica-ink-soft disabled:opacity-40">
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );
