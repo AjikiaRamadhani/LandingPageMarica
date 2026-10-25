@@ -2,13 +2,15 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, UserRoundX } from "lucide-react";
 import AuthCard from "./Authcard";
 
 export default function ForgotPasswordForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "not-found">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -26,13 +28,18 @@ export default function ForgotPasswordForm() {
       });
       const data = await res.json();
 
+      if (res.status === 404 && data?.code === "USER_NOT_FOUND") {
+        setStatus("not-found");
+        return;
+      }
+
       if (!res.ok) {
         setStatus("idle");
         setError(data?.error ?? "Gagal memproses permintaan, coba lagi nanti.");
         return;
       }
 
-      setStatus("sent");
+      router.push(`/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`);
     } catch (err) {
       console.error("[forgot-password]", err);
       setStatus("idle");
@@ -43,30 +50,33 @@ export default function ForgotPasswordForm() {
   return (
     <AuthCard
       title="Lupa password?"
-      subtitle="Masukkan email akun kamu, kami kirimkan link untuk atur ulang password."
+      subtitle="Masukkan email akun kamu, kami kirimkan kode OTP untuk atur ulang password."
     >
       <AnimatePresence mode="wait">
-        {status === "sent" ? (
+        {status === "not-found" ? (
           <motion.div
-            key="sent"
+            key="not-found"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-3 py-4 text-center"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-marica-green/15 text-marica-green">
-              <CheckCircle2 className="h-6 w-6" />
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-marica-rose-deep/10 text-marica-rose-deep">
+              <UserRoundX className="h-6 w-6" />
             </span>
             <p className="font-body text-sm text-marica-ink-soft">
-              Kalau email{" "}
-              <span className="font-medium text-marica-ink">{email}</span>{" "}
-              terdaftar, link reset password sudah dikirim. Cek juga folder spam
-              ya.
+              Akun dengan email <span className="font-medium text-marica-ink">{email}</span> tidak ditemukan.
             </p>
             <Link
-              href="/login"
+              href="/daftar"
               className="mt-2 font-body text-sm font-semibold text-marica-amber-text hover:underline"
             >
-              Kembali ke halaman masuk
+              Buat akun baru
+            </Link>
+            <Link
+              href="/lupa-password"
+              className="font-body text-sm text-marica-ink-soft hover:underline"
+            >
+              Coba email lain
             </Link>
           </motion.div>
         ) : (
@@ -123,7 +133,7 @@ export default function ForgotPasswordForm() {
                   Mengirim...
                 </span>
               ) : (
-                "Kirim Link Reset"
+                "Kirim Kode OTP"
               )}
             </button>
 

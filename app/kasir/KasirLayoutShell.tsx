@@ -21,6 +21,7 @@ export default function KasirLayoutShell({
         name={name}
         email={email}
         role="KASIR"
+        collapsible
         onCollapsedChange={setIsCollapsed}
       />
       <main className={`min-h-screen min-w-0 w-full max-w-full overflow-x-hidden bg-[#fff7ed] px-3.5 py-4 transition-[margin] duration-200 sm:px-6 sm:py-6 lg:px-8 lg:py-8 ${isCollapsed ? "lg:ml-16" : "lg:ml-64"}`}>
