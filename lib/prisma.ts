@@ -26,11 +26,15 @@ const hasSubscriptionDelegates =
 const hasInventoryDelegates =
   cachedPrisma &&
   typeof cachedPrisma.productInventory !== "undefined";
+const hasNotificationDelegates =
+  cachedPrisma &&
+  typeof cachedPrisma.notification !== "undefined";
 
 export const prisma =
   (hasBookingDelegates &&
   hasSubscriptionDelegates &&
-  hasInventoryDelegates
+  hasInventoryDelegates &&
+  hasNotificationDelegates
     ? cachedPrisma
     : undefined) ??
   new PrismaClient({

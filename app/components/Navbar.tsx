@@ -18,8 +18,10 @@ import {
   ArrowRight,
   LayoutDashboard,
   ShoppingCart,
+  Bell,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { landingCompany } from "@/lib/landing-content";
 
 type NavMenu = "shop" | "activity" | "edugames" | "event" | "blog" | "more";
 type NavLink = { label: string; href: string; menu?: NavMenu };
@@ -33,11 +35,6 @@ const navLinks: NavLink[] = [
   { label: "Printable", href: "/printable" },
   { label: "Lainnya", href: "#lainnya", menu: "more" },
 ];
-
-type ApiCompany = {
-  name: string;
-  logoUrl: string | null;
-};
 
 type ApiUserProfile = {
   name: string | null;
@@ -80,6 +77,16 @@ type ApiArticleCategory = {
   slug: string;
 };
 
+type ApiNotification = {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  href: string | null;
+  isRead: boolean;
+  createdAt: string;
+};
+
 const simpleMenus = {
   activity: [
     { label: "Event", href: "/event" },
@@ -103,7 +110,7 @@ export default function Navbar() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [company, setCompany] = useState<ApiCompany | null>(null);
+  const company = landingCompany;
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
@@ -116,6 +123,10 @@ export default function Navbar() {
   >([]);
   const [points, setPoints] = useState(0);
   const [profile, setProfile] = useState<ApiUserProfile | null>(null);
+  const [cartCount, setCartCount] = useState(0);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const solidHeader = scrolled || isShoppingPage;
 
   // Session yang sudah terlanjur terbuka bisa belum membawa role terbaru di
@@ -138,17 +149,6 @@ export default function Navbar() {
     "/";
 
   useEffect(() => {
-    fetch("/api/company")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) {
-          setCompany(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load company profile", err));
-  }, []);
-
-  useEffect(() => {
     Promise.all([
       fetch("/api/product-categories").then((res) => res.json()),
       fetch("/api/article-categories").then((res) => res.json()),
@@ -166,6 +166,7 @@ export default function Navbar() {
   useEffect(() => {
     if (!isLoggedIn) {
       setProfile(null);
+      setCartCount(0);
       return;
     }
 
@@ -193,6 +194,76 @@ export default function Navbar() {
         setProfile(null);
       });
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setCartCount(0);
+      return;
+    }
+
+    const loadCartCount = async () => {
+      const response = await fetch("/api/cart", { cache: "no-store" });
+      if (!response.ok) {
+        setCartCount(0);
+        return;
+      }
+
+      const data = await response.json().catch(() => null);
+      const total = Array.isArray(data?.items)
+        ? data.items.reduce(
+            (sum: number, item: { quantity?: number }) =>
+              sum + (Number(item.quantity) || 0),
+            0,
+          )
+        : 0;
+      setCartCount(total);
+    };
+
+    void loadCartCount();
+    const handleCartUpdated = () => void loadCartCount();
+    window.addEventListener("marica:cart-updated", handleCartUpdated);
+    return () =>
+      window.removeEventListener("marica:cart-updated", handleCartUpdated);
+  }, [isLoggedIn, pathname]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    const loadNotifications = async () => {
+      const response = await fetch("/api/notifications", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json().catch(() => null);
+      setNotifications(Array.isArray(data?.notifications) ? data.notifications : []);
+      setUnreadNotificationCount(
+        typeof data?.unreadCount === "number" ? data.unreadCount : 0,
+      );
+    };
+
+    void loadNotifications();
+  }, [isLoggedIn, pathname]);
+
+  const markNotificationRead = async (notification: ApiNotification) => {
+    if (notification.isRead) return;
+    setNotifications((current) =>
+      current.map((item) =>
+        item.id === notification.id ? { ...item, isRead: true } : item,
+      ),
+    );
+    setUnreadNotificationCount((current) => Math.max(0, current - 1));
+    await fetch(`/api/notifications/${notification.id}`, { method: "PATCH" });
+  };
+
+  const markAllNotificationsRead = async () => {
+    setNotifications((current) =>
+      current.map((notification) => ({ ...notification, isRead: true })),
+    );
+    setUnreadNotificationCount(0);
+    await fetch("/api/notifications", { method: "PATCH" });
+  };
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -567,13 +638,114 @@ export default function Navbar() {
               {points.toLocaleString("id-ID")}
             </Link>
           )}
+          {isLoggedIn && (
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Notifikasi"
+                aria-expanded={notificationsOpen}
+                onClick={() => setNotificationsOpen((current) => !current)}
+                className="relative flex h-9 w-9 items-center justify-center rounded-full text-marica-ink-soft transition hover:bg-marica-cream hover:text-marica-ink"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadNotificationCount > 0 && (
+                  <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 font-body text-[10px] font-bold leading-none text-white">
+                    {unreadNotificationCount > 99
+                      ? "99+"
+                      : unreadNotificationCount}
+                  </span>
+                )}
+              </button>
+              <AnimatePresence>
+                {notificationsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl bg-white shadow-[0_14px_35px_rgba(120,60,10,0.15)]"
+                  >
+                    <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
+                      <p className="font-body text-sm font-bold text-marica-ink">
+                        Notifikasi
+                      </p>
+                      {unreadNotificationCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => void markAllNotificationsRead()}
+                          className="font-body text-xs font-semibold text-marica-amber-text hover:underline"
+                        >
+                          Tandai semua dibaca
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <p className="px-4 py-8 text-center font-body text-sm text-marica-ink-soft">
+                          Belum ada notifikasi.
+                        </p>
+                      ) : (
+                        notifications.map((notification) => {
+                          const content = (
+                            <div
+                              className={`border-b border-black/5 px-4 py-3 text-left transition hover:bg-marica-cream/50 ${notification.isRead ? "" : "bg-marica-amber/10"}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                {!notification.isRead && (
+                                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                                )}
+                                <div>
+                                  <p className="font-body text-sm font-semibold text-marica-ink">
+                                    {notification.title}
+                                  </p>
+                                  <p className="mt-0.5 font-body text-xs leading-5 text-marica-ink-soft">
+                                    {notification.message}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+
+                          return notification.href ? (
+                            <Link
+                              key={notification.id}
+                              href={notification.href}
+                              onClick={() => {
+                                void markNotificationRead(notification);
+                                setNotificationsOpen(false);
+                              }}
+                            >
+                              {content}
+                            </Link>
+                          ) : (
+                            <button
+                              key={notification.id}
+                              type="button"
+                              className="block w-full"
+                              onClick={() => void markNotificationRead(notification)}
+                            >
+                              {content}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
           {isLoggedIn ? (
             <Link
               href="/belanja/keranjang"
               aria-label="Keranjang"
-              className="hidden text-marica-ink-soft transition hover:text-marica-ink lg:block"
+              className="relative hidden text-marica-ink-soft transition hover:text-marica-ink lg:block"
             >
               <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 font-body text-[10px] font-bold leading-none text-white">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </Link>
           ) : (
             <button
@@ -693,6 +865,21 @@ export default function Navbar() {
               </a>
             </>
           )}
+
+          {isLoggedIn ? (
+            <Link
+              href="/belanja/keranjang"
+              aria-label="Keranjang"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-marica-ink lg:hidden"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 font-body text-[10px] font-bold leading-none text-white">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </Link>
+          ) : null}
 
           <button
             type="button"

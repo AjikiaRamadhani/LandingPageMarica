@@ -49,46 +49,8 @@ const defaultSteps = [
   },
 ];
 
-type ApiStep = {
-  id: string;
-  stepNumber: number;
-  title: string;
-  description: string | null;
-  icon: string | null;
-  imageUrl: string | null;
-  order: number;
-};
-
-import { useEffect, useState } from "react";
-
 export default function HowItWorksSection() {
-  const [steps, setSteps] = useState(defaultSteps);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/how-it-works")
-      .then((res) => res.json())
-      .then((data: ApiStep[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Merge API data with default styling
-          const mergedSteps = data.map((item, i) => {
-            const defaultStep = defaultSteps[i % defaultSteps.length];
-            return {
-              ...defaultStep,
-              key: item.id,
-              step: `LANGKAH ${item.stepNumber}`,
-              title: item.title,
-              description: item.description || defaultStep.description,
-              image: item.imageUrl || defaultStep.image,
-              subtitle: "", // API doesn't provide subtitle, we can either clear it or keep default
-            };
-          });
-          setSteps(mergedSteps);
-        }
-      })
-      .catch((err) => console.error("Failed to load how-it-works", err))
-      .finally(() => setLoading(false));
-  }, []);
+  const steps = defaultSteps;
 
   return (
     <section id="cara-kerja" className="section-peach-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">

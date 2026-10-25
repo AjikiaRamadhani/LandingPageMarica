@@ -77,6 +77,17 @@ export async function settleOrderPayment(
 
     if (paidOrder.count === 0) return;
 
+    await transaction.notification.create({
+      data: {
+        userId: order.userId,
+        type: "ORDER_PAID",
+        title: "Pembayaran berhasil",
+        message: `Pembayaran pesanan ${order.orderNumber} sudah diterima. Pesanan akan segera diproses.`,
+        href: `/belanja/pesanan-saya/${order.id}`,
+        relatedId: order.id,
+      },
+    });
+
     for (const item of validItems) {
       await changeInventoryQuantity(
         transaction,

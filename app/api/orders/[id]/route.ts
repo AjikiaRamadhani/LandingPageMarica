@@ -73,6 +73,16 @@ export async function PATCH(
         data: { status: "DELIVERED", deliveredAt: new Date() },
         include: { items: true },
       });
+      await prisma.notification.create({
+        data: {
+          userId: order.userId,
+          type: "ORDER_DELIVERED",
+          title: "Pesanan telah diterima",
+          message: `Pesanan ${order.orderNumber} sudah ditandai diterima. Yuk beri rating untuk produkmu.`,
+          href: `/belanja/pesanan-saya/${order.id}`,
+          relatedId: order.id,
+        },
+      });
       const [enrichedOrder] = await addProductAvailability([delivered]);
       return NextResponse.json({
         ...enrichedOrder,

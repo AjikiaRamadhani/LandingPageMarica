@@ -44,6 +44,7 @@ export function useBuyNow() {
       }
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error ?? "Gagal menambah ke keranjang");
+      window.dispatchEvent(new Event("marica:cart-updated"));
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menambah ke keranjang");
@@ -70,6 +71,7 @@ export function useBuyNow() {
       const addJson = await addRes.json().catch(() => null);
       if (!addRes.ok) throw new Error(addJson?.error ?? "Gagal menambah ke keranjang");
 
+      window.dispatchEvent(new Event("marica:cart-updated"));
       router.push("/belanja/keranjang");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menambah ke keranjang");

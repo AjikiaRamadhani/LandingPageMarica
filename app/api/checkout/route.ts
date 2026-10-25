@@ -386,6 +386,17 @@ export async function POST(request: Request) {
         // order existing: token Midtrans atau URL Checkout Page/WhatsApp.
         data: { midtransSnapToken: transaction.token ?? transaction.redirect_url },
       });
+
+      await prisma.notification.create({
+        data: {
+          userId: session.user.id,
+          type: "ORDER_CREATED",
+          title: "Pesanan berhasil dibuat",
+          message: `Pesanan ${order.orderNumber} menunggu pembayaran.`,
+          href: `/belanja/pesanan-saya/${order.id}`,
+          relatedId: order.id,
+        },
+      });
     } catch (error) {
       await prisma.$transaction(async (tx) => {
         if (pointsUsed > 0) {

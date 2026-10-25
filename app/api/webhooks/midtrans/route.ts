@@ -240,6 +240,16 @@ export async function POST(request: Request) {
         where: { id: order.id, status: "PENDING_PAYMENT" },
         data: { status: transaction_status === "expire" ? "EXPIRED" : "CANCELLED" },
       });
+      await prisma.notification.create({
+        data: {
+          userId: order.userId,
+          type: transaction_status === "expire" ? "ORDER_EXPIRED" : "ORDER_CANCELLED",
+          title: transaction_status === "expire" ? "Pembayaran kedaluwarsa" : "Pembayaran dibatalkan",
+          message: `Pembayaran pesanan ${order.orderNumber} tidak berhasil diproses.`,
+          href: `/belanja/pesanan-saya/${order.id}`,
+          relatedId: order.id,
+        },
+      });
       await prisma.$transaction(async (transaction) => {
         const cancelledOrder = await transaction.order.findUnique({
           where: { id: order.id },

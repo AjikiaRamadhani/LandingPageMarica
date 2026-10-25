@@ -1,31 +1,14 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { WEB_GAMES, type WebGameId } from "./web-games";
+
+export { WEB_GAMES } from "./web-games";
+export type { WebGameId } from "./web-games";
 
 export const GAME_POINTS_PER_COMPLETION = 50;
 export const DAILY_GAME_POINTS_LIMIT = 1_000;
 export const GAME_VISIT_POINTS = 5;
 export const DAILY_GAME_VISIT_LIMIT = 20;
 export const GAME_LAUNCH_TOKEN_TTL_SECONDS = 10 * 60;
-
-export const WEB_GAMES = {
-  "pacu-jalur": {
-    title: "Marica Pacu Jalur",
-    url: "https://pacujalur.marica.id/",
-  },
-  "panjat-pinang": {
-    title: "Panjat Pinang",
-    url: "https://panjatpinang.marica.id/",
-  },
-  "dino-escape": {
-    title: "Dino Escape",
-    url: "https://dino.marica.id/",
-  },
-  "angkasa-rasa": {
-    title: "Marica Angkasa Rasa",
-    url: "https://angkarasa.marica.id/",
-  },
-} as const;
-
-export type WebGameId = keyof typeof WEB_GAMES;
 
 type GameLaunchClaims = {
   version: 1;

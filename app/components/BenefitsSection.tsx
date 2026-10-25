@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -16,17 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import BackgroundDoodles from "./BackgroundDoodles";
-
-type Benefit = {
-  id: string;
-  category: string | null;
-  icon: string | null;
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  tags: string[];
-  order: number;
-};
+import { landingBenefits } from "@/lib/landing-content";
 
 type CategoryStyle = {
   categoryIcon: LucideIcon;
@@ -89,27 +78,7 @@ const categoryStyles: Record<string, CategoryStyle> = {
 const defaultStyle: CategoryStyle = categoryStyles.logikakreativitas;
 
 export default function BenefitsSection() {
-  const [benefits, setBenefits] = useState<Benefit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/benefits")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setBenefits(data);
-        } else {
-          console.error("Unexpected /api/benefits response:", data);
-          setError("Gagal memuat data.");
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load benefits", err);
-        setError("Gagal memuat data.");
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const benefits = landingBenefits;
 
   return (
     <section id="manfaat" className="section-warm-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">
@@ -136,16 +105,7 @@ export default function BenefitsSection() {
         </motion.p>
       </div>
 
-      {loading ? (
-        <div className="relative z-10 mt-14 text-center font-body text-sm text-marica-ink/60">
-          Memuat data...
-        </div>
-      ) : error ? (
-        <div className="relative z-10 mt-14 text-center font-body text-sm text-red-600">
-          {error}
-        </div>
-      ) : (
-        <div className="relative z-10 mx-auto mt-14 flex max-w-5xl flex-col gap-8 lg:mt-16 lg:gap-10">
+      <div className="relative z-10 mx-auto mt-14 flex max-w-5xl flex-col gap-8 lg:mt-16 lg:gap-10">
           {benefits.map((item, i) => {
             const style = categoryStyles[normalizeCategory(item.category)] ?? defaultStyle;
             const reverse = i % 2 === 1;
@@ -242,8 +202,7 @@ export default function BenefitsSection() {
               </motion.div>
             );
           })}
-        </div>
-      )}
+      </div>
     </section>
   );
 }

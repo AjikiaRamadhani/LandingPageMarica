@@ -173,6 +173,7 @@ export default function CartPage() {
       if (!response.ok)
         throw new Error(json?.error ?? "Gagal mengubah jumlah produk");
       await loadCart();
+      window.dispatchEvent(new Event("marica:cart-updated"));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Gagal mengubah jumlah produk",
@@ -191,6 +192,7 @@ export default function CartPage() {
       if (!response.ok)
         throw new Error(json?.error ?? "Gagal menghapus produk");
       await loadCart();
+      window.dispatchEvent(new Event("marica:cart-updated"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menghapus produk");
     } finally {
@@ -217,6 +219,7 @@ export default function CartPage() {
           throw new Error(json?.error ?? "Gagal menambahkan paket");
       }
       await loadCart();
+      window.dispatchEvent(new Event("marica:cart-updated"));
       setAddressModalOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menambahkan paket");

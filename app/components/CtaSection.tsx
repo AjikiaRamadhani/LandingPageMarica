@@ -1,36 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, MapPin, MessageCircle } from "lucide-react";
 import { FaInstagram as Instagram } from "react-icons/fa6";
-
-type ApiCompany = {
-  phone: string | null;
-  instagram: string | null;
-  address: string | null;
-};
+import { landingCompany } from "@/lib/landing-content";
 
 export default function CtaSection() {
-  const [company, setCompany] = useState<ApiCompany | null>(null);
-
-  useEffect(() => {
-    fetch("/api/company")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) {
-          setCompany(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load company profile", err));
-  }, []);
-
-  const phoneRaw = company?.phone || "+62 822 2149 1429";
+  const phoneRaw = landingCompany.phone;
   const phoneClean = phoneRaw.replace(/[^0-9+]/g, "");
   const waLink = `https://wa.me/${phoneClean.replace('+', '')}`;
-  const igLink = company?.instagram ? `https://instagram.com/${company.instagram.replace('@', '')}` : "#";
-  const mapsLink = company?.address ? `https://maps.google.com/?q=${encodeURIComponent(company.address)}` : "#";
+  const igLink = `https://instagram.com/${landingCompany.instagram.replace('@', '')}`;
+  const mapsLink = `https://maps.google.com/?q=${encodeURIComponent(landingCompany.address)}`;
 
   const contacts = [
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, href: waLink },
@@ -108,7 +89,7 @@ export default function CtaSection() {
               className="mt-7 flex justify-center lg:justify-start"
             >
               <motion.a
-                href="#"
+                href="/belanja"
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-display text-sm font-semibold text-marica-ink shadow-[0_10px_24px_rgba(120,60,10,0.15)] transition-shadow hover:shadow-[0_14px_30px_rgba(120,60,10,0.22)]"

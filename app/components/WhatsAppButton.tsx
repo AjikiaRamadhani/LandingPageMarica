@@ -1,10 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-type CompanyProfile = {
-  phone: string | null;
-};
+import { landingCompany } from "@/lib/landing-content";
 
 const WhatsAppIcon = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
@@ -18,18 +14,7 @@ function toWhatsAppNumber(phone: string): string {
 }
 
 export default function WhatsAppButton() {
-  const [phone, setPhone] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/company")
-      .then((res) => res.json())
-      .then((data: CompanyProfile) => {
-        if (data?.phone) setPhone(data.phone);
-      })
-      .catch((err) => console.error("Failed to load company profile", err));
-  }, []);
-
-  const href = phone ? `https://wa.me/${toWhatsAppNumber(phone)}` : "https://wa.me/6285870459329";
+  const href = `https://wa.me/${toWhatsAppNumber(landingCompany.phone)}`;
 
   return (
     <a

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion, useAnimationControls, type PanInfo } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
+import { landingTestimonials } from "@/lib/landing-content";
 
 type Testimonial = {
   id: string;
@@ -28,28 +29,11 @@ export default function TestimonialSection() {
   const trackRef = useRef<HTMLDivElement>(null);
   const controls = useAnimationControls();
 
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loading, setLoading] = useState(true);
+  const testimonials: Testimonial[] = landingTestimonials.map((item) => ({ ...item }));
   const [index, setIndex] = useState(0);
   const [cardStep, setCardStep] = useState(0);
   const [maxIndex, setMaxIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/testimonials")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // Section ini cuma nampilin testimoni umum (activityId null),
-          // bukan yang nempel ke Activity tertentu ("Aktivitas Seru di Marica")
-          const general = data.filter((t: any) => !t.activityId);
-          setTestimonials(general);
-          setMaxIndex(Math.max(0, general.length - 1));
-        }
-      })
-      .catch((err) => console.error("Failed to load testimonials", err))
-      .finally(() => setLoading(false));
-  }, []);
 
   // Measure card width + gap responsively
   useEffect(() => {
@@ -148,11 +132,7 @@ export default function TestimonialSection() {
         </motion.p>
       </div>
 
-      {loading ? (
-        <div className="mt-12 text-center font-body text-sm text-marica-ink/60">
-          Memuat data...
-        </div>
-      ) : testimonials.length === 0 ? (
+      {testimonials.length === 0 ? (
         <div className="mt-12 text-center font-body text-sm text-marica-ink/60">
           Belum ada testimoni.
         </div>

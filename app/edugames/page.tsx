@@ -7,9 +7,10 @@ import { ArrowRight, ExternalLink, Search, Sparkles, Star, Users } from "lucide-
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import FeedbackPopup from "../components/FeedbackPopup";
+import { WEB_GAMES, type WebGameId } from "../../lib/web-games";
 
 type Edugame = {
-  gameId?: "pacu-jalur" | "panjat-pinang" | "dino-escape" | "angkasa-rasa";
+  gameId?: WebGameId;
   title: string;
   description: string;
   age: string;
@@ -30,7 +31,7 @@ const games: Edugame[] = [
     duration: "5 Menit",
     platform: "Website",
     image: "/images/edugames/marica pacu jalur.png",
-    href: "https://pacujalur.marica.id/",
+    href: WEB_GAMES["pacu-jalur"].url,
   },
   {
     gameId: "panjat-pinang",
@@ -41,7 +42,7 @@ const games: Edugame[] = [
     duration: "5 Menit",
     platform: "Website",
     image: "/images/edugames/panjat pinang.png",
-    href: "https://panjatpinang.marica.id/",
+    href: WEB_GAMES["panjat-pinang"].url,
   },
   {
     gameId: "dino-escape",
@@ -52,7 +53,7 @@ const games: Edugame[] = [
     duration: "6 Menit",
     platform: "Website",
     image: "/images/edugames/dino escpae.png",
-    href: "https://dino.marica.id/",
+    href: WEB_GAMES["dino-escape"].url,
   },
   {
     gameId: "angkasa-rasa",
@@ -63,7 +64,7 @@ const games: Edugame[] = [
     duration: "5 Menit",
     platform: "Website",
     image: "/images/edugames/marica angkasa rasa.jpg",
-    href: "https://angkarasa.marica.id/",
+    href: WEB_GAMES["angkasa-rasa"].url,
   },
   {
     title: "Petualangan Marica",

@@ -28,7 +28,7 @@ type HeroData = {
   imageUrl: string | null;
   ctaText: string | null;
   ctaLink: string | null;
-  badges: HeroBadge[];
+  badges: readonly HeroBadge[];
 };
 
 type Statistic = {
@@ -41,7 +41,7 @@ type Statistic = {
 
 type Props = {
   hero: HeroData;
-  stats: Statistic[];
+  stats: readonly Statistic[];
 };
 
 // Icon key (dari database) -> komponen Lucide.

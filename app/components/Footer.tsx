@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { landingCompany } from "@/lib/landing-content";
+import { MapPin } from "lucide-react";
 import {
   FaPhone as Phone,
   FaEnvelope as Mail,
@@ -14,18 +15,20 @@ import {
 } from "react-icons/fa6";
 
 const navigasi = [
-  { label: "Beranda", href: "#beranda", active: true },
-  { label: "Masalah", href: "#masalah" },
-  { label: "Manfaat", href: "#manfaat" },
-  { label: "Testimoni", href: "#testimoni" },
-  { label: "Cara Kerja", href: "#cara-kerja" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Beranda", href: "/#beranda", active: true },
+  { label: "Masalah", href: "/#masalah" },
+  { label: "Manfaat", href: "/#manfaat" },
+  { label: "Testimoni", href: "/#testimoni" },
+  { label: "Cara Kerja", href: "/#cara-kerja" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 const layanan = [
-  { label: "Books & Edugames", href: "/layanan" },
-  { label: "Subscription", href: "/layanan" },
-  { label: "Play & Interactive Zone", href: "/layanan" },
+  { label: "Produk Edukasi", href: "/belanja" },
+  { label: "Edugames", href: "/edugames" },
+  { label: "Subscription Edu-Kit", href: "/subscription" },
+  { label: "Playpass & Reservasi", href: "/playpass" },
+  { label: "Event & Workshop", href: "/event" },
   { label: "Sekolah & Bisnis", href: "/b2b" },
 ];
 
@@ -33,46 +36,22 @@ function TikTokIcon({ className }: { className?: string }) {
   return <FaTiktok className={className} />;
 }
 
-type ApiCompany = {
-  name: string;
-  description: string | null;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  instagram: string | null;
-  tiktok: string | null;
-  youtube: string | null;
-  logoUrl: string | null;
-};
-
 export default function Footer() {
-  const [company, setCompany] = useState<ApiCompany | null>(null);
-
-  useEffect(() => {
-    fetch("/api/company")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) {
-          setCompany(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load company profile", err));
-  }, []);
-
-  // Fallbacks
-  const description = company?.description || "Pusat pengalaman edukasi keluarga berkonsep phygital yang memadukan ritel buku, board game edukatif, dan aktivitas interaktif.";
-  const phone = company?.phone || "+62 858 7045 9329";
-  const email = company?.email || "pt.sebangku@gmail.com";
-  const website = company?.website || "www.marica.id";
-  const instagramId = company?.instagram || "@kids.marica";
+  const company = landingCompany;
+  const description = company.description;
+  const phone = company.phone;
+  const email = company.email;
+  const website = company.website;
+  const instagramId = company.instagram;
+  const mapsLink = `https://maps.google.com/?q=${encodeURIComponent(company.address)}`;
 
   // Clean phone for tel: link
   const phoneClean = phone.replace(/[^0-9+]/g, "");
 
   const socials = [
-    { key: "youtube", icon: Youtube, href: company?.youtube || "#", label: "YouTube" },
-    { key: "tiktok", icon: TikTokIcon, href: company?.tiktok || "#", label: "TikTok" },
-    { key: "instagram", icon: Instagram, href: company?.instagram ? `https://instagram.com/${company.instagram.replace('@', '')}` : "#", label: "Instagram" },
+    { key: "youtube", icon: Youtube, href: `https://youtube.com/${company.youtube}`, label: "YouTube" },
+    { key: "tiktok", icon: TikTokIcon, href: `https://tiktok.com/${company.tiktok}`, label: "TikTok" },
+    { key: "instagram", icon: Instagram, href: `https://instagram.com/${company.instagram.replace('@', '')}`, label: "Instagram" },
   ];
 
   return (
@@ -210,6 +189,18 @@ export default function Footer() {
                 {website.replace(/^https?:\/\//, '')}
               </a>
             </li>
+
+            <li>
+              <a
+                href={mapsLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2.5 font-body text-sm leading-relaxed text-marica-ink-soft transition-colors hover:text-marica-ink"
+              >
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{company.address}</span>
+              </a>
+            </li>
           </ul>
 
           <div className="mt-5 flex items-center gap-2.5">
@@ -263,7 +254,7 @@ export default function Footer() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-center font-body text-xs text-marica-ink-soft"
         >
-          © 2025 {company?.name || "Marica Experience Store"} - PT Sebangku Jaya Abadi. All rights
+          © 2026 {company?.name || "Marica Experience Store"} - PT Sebangku Jaya Abadi. All rights
           reserved.
         </motion.p>
       </div>

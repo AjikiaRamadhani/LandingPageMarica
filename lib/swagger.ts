@@ -366,6 +366,9 @@ export const getApiDocs = () => {
   add("/api/admin/subscriptions", "get", "List customer subscriptions and delivery status", "Admin", { admin: true, success: arraySchema(), errorCodes: ["401", "403", "500"] });
 
   add("/api/swagger", "get", "Get OpenAPI document", "Documentation", { success: objectSchema, errorCodes: ["500"] });
+  add("/api/notifications", "get", "Get the current user's latest notifications and unread count", "Notifications", { auth: true, success: { type: "object", properties: { notifications: arraySchema(), unreadCount: { type: "integer" } } }, errorCodes: ["401", "500"] });
+  add("/api/notifications", "patch", "Mark all notifications for the current user as read", "Notifications", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
+  add("/api/notifications/{id}", "patch", "Mark one notification as read", "Notifications", { auth: true, parameters: [pathParam("id", "Notification ID.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
 
   return {
     openapi: "3.0.3",
