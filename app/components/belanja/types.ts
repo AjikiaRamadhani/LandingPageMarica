@@ -145,6 +145,23 @@ export type ApiOrderItem = {
   subtotal: number;
 };
 
+export type ApiOrderReview = {
+  id: string;
+  productId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiProductReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user: { name: string };
+};
+
 export type ApiOrder = {
   id: string;
   orderNumber: string;
@@ -158,11 +175,17 @@ export type ApiOrder = {
   shippingCourier: string | null;
   shippingService: string | null;
   shippingCost: number;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
   subtotal: number;
   pointsUsed: number;
   pointsDiscount: number;
   total: number;
   midtransSnapToken: string | null;
+  paidAt: string | null;
+  processingAt: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
   createdAt: string;
   items: ApiOrderItem[];
 };

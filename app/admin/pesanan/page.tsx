@@ -42,6 +42,9 @@ type AdminOrder = {
   shippingCity: string;
   shippingProvince: string;
   shippingPostalCode: string;
+  shippingCourier: string | null;
+  shippingService: string | null;
+  trackingNumber: string | null;
   total: number;
   createdAt: string;
   user: { id: string; name: string | null; email: string | null };
@@ -153,6 +156,8 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [savingFulfillmentId, setSavingFulfillmentId] = useState<string | null>(null);
+  const [fulfillmentDrafts, setFulfillmentDrafts] = useState<Record<string, { trackingNumber: string }>>({});
 
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
@@ -202,6 +207,41 @@ export default function AdminOrdersPage() {
       );
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const getFulfillmentDraft = (order: AdminOrder) =>
+    fulfillmentDrafts[order.id] ?? {
+      trackingNumber: order.trackingNumber ?? "",
+    };
+
+  const updateFulfillmentDraft = (order: AdminOrder, value: string) => {
+    const current = getFulfillmentDraft(order);
+    setFulfillmentDrafts((drafts) => ({ ...drafts, [order.id]: { ...current, trackingNumber: value } }));
+  };
+
+  const saveFulfillment = async (order: AdminOrder) => {
+    const draft = getFulfillmentDraft(order);
+    setSavingFulfillmentId(order.id);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: order.status,
+          shippingCourier: order.shippingCourier,
+          shippingService: order.shippingService,
+          trackingNumber: draft.trackingNumber || null,
+        }),
+      });
+      const json = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(json?.error ?? "Gagal menyimpan data pengiriman");
+      await loadOrders();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Gagal menyimpan data pengiriman");
+    } finally {
+      setSavingFulfillmentId(null);
     }
   };
 
@@ -305,7 +345,7 @@ export default function AdminOrdersPage() {
             </div>
           )}
           <table
-            className={`w-full min-w-225 border-collapse transition-opacity duration-200 ${isLoading && data ? "opacity-55" : "opacity-100"}`}
+            className={`w-full min-w-300 border-collapse transition-opacity duration-200 ${isLoading && data ? "opacity-55" : "opacity-100"}`}
           >
             <thead className="bg-marica-sky-light/25">
               <tr className="border-b border-black/5 text-left font-body text-xs font-semibold uppercase tracking-wide text-marica-ink-soft/60">
@@ -314,6 +354,7 @@ export default function AdminOrdersPage() {
                 <th className="py-3 pr-4">Produk</th>
                 <th className="py-3 pr-4">Total</th>
                 <th className="py-3 pr-4">Status</th>
+                <th className="py-3 pr-4">Pengiriman</th>
                 <th className="py-3 text-right">Aksi</th>
               </tr>
             </thead>
@@ -321,7 +362,7 @@ export default function AdminOrdersPage() {
               {isLoading && !data && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-12 text-center font-body text-sm text-marica-ink-soft"
                   >
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
@@ -331,7 +372,7 @@ export default function AdminOrdersPage() {
               {!isLoading && filteredOrders.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-12 text-center font-body text-sm text-marica-ink-soft"
                   >
                     <Package className="mx-auto mb-2 h-6 w-6 opacity-40" />
@@ -379,6 +420,36 @@ export default function AdminOrdersPage() {
                     >
                       {statusLabel(order.status)}
                     </span>
+                  </td>
+                  <td className="min-w-72 py-4 pr-4">
+                    {(() => {
+                      const draft = getFulfillmentDraft(order);
+                      return (
+                        <div className="grid gap-2">
+                          <p className="font-body text-xs text-marica-ink-soft">
+                            Kurir: <strong className="text-marica-ink">{order.shippingCourier?.toUpperCase() ?? "Belum dipilih"}</strong>{" "}
+                            {order.shippingService ?? ""}
+                          </p>
+                          <div className="flex gap-2">
+                            <input
+                              value={draft.trackingNumber}
+                              onChange={(event) => updateFulfillmentDraft(order, event.target.value)}
+                              placeholder="Nomor resi"
+                              className="min-w-0 flex-1 rounded-lg border border-black/10 px-2.5 py-2 font-body text-xs text-marica-ink outline-none focus:border-marica-amber"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => void saveFulfillment(order)}
+                              disabled={savingFulfillmentId === order.id}
+                              className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-marica-amber-dark px-3 py-2 font-body text-xs font-semibold text-white disabled:opacity-50"
+                            >
+                              {savingFulfillmentId === order.id && <Loader2 className="h-3 w-3 animate-spin" />}
+                              Simpan
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="py-4 text-right">
                     <select
