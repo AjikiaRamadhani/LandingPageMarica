@@ -145,6 +145,23 @@ export type ApiOrderItem = {
   subtotal: number;
 };
 
+export type ApiOrderReview = {
+  id: string;
+  productId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiProductReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user: { name: string };
+};
+
 export type ApiOrder = {
   id: string;
   orderNumber: string;

@@ -230,6 +230,9 @@ export const getApiDocs = () => {
   add("/api/orders", "get", "List current user orders", "Orders", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
   add("/api/orders/{id}", "get", "Get order detail", "Orders", { auth: true, parameters: [pathParam("id", "Order ID.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
   add("/api/orders/{id}", "patch", "Cancel order or confirm delivery", "Orders", { auth: true, parameters: [pathParam("id", "Order ID.")], requestBody: { type: "object", required: ["action"], properties: { action: { type: "string", enum: ["cancel", "confirm_delivery"] } } }, success: objectSchema, errorCodes: ["400", "401", "404", "409", "500"] });
+  add("/api/orders/{id}/reviews", "get", "List the current user's reviews for an order", "Reviews", { auth: true, parameters: [pathParam("id", "Order ID.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
+  add("/api/orders/{id}/reviews", "post", "Create a product review after delivery confirmation", "Reviews", { auth: true, parameters: [pathParam("id", "Order ID.")], requestBody: { type: "object", required: ["productId", "rating"], properties: { productId: { type: "string" }, rating: { type: "integer", minimum: 1, maximum: 5 }, comment: { type: "string", maxLength: 1000 } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "404", "409", "500"] });
+  add("/api/products/{slug}/reviews", "get", "List public reviews for a product", "Reviews", { parameters: [pathParam("slug", "Product slug or ID.") , queryParam("page", "Page number."), queryParam("limit", "Reviews per page; maximum 50.")], success: objectSchema, errorCodes: ["404", "500"] });
 
   // Events and tickets.
   add("/api/events", "get", "List active events", "Events", { success: arraySchema(), errorCodes: ["500"] });

@@ -44,6 +44,7 @@ model User {
   playpassBookings            PlaypassBooking[]
   preOrderReservations        PreOrderReservation[]
   childProfiles               ChildProfile[]
+  productReviews              ProductReview[]
   subscriptions               Subscription[]
   issuedPlaypassTickets       PlaypassTicket[]      @relation("PlaypassCashier")
   tableFeeSessions            TableFeeSession[]     @relation("TableFeeCustomer")
@@ -457,6 +458,7 @@ model Product {
   articlePlacements    ArticleProductPlacement[]
   recommendationEvents RecommendationEvent[]
   preOrderCampaign     PreOrderCampaign?
+  reviews              ProductReview[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -807,6 +809,7 @@ model Order {
   expirationEmailSentAt DateTime?
 
   items              OrderItem[]
+  productReviews     ProductReview[]
   inventoryMovements InventoryMovement[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -1358,6 +1361,24 @@ model OrderItem {
   bundleId        String?
 
   @@map("order_items")
+}
+
+model ProductReview {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId, orderId])
+  @@index([productId, createdAt])
+  @@map("product_reviews")
 }
 
 // ============================================
