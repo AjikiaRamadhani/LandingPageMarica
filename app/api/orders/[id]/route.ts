@@ -6,6 +6,7 @@ import { settleOrderPayment } from "@/lib/settle-order-payment";
 import { refundRedeemedPointsInTransaction } from "@/lib/points";
 import { addProductAvailability } from "@/lib/order-product-availability";
 import { sendOrderPaymentEmailIfNeeded } from "@/lib/order-mailer";
+import { getTrackingUrl } from "@/lib/shipping-tracking";
 
 type MidtransStatus = {
   transaction_status?: string;
@@ -34,7 +35,11 @@ export async function GET(
       return NextResponse.json({ error: "Pesanan tidak ditemukan" }, { status: 404 });
     }
 
-    return NextResponse.json(await addProductAvailability([order]).then(([item]) => item));
+    const [enrichedOrder] = await addProductAvailability([order]);
+    return NextResponse.json({
+      ...enrichedOrder,
+      trackingUrl: getTrackingUrl(order.shippingCourier, order.trackingNumber),
+    });
   } catch (error) {
     console.error("[GET /api/orders/[id]]", error);
     return NextResponse.json({ error: "Gagal mengambil detail pesanan" }, { status: 500 });
@@ -53,14 +58,32 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = (await request.json().catch(() => ({}))) as { action?: string };
-    if (body.action !== "cancel") {
-      return NextResponse.json({ error: "Aksi pesanan tidak valid" }, { status: 400 });
-    }
-
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order || order.userId !== session.user.id) {
       return NextResponse.json({ error: "Pesanan tidak ditemukan" }, { status: 404 });
     }
+
+    if (body.action === "confirm_delivery") {
+      if (order.status !== "SHIPPED") {
+        return NextResponse.json({ error: "Pesanan belum berstatus dikirim" }, { status: 409 });
+      }
+
+      const delivered = await prisma.order.update({
+        where: { id: order.id, status: "SHIPPED" },
+        data: { status: "DELIVERED", deliveredAt: new Date() },
+        include: { items: true },
+      });
+      const [enrichedOrder] = await addProductAvailability([delivered]);
+      return NextResponse.json({
+        ...enrichedOrder,
+        trackingUrl: getTrackingUrl(delivered.shippingCourier, delivered.trackingNumber),
+      });
+    }
+
+    if (body.action !== "cancel") {
+      return NextResponse.json({ error: "Aksi pesanan tidak valid" }, { status: 400 });
+    }
+
     if (order.status !== "PENDING_PAYMENT") {
       return NextResponse.json(
         { error: "Pesanan hanya bisa dibatalkan sebelum pembayaran dan proses dimulai" },
@@ -91,7 +114,11 @@ export async function PATCH(
       return updatedOrder;
     });
 
-    return NextResponse.json(await addProductAvailability([updated]).then(([item]) => item));
+    const [enrichedOrder] = await addProductAvailability([updated]);
+    return NextResponse.json({
+      ...enrichedOrder,
+      trackingUrl: getTrackingUrl(updated.shippingCourier, updated.trackingNumber),
+    });
   } catch (error) {
     console.error("[PATCH /api/orders/[id]]", error);
     return NextResponse.json({ error: "Gagal membatalkan pesanan" }, { status: 500 });

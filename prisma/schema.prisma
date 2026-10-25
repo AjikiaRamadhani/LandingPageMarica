@@ -791,6 +791,9 @@ model Order {
   userVoucher     UserVoucher? @relation(fields: [userVoucherId], references: [id])
   trackingNumber  String?
   fulfillmentNote String?      @db.Text
+  processingAt    DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
   total           Int // subtotal + shippingCost
 
   // Midtrans

@@ -39,6 +39,9 @@ export async function PUT(
       where: { id },
       data: {
         status: status as typeof VALID_STATUSES[number] as never,
+        ...(status === "PROCESSING" && !existing.processingAt ? { processingAt: new Date() } : {}),
+        ...(status === "SHIPPED" && !existing.shippedAt ? { shippedAt: new Date() } : {}),
+        ...(status === "DELIVERED" && !existing.deliveredAt ? { deliveredAt: new Date() } : {}),
         ...(trackingNumber !== undefined ? { trackingNumber } : {}),
         ...(shippingCourier !== undefined ? { shippingCourier } : {}),
         ...(fulfillmentNote !== undefined ? { fulfillmentNote } : {}),

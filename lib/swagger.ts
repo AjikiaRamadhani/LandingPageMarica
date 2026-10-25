@@ -229,7 +229,7 @@ export const getApiDocs = () => {
   add("/api/admin/table-fee-packages/{id}", "delete", "Deactivate table fee package", "Admin", { admin: true, parameters: [pathParam("id", "Table fee package ID.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
   add("/api/orders", "get", "List current user orders", "Orders", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
   add("/api/orders/{id}", "get", "Get order detail", "Orders", { auth: true, parameters: [pathParam("id", "Order ID.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
-  add("/api/orders/{id}", "patch", "Cancel current user order", "Orders", { auth: true, parameters: [pathParam("id", "Order ID.")], requestBody: { type: "object", properties: { action: { type: "string", enum: ["cancel"] } } }, success: objectSchema, errorCodes: ["400", "401", "404", "500"] });
+  add("/api/orders/{id}", "patch", "Cancel order or confirm delivery", "Orders", { auth: true, parameters: [pathParam("id", "Order ID.")], requestBody: { type: "object", required: ["action"], properties: { action: { type: "string", enum: ["cancel", "confirm_delivery"] } } }, success: objectSchema, errorCodes: ["400", "401", "404", "409", "500"] });
 
   // Events and tickets.
   add("/api/events", "get", "List active events", "Events", { success: arraySchema(), errorCodes: ["500"] });

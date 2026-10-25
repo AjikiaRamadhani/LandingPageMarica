@@ -158,11 +158,17 @@ export type ApiOrder = {
   shippingCourier: string | null;
   shippingService: string | null;
   shippingCost: number;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
   subtotal: number;
   pointsUsed: number;
   pointsDiscount: number;
   total: number;
   midtransSnapToken: string | null;
+  paidAt: string | null;
+  processingAt: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
   createdAt: string;
   items: ApiOrderItem[];
 };
