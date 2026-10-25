@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { sendOrderExpiredEmailIfNeeded } from "@/lib/order-mailer";
 
 const VALID_STATUSES = [
   "PENDING_PAYMENT",
@@ -44,6 +45,10 @@ export async function PUT(
       },
       include: { items: true },
     });
+
+    if (order.status === "EXPIRED") {
+      await sendOrderExpiredEmailIfNeeded(order.id);
+    }
 
     return NextResponse.json(order);
   } catch (error) {

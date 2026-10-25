@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { expireStaleOrders } from "@/lib/expire-orders";
 
 export async function GET(request: Request) {
   const session = await requireAdmin();
@@ -16,10 +17,7 @@ export async function GET(request: Request) {
 
     const where = status ? { status: status as "PENDING_PAYMENT" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "EXPIRED" } : {};
 
-    await prisma.order.updateMany({
-      where: { status: "PENDING_PAYMENT", createdAt: { lt: new Date(Date.now() - 30 * 60 * 1000) } },
-      data: { status: "EXPIRED" },
-    });
+    await expireStaleOrders();
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({

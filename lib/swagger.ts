@@ -281,6 +281,8 @@ export const getApiDocs = () => {
   add("/api/auth/reset-password", "post", "Reset password with a one-time OTP", "Authentication", { requestBody: { type: "object", required: ["email", "otp", "newPassword"], properties: { email: { type: "string", format: "email" }, otp: { type: "string", pattern: "^\\d{6}$", description: "6-digit OTP sent by email" }, newPassword: { type: "string", format: "password" } } }, success: objectSchema, errorCodes: ["400", "429", "500"] });
   add("/api/auth/{nextauth}", "get", "NextAuth handler", "Authentication", { parameters: [pathParam("nextauth", "NextAuth action such as csrf, session, or providers.")], success: objectSchema, errorCodes: ["400", "500"] });
   add("/api/auth/{nextauth}", "post", "NextAuth callback handler", "Authentication", { parameters: [pathParam("nextauth", "NextAuth action.")], success: objectSchema, errorCodes: ["400", "401", "500"] });
+  add("/api/cron/orders", "get", "Expire unpaid retail orders and send expiration emails", "System", { requestBody: { type: "object" }, success: objectSchema, errorCodes: ["401", "500"] });
+  add("/api/cron/orders", "post", "Expire unpaid retail orders and send expiration emails", "System", { requestBody: { type: "object" }, success: objectSchema, errorCodes: ["401", "500"] });
 
   // User profile and account management.
   add("/api/user/profile", "get", "Get current user profile and stats", "Profile", { auth: true, success: objectSchema, errorCodes: ["401", "404", "500"] });

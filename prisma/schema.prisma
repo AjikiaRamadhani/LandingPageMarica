@@ -800,6 +800,8 @@ model Order {
   midtransSnapToken     String?
   paidAt                DateTime?
   ticketEmailSentAt     DateTime?
+  paymentEmailSentAt    DateTime?
+  expirationEmailSentAt DateTime?
 
   items              OrderItem[]
   inventoryMovements InventoryMovement[]

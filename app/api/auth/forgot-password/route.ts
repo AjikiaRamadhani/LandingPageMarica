@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { transporter } from "@/lib/mailer";
+import { mailerFrom, transporter } from "@/lib/mailer";
 import { isRateLimited } from "@/lib/rate-limit";
 import {
   createPasswordResetOtp,
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     });
 
     await transporter.sendMail({
-      from: `"Marica" <${process.env.GMAIL_USER}>`,
+      from: `"Marica" <${mailerFrom}>`,
       to: normalizedEmail,
       subject: "Reset Password Marica",
       html: `
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[POST /api/auth/forgot-password]", error);
-    if (error instanceof Error && /socket|smtp|connection|timeout/i.test(error.message)) {
+    if (error instanceof Error && /socket|smtp|connection|timeout|enotfound|getaddrinfo/i.test(error.message)) {
       return NextResponse.json(
         { error: "Layanan email sedang bermasalah, coba lagi beberapa saat lagi" },
         { status: 503 },

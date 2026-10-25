@@ -5,6 +5,7 @@ import { coreApi, snap } from "@/lib/midtrans";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
 import { refundRedeemedPointsInTransaction } from "@/lib/points";
 import { addProductAvailability } from "@/lib/order-product-availability";
+import { sendOrderPaymentEmailIfNeeded } from "@/lib/order-mailer";
 
 type MidtransStatus = {
   transaction_status?: string;
@@ -164,6 +165,7 @@ export async function POST(
         order,
         payment.transaction_id ?? order.midtransOrderId,
       );
+      await sendOrderPaymentEmailIfNeeded(order.id);
     }
 
     const updated = await prisma.order.findUnique({

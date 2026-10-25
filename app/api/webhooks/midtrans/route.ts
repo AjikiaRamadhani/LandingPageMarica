@@ -7,6 +7,7 @@ import { settlePlaypassBooking } from "@/lib/playpass-booking";
 import { sendTableReservationEmailIfNeeded } from "@/lib/table-reservation-mailer";
 import { settleTableReservation } from "@/lib/table-reservation";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
+import { sendOrderExpiredEmailIfNeeded, sendOrderPaymentEmailIfNeeded } from "@/lib/order-mailer";
 import {
   awardPointsInTransaction,
   calculateEarnedPoints,
@@ -224,6 +225,7 @@ export async function POST(request: Request) {
 
     if (transaction_status === "capture" || transaction_status === "settlement") {
       await settleOrderPayment(order, transaction_id);
+      await sendOrderPaymentEmailIfNeeded(order.id);
     } else if (transaction_status === "pending") {
       await prisma.order.updateMany({
         where: { id: order.id, status: "PENDING_PAYMENT" },
@@ -257,6 +259,9 @@ export async function POST(request: Request) {
           });
         }
       });
+      if (transaction_status === "expire") {
+        await sendOrderExpiredEmailIfNeeded(order.id);
+      }
     }
 
     return NextResponse.json({ message: "OK" });

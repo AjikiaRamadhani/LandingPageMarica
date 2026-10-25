@@ -1,4 +1,4 @@
-import { transporter } from "@/lib/mailer";
+import { mailerFrom, transporter } from "@/lib/mailer";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({
@@ -19,7 +19,7 @@ export async function sendPrintableDownloadEmail(input: {
 }) {
   const expiresInMinutes = Math.round(input.expiresInSeconds / 60);
   await transporter.sendMail({
-    from: `Marica <${process.env.GMAIL_USER}>`,
+    from: `Marica <${mailerFrom}>`,
     to: input.email,
     subject: `Download Printable Marica - ${input.printableTitle}`,
     html: `

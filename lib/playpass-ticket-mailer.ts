@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { transporter } from "@/lib/mailer";
+import { mailerFrom, transporter } from "@/lib/mailer";
 import QRCode from "qrcode";
 
 export async function sendPlaypassTicketEmailIfNeeded(bookingId: string) {
@@ -13,7 +13,7 @@ export async function sendPlaypassTicketEmailIfNeeded(bookingId: string) {
   try {
     const qr = await QRCode.toDataURL(ticket.qrToken);
     await transporter.sendMail({
-      from: `Marica <${process.env.GMAIL_USER}>`,
+      from: `Marica <${mailerFrom}>`,
       to: booking.customerEmail,
       subject: `E-Tiket Playpass Marica - ${booking.bookingNumber}`,
       html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#30251f">

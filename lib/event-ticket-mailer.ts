@@ -1,4 +1,4 @@
-import { transporter } from "@/lib/mailer";
+import { mailerFrom, transporter } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
 import QRCode from "qrcode";
 
@@ -35,7 +35,7 @@ export async function sendEventTicketEmail(input: TicketEmailInput) {
     .join("");
 
   await transporter.sendMail({
-    from: `Marica <${process.env.GMAIL_USER}>`,
+    from: `Marica <${mailerFrom}>`,
     to: input.customerEmail,
     subject: `E-Tiket Event Marica - ${input.eventTitle}`,
     html: `

@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
+import { sendOrderPaymentEmailIfNeeded } from "@/lib/order-mailer";
 import { settlePlaypassBooking } from "@/lib/playpass-booking";
 import { settleTableReservation } from "@/lib/table-reservation";
 import { sendPlaypassTicketEmailIfNeeded } from "@/lib/playpass-ticket-mailer";
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     const order = await prisma.order.findFirst({ where: { OR: [{ orderNumber: reference }, { midtransOrderId: reference }] }, include: { items: true } });
     if (!order || order.total !== amount) return new Response("INVALID", { status: 400 });
     await settleOrderPayment(order, body.uuid || reference);
+    await sendOrderPaymentEmailIfNeeded(order.id);
     return new Response("ACCEPTED");
   } catch (error) {
     console.error("[POST /api/webhooks/winpay]", error);

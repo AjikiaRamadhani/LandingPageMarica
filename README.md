@@ -80,6 +80,20 @@ digunakan di server.
 
 ### Email SMTP
 
+Untuk akun email cPanel, ambil nilai host dan port dari menu **Connect Devices**
+di cPanel. Port `465` memakai SSL, sedangkan port `587` memakai STARTTLS.
+
+```text
+SMTP_HOST=mail.example.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=no-reply@example.com
+SMTP_PASSWORD=...
+SMTP_FROM=no-reply@example.com
+```
+
+Konfigurasi Gmail lama tetap didukung jika `SMTP_*` tidak diisi:
+
 ```text
 GMAIL_USER=...
 GMAIL_APP_PASSWORD=...
