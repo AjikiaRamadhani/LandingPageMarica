@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { isRateLimited } from "@/lib/rate-limit";
+import { hashPasswordResetOtp, isPasswordResetOtp } from "@/lib/password-reset";
 
 function validatePassword(password: string): string | null {
   if (password.length < 8) return "Password minimal 8 karakter";
@@ -18,16 +19,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Terlalu banyak percobaan, coba lagi nanti" }, { status: 429 });
     }
 
-    const { email, token, newPassword } = (await request.json()) as {
+    const { email, otp, newPassword } = (await request.json()) as {
       email?: string;
-      token?: string;
+      otp?: string;
       newPassword?: string;
     };
 
     const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedOtp = otp?.trim();
 
-    if (!normalizedEmail || !token || !newPassword) {
+    if (!normalizedEmail || !normalizedOtp || !newPassword) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 });
+    }
+
+    if (!isPasswordResetOtp(normalizedOtp)) {
+      return NextResponse.json({ error: "Kode OTP harus terdiri dari 6 angka" }, { status: 400 });
     }
 
     const passwordError = validatePassword(newPassword);
@@ -37,27 +43,26 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const resetSucceeded = await prisma.$transaction(async (transaction) => {
-      const consumed = await transaction.verificationToken.deleteMany({
-        where: {
-          token,
-          identifier: normalizedEmail,
-          expires: { gt: new Date() },
-        },
-      });
+    // Satu statement PostgreSQL ini bersifat atomik, tetapi tidak memakai
+    // interactive transaction Prisma yang bermasalah pada driver adapter ini.
+    const updatedUsers = await prisma.$executeRaw`
+      WITH consumed AS (
+        DELETE FROM "verificationtokens"
+        WHERE "identifier" = ${normalizedEmail}
+          AND "token" = ${hashPasswordResetOtp(normalizedOtp)}
+          AND "expires" > NOW()
+        RETURNING "identifier"
+      )
+      UPDATE "users"
+      SET "password" = ${hashedPassword}, "updatedAt" = NOW()
+      FROM consumed
+      WHERE "users"."email" = consumed."identifier"
+    `;
 
-      if (consumed.count !== 1) return false;
-
-      await transaction.user.update({
-        where: { email: normalizedEmail },
-        data: { password: hashedPassword },
-      });
-
-      return true;
-    });
+    const resetSucceeded = updatedUsers === 1;
 
     if (!resetSucceeded) {
-      return NextResponse.json({ error: "Token tidak valid atau sudah kadaluarsa" }, { status: 400 });
+      return NextResponse.json({ error: "Kode OTP tidak valid atau sudah kadaluarsa" }, { status: 400 });
     }
 
     return NextResponse.json({ message: "Password berhasil direset, silakan login." });

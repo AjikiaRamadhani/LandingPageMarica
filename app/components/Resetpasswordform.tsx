@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Eye, EyeOff, Loader2, Lock } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, KeyRound, Loader2, Lock, Mail } from "lucide-react";
 import AuthCard from "./Authcard";
 
 function getPasswordStrength(pw: string) {
@@ -25,9 +25,8 @@ const strengthMeta = [
 export default function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const email = searchParams.get("email");
-  const linkInvalid = !token || !email;
+  const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
+  const [otp, setOtp] = useState("");
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,7 +38,7 @@ export default function ResetPasswordForm() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (status !== "idle" || linkInvalid) return;
+    if (status !== "idle") return;
 
     if (password !== confirmPassword) {
       setError("Password dan konfirmasi password tidak sama.");
@@ -53,7 +52,7 @@ export default function ResetPasswordForm() {
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token, newPassword: password }),
+        body: JSON.stringify({ email, otp, newPassword: password }),
       });
       const data = await res.json();
 
@@ -72,20 +71,8 @@ export default function ResetPasswordForm() {
     }
   };
 
-  if (linkInvalid) {
-    return (
-      <AuthCard title="Link tidak valid" subtitle="Link reset password ini tidak lengkap atau sudah tidak berlaku.">
-        <div className="flex flex-col items-center gap-3 py-2 text-center">
-          <Link href="/lupa-password" className="font-body text-sm font-semibold text-marica-amber-text hover:underline">
-            Minta link reset baru
-          </Link>
-        </div>
-      </AuthCard>
-    );
-  }
-
   return (
-    <AuthCard title="Atur password baru" subtitle={`Buat password baru untuk ${email}.`}>
+    <AuthCard title="Atur password baru" subtitle="Masukkan email dan kode OTP yang dikirimkan ke email kamu.">
       <AnimatePresence mode="wait">
         {status === "success" ? (
           <motion.div
@@ -110,6 +97,47 @@ export default function ResetPasswordForm() {
             onSubmit={handleSubmit}
             className="flex flex-col gap-4"
           >
+            <div>
+              <label htmlFor="email" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-marica-ink-soft/50" />
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="nama@email.com"
+                  className="w-full rounded-xl border border-black/10 bg-marica-sky-light/40 py-2.5 pl-10 pr-4 font-body text-[15px] text-marica-ink outline-none transition placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="otp" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
+                Kode OTP
+              </label>
+              <div className="relative">
+                <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-marica-ink-soft/50" />
+                <input
+                  id="otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  minLength={6}
+                  maxLength={6}
+                  pattern="[0-9]{6}"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\\D/g, "").slice(0, 6))}
+                  placeholder="6 digit kode dari email"
+                  className="w-full rounded-xl border border-black/10 bg-marica-sky-light/40 py-2.5 pl-10 pr-4 font-body text-[15px] tracking-[0.25em] text-marica-ink outline-none transition placeholder:tracking-normal placeholder:text-marica-ink-soft/50 focus:border-marica-amber focus:bg-white focus:ring-4 focus:ring-marica-amber/15"
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="password" className="mb-1.5 block font-body text-sm font-medium text-marica-ink">
                 Password Baru
@@ -200,6 +228,13 @@ export default function ResetPasswordForm() {
                 "Simpan Password Baru"
               )}
             </button>
+
+            <p className="text-center font-body text-sm text-marica-ink-soft">
+              Belum menerima kode?{" "}
+              <Link href="/lupa-password" className="font-semibold text-marica-amber-text hover:underline">
+                Minta OTP baru
+              </Link>
+            </p>
           </motion.form>
         )}
       </AnimatePresence>
