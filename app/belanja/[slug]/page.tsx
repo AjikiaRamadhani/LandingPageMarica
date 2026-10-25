@@ -34,6 +34,7 @@ import { trackRecommendationEvent } from "../../components/belanja/recommendatio
 import type {
   ApiProduct,
   ApiProductImage,
+  ApiProductReview,
 } from "../../components/belanja/types";
 
 type ApiProductDetail = ApiProduct & {
@@ -68,6 +69,11 @@ export default function ProductDetailPage() {
   const [descExpanded, setDescExpanded] = useState(false);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
   const [isAddingBundle, setIsAddingBundle] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<ApiProductReview[]>([]);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   // --- Shipping/checkout flow ------------------------------------------
   const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
@@ -110,6 +116,10 @@ export default function ProductDetailPage() {
       .then((json) => {
         if (cancelled) return;
         setProduct(json);
+        setReviews([]);
+        setReviewsPage(1);
+        setReviewsTotal(0);
+        setReviewsTotalPages(1);
         setActiveImageIdx(0);
         setQty(1);
       })
@@ -127,6 +137,52 @@ export default function ProductDetailPage() {
       cancelled = true;
     };
   }, [params?.slug]);
+
+  useEffect(() => {
+    if (!params?.slug) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoadingReviews(true);
+    fetch(`/api/products/${params.slug}/reviews?limit=10&page=1`, { cache: "no-store" })
+      .then(async (res) => {
+        const json = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(json?.error ?? "Gagal memuat ulasan");
+        return json as { reviews: ApiProductReview[]; pagination: { total: number; totalPages: number } };
+      })
+      .then((json) => {
+        if (cancelled) return;
+        setReviews(json.reviews);
+        setReviewsTotal(json.pagination.total);
+        setReviewsTotalPages(json.pagination.totalPages);
+        setReviewsPage(1);
+      })
+      .catch(() => {
+        if (!cancelled) setReviews([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingReviews(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [params?.slug]);
+
+  const loadMoreReviews = async () => {
+    if (!params?.slug || reviewsPage >= reviewsTotalPages || isLoadingReviews) return;
+    const nextPage = reviewsPage + 1;
+    setIsLoadingReviews(true);
+    try {
+      const response = await fetch(`/api/products/${params.slug}/reviews?limit=10&page=${nextPage}`, { cache: "no-store" });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json?.error ?? "Gagal memuat ulasan");
+      setReviews((current) => [...current, ...(json.reviews as ApiProductReview[])]);
+      setReviewsPage(nextPage);
+    } catch {
+      // Gagal memuat halaman berikutnya tidak mengganggu detail produk.
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
 
   useEffect(() => {
     if (product?.id) trackRecommendationEvent(product.id, "VIEW");
@@ -590,6 +646,16 @@ export default function ProductDetailPage() {
           )}
 
           {!isLoading && !error && product && (
+            <ProductReviews
+              reviews={reviews}
+              total={reviewsTotal}
+              isLoading={isLoadingReviews}
+              hasMore={reviewsPage < reviewsTotalPages}
+              onLoadMore={loadMoreReviews}
+            />
+          )}
+
+          {!isLoading && !error && product && (
             <RecommendedProducts productId={product.id} />
           )}
         </div>
@@ -644,6 +710,63 @@ function Stars({ rating }: { rating: number }) {
         />
       ))}
     </span>
+  );
+}
+
+function ProductReviews({
+  reviews,
+  total,
+  isLoading,
+  hasMore,
+  onLoadMore,
+}: {
+  reviews: ApiProductReview[];
+  total: number;
+  isLoading: boolean;
+  hasMore: boolean;
+  onLoadMore: () => void;
+}) {
+  return (
+    <section className="mt-10 rounded-2xl border border-marica-ink/5 bg-white p-5 shadow-[0_10px_28px_rgba(120,60,10,0.06)] sm:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-bold text-marica-ink sm:text-xl">Ulasan Pelanggan</h2>
+          <p className="mt-1 font-body text-sm text-marica-ink-soft">{total} ulasan terverifikasi dari pembeli Marica.</p>
+        </div>
+        {total > 0 && <span className="rounded-full bg-marica-amber/20 px-3 py-1 font-body text-xs font-semibold text-marica-amber-text">Pengalaman pembeli</span>}
+      </div>
+
+      {isLoading && reviews.length === 0 && <p className="mt-5 font-body text-sm text-marica-ink-soft">Memuat ulasan...</p>}
+      {!isLoading && reviews.length === 0 && <p className="mt-5 rounded-xl bg-marica-cream/60 p-4 font-body text-sm text-marica-ink-soft">Belum ada ulasan untuk produk ini.</p>}
+
+      {reviews.length > 0 && (
+        <div className="mt-5 divide-y divide-marica-ink/10">
+          {reviews.map((review) => (
+            <article key={review.id} className="py-4 first:pt-0 last:pb-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-body text-sm font-semibold text-marica-ink">{review.user.name}</p>
+                <time className="font-body text-xs text-marica-ink-soft" dateTime={review.createdAt}>
+                  {new Date(review.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                </time>
+              </div>
+              <div className="mt-2"><Stars rating={review.rating} /></div>
+              {review.comment && <p className="mt-2 whitespace-pre-wrap font-body text-sm leading-relaxed text-marica-ink-soft">{review.comment}</p>}
+            </article>
+          ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <button
+          type="button"
+          onClick={onLoadMore}
+          disabled={isLoading}
+          className="mt-5 rounded-full border-2 border-marica-amber-dark/40 px-4 py-2 font-body text-sm font-semibold text-marica-amber-text disabled:opacity-50"
+        >
+          {isLoading ? "Memuat..." : "Lihat Ulasan Lainnya"}
+        </button>
+      )}
+    </section>
   );
 }
 

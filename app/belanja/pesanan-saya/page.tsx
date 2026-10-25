@@ -372,12 +372,12 @@ function OrderCard({
               >
                 Beli Lagi
               </Link>
-              <button
-                type="button"
+              <Link
+                href={`/belanja/pesanan-saya/${order.id}`}
                 className="rounded-full bg-marica-amber-dark px-5 py-2 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
               >
                 Beri Ulasan
-              </button>
+              </Link>
             </>
           )}
 
