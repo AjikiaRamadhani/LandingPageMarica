@@ -116,10 +116,6 @@ export default function ProductDetailPage() {
       .then((json) => {
         if (cancelled) return;
         setProduct(json);
-        setReviews([]);
-        setReviewsPage(1);
-        setReviewsTotal(0);
-        setReviewsTotalPages(1);
         setActiveImageIdx(0);
         setQty(1);
       })
