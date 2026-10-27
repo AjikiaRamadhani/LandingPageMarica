@@ -218,7 +218,7 @@ export default function HeroView({ hero, stats }: Props) {
             className="relative mx-auto aspect-square w-full max-w-[500px] md:max-w-[420px] lg:max-w-[540px]"
           >
             <Image
-              src={hero.imageUrl ?? "/images/hero-character.png"}
+              src="/images/hero-character.webp"
               alt="Ibu dan anak bermain balok edukatif bersama"
               width={700}
               height={700}

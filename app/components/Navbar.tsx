@@ -34,11 +34,6 @@ const navLinks: NavLink[] = [
   { label: "Lainnya", href: "#lainnya", menu: "more" },
 ];
 
-type ApiCompany = {
-  name: string;
-  logoUrl: string | null;
-};
-
 type ApiUserProfile = {
   name: string | null;
   email: string | null;
@@ -103,7 +98,6 @@ export default function Navbar() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [company, setCompany] = useState<ApiCompany | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
@@ -136,17 +130,6 @@ export default function Navbar() {
     )?.href ??
     pathname ??
     "/";
-
-  useEffect(() => {
-    fetch("/api/company")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) {
-          setCompany(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load company profile", err));
-  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -472,16 +455,13 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center gap-3">
           <Image
-            src={company?.logoUrl || "/images/logo.png"}
-            alt={company?.name || "Marica"}
+            src="/images/logo.png"
+            alt="Marica"
             width={434}
             height={145}
             priority
             className="h-8 w-auto object-contain sm:h-9"
           />
-          {/* <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
-            {company?.name || "Marica"}
-          </span> */}
         </Link>
 
         {/* Desktop navigation */}

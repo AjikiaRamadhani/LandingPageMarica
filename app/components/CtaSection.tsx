@@ -1,36 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, MapPin, MessageCircle } from "lucide-react";
 import { FaInstagram as Instagram } from "react-icons/fa6";
 
-type ApiCompany = {
-  phone: string | null;
-  instagram: string | null;
-  address: string | null;
-};
-
 export default function CtaSection() {
-  const [company, setCompany] = useState<ApiCompany | null>(null);
-
-  useEffect(() => {
-    fetch("/api/company")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) {
-          setCompany(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load company profile", err));
-  }, []);
-
-  const phoneRaw = company?.phone || "+62 822 2149 1429";
+  const phoneRaw = "+62 822 2149 1429";
   const phoneClean = phoneRaw.replace(/[^0-9+]/g, "");
   const waLink = `https://wa.me/${phoneClean.replace('+', '')}`;
-  const igLink = company?.instagram ? `https://instagram.com/${company.instagram.replace('@', '')}` : "#";
-  const mapsLink = company?.address ? `https://maps.google.com/?q=${encodeURIComponent(company.address)}` : "#";
+  const igLink = "https://instagram.com/kids.marica";
+  const mapsLink = "https://maps.google.com/?q=Marica+Experience+Store";
 
   const contacts = [
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, href: waLink },
@@ -155,7 +135,7 @@ export default function CtaSection() {
               transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
             >
               <Image
-                src="/images/trust-mascot.png"
+                src="/images/trust-mascot.webp"
                 alt="Maskot Marica"
                 width={280}
                 height={322}

@@ -174,19 +174,39 @@ export default function PosPage() {
   useEffect(() => {
     if (!isCameraActive) return;
     const scanner = new Html5Qrcode("kasir-qr-reader");
+    let disposed = false;
+    let cleanupPromise: Promise<void> | null = null;
     scannerRef.current = scanner;
-    void scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 230, height: 230 } },
-        (decodedText) => {
-          setCheckInToken(decodedText);
-          setIsCameraActive(false);
-          void scanner.stop().catch(() => undefined);
-        },
-        () => undefined,
-      )
+
+    const stopAndClearScanner = () => {
+      if (!cleanupPromise) {
+        cleanupPromise = (async () => {
+          if (scanner.isScanning) {
+            await scanner.stop();
+          }
+          scanner.clear();
+        })();
+      }
+      return cleanupPromise;
+    };
+
+    const startPromise = scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 230, height: 230 } },
+      (decodedText) => {
+        setCheckInToken(decodedText);
+        setIsCameraActive(false);
+      },
+      () => undefined,
+    );
+    void startPromise
+      .then(() => {
+        if (disposed) {
+          return stopAndClearScanner();
+        }
+      })
       .catch(() => {
+        if (disposed) return;
         setIsCameraActive(false);
         setNotice({
           type: "error",
@@ -194,8 +214,12 @@ export default function PosPage() {
         });
       });
     return () => {
-      void scanner.stop().catch(() => undefined);
-      scanner.clear();
+      disposed = true;
+      void startPromise
+        .then(stopAndClearScanner, () => {
+          scanner.clear();
+        })
+        .catch(() => undefined);
       scannerRef.current = null;
     };
   }, [isCameraActive]);
@@ -319,7 +343,15 @@ export default function PosPage() {
   const change = Math.max(0, paid - total);
   const catalog =
     tab === "PRODUCT" ? products : tab === "PLAYPASS" ? playpasses : tableFees;
-  const filteredCatalog = catalog.filter((item) =>
+  const sortedCatalog =
+    tab === "PRODUCT"
+      ? [...catalog].sort((left, right) => {
+          const leftAvailable = "stock" in left && left.stock > 0;
+          const rightAvailable = "stock" in right && right.stock > 0;
+          return Number(rightAvailable) - Number(leftAvailable);
+        })
+      : catalog;
+  const filteredCatalog = sortedCatalog.filter((item) =>
     item.name.toLowerCase().includes(query.toLowerCase()),
   );
   const catalogPageSize = 6;

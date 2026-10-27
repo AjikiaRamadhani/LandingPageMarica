@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -33,46 +32,21 @@ function TikTokIcon({ className }: { className?: string }) {
   return <FaTiktok className={className} />;
 }
 
-type ApiCompany = {
-  name: string;
-  description: string | null;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  instagram: string | null;
-  tiktok: string | null;
-  youtube: string | null;
-  logoUrl: string | null;
-};
-
 export default function Footer() {
-  const [company, setCompany] = useState<ApiCompany | null>(null);
-
-  useEffect(() => {
-    fetch("/api/company")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && !data.error) {
-          setCompany(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load company profile", err));
-  }, []);
-
-  // Fallbacks
-  const description = company?.description || "Pusat pengalaman edukasi keluarga berkonsep phygital yang memadukan ritel buku, board game edukatif, dan aktivitas interaktif.";
-  const phone = company?.phone || "+62 858 7045 9329";
-  const email = company?.email || "pt.sebangku@gmail.com";
-  const website = company?.website || "www.marica.id";
-  const instagramId = company?.instagram || "@kids.marica";
+  const companyName = "Marica Experience Store";
+  const description = "Pusat pengalaman edukasi keluarga berkonsep phygital yang memadukan ritel buku, board game edukatif, dan aktivitas interaktif.";
+  const phone = "+62 858 7045 9329";
+  const email = "pt.sebangku@gmail.com";
+  const website = "www.marica.id";
+  const instagramId = "@kids.marica";
 
   // Clean phone for tel: link
   const phoneClean = phone.replace(/[^0-9+]/g, "");
 
   const socials = [
-    { key: "youtube", icon: Youtube, href: company?.youtube || "#", label: "YouTube" },
-    { key: "tiktok", icon: TikTokIcon, href: company?.tiktok || "#", label: "TikTok" },
-    { key: "instagram", icon: Instagram, href: company?.instagram ? `https://instagram.com/${company.instagram.replace('@', '')}` : "#", label: "Instagram" },
+    { key: "youtube", icon: Youtube, href: "#", label: "YouTube" },
+    { key: "tiktok", icon: TikTokIcon, href: "#", label: "TikTok" },
+    { key: "instagram", icon: Instagram, href: "https://instagram.com/kids.marica", label: "Instagram" },
   ];
 
   return (
@@ -99,8 +73,8 @@ export default function Footer() {
             className="w-32"
           >
             <Image
-              src={company?.logoUrl || "/images/logo.png"}
-              alt={`${company?.name || "Marica"} - Math with a Smile`}
+              src="/images/logo.png"
+              alt={`${companyName} - Math with a Smile`}
               width={200}
               height={80}
               className="h-auto w-full select-none"
@@ -263,7 +237,7 @@ export default function Footer() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-center font-body text-xs text-marica-ink-soft"
         >
-          © 2025 {company?.name || "Marica Experience Store"} - PT Sebangku Jaya Abadi. All rights
+          © 2025 {companyName} - PT Sebangku Jaya Abadi. All rights
           reserved.
         </motion.p>
       </div>

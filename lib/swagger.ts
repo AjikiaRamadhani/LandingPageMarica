@@ -75,16 +75,9 @@ export const getApiDocs = () => {
 
   // Public landing page content.
   for (const [path, summary] of [
-    ["/api/benefits", "Get benefits"],
-    ["/api/faqs", "Get FAQs"],
-    ["/api/how-it-works", "Get how-it-works steps"],
-    ["/api/pain-points", "Get pain points"],
     ["/api/solutions", "Get solutions"],
-    ["/api/statistics", "Get statistics"],
-    ["/api/testimonials", "Get testimonials"],
   ]) add(path, "get", summary, "Content", { success: arraySchema(), errorCodes: ["500"] });
   add("/api/company", "get", "Get company profile", "Content", { success: objectSchema, errorCodes: ["404", "500"] });
-  add("/api/hero", "get", "Get hero section", "Content", { success: objectSchema, errorCodes: ["500"] });
 
   // Catalog, cart, checkout, and orders.
   add("/api/product-categories", "get", "List active product categories", "Catalog", { success: arraySchema(), errorCodes: ["500"] });

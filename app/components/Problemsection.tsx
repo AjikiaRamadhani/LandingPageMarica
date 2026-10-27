@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import BackgroundDoodles from "./BackgroundDoodles";
@@ -13,36 +12,40 @@ type PainPoint = {
   order: number;
 };
 
-// Fallback image kalau field imageUrl belum diisi di database
+const problems: PainPoint[] = [
+  {
+    id: "where-to-play",
+    title: "Bingung Mau Ajak Anak Main ke Mana Lagi?",
+    description:
+      "Bosan dengan tempat rekreasi yang itu-itu saja dan cuma bikin anak muter-muter tanpa dapat manfaat atau stimulasi belajar yang berarti.",
+    icon: null,
+    order: 1,
+  },
+  {
+    id: "activity-ideas",
+    title: "Habis Ide Bikin Aktivitas Seru di Rumah",
+    description:
+      "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri dari nol.",
+    icon: null,
+    order: 2,
+  },
+  {
+    id: "boring-toys",
+    title: "Mainan Anak Cuma Jadi Pajangan & Gampang Bikin Bosan",
+    description:
+      "Sudah beli banyak mainan, tapi cuma dimainkan sekali-dua kali lalu ditinggal begitu saja karena kurang interaktif dan nggak ada alur permainan yang seru untuk dimainkan bareng.",
+    icon: null,
+    order: 3,
+  },
+];
+
 const fallbackImages = [
-  "/images/problemkids1.png",
-  "/images/problemkids2.png",
-  "/images/problemkids3.png",
+  "/images/problemkids1.webp",
+  "/images/problemkids2.webp",
+  "/images/problemkids3.webp",
 ];
 
 export default function ProblemSection() {
-  const [problems, setProblems] = useState<PainPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/pain-points")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setProblems(data);
-        } else {
-          console.error("Unexpected /api/pain-points response:", data);
-          setError("Gagal memuat data.");
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load pain points", err);
-        setError("Gagal memuat data.");
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
   return (
     <section id="masalah" className="section-soft-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">
       <BackgroundDoodles />
@@ -69,16 +72,7 @@ export default function ProblemSection() {
         </motion.p>
       </div>
 
-      {loading ? (
-        <div className="relative z-10 mt-12 text-center font-body text-sm text-marica-ink/60">
-          Memuat data...
-        </div>
-      ) : error ? (
-        <div className="relative z-10 mt-12 text-center font-body text-sm text-red-600">
-          {error}
-        </div>
-      ) : (
-        <div className="relative z-10 mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-3 lg:mt-16 lg:grid-cols-3">
+      <div className="relative z-10 mx-auto mt-12 grid max-w-6xl gap-6 sm:grid-cols-3 lg:mt-16 lg:grid-cols-3">
           {problems.map((item, i) => (
             <motion.div
               key={item.id}
@@ -106,8 +100,7 @@ export default function ProblemSection() {
               </p>
             </motion.div>
           ))}
-        </div>
-      )}
+      </div>
     </section>
   );
 }

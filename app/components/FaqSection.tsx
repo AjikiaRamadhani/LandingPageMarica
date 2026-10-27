@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 
@@ -54,38 +54,9 @@ const defaultFaqs = [
   },
 ];
 
-type ApiFaq = {
-  id: string;
-  question: string;
-  answer: string;
-  icon: string | null;
-  order: number;
-};
-
 export default function FaqSection() {
-  const [faqs, setFaqs] = useState(defaultFaqs);
+  const faqs = defaultFaqs;
   const [openKey, setOpenKey] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/faqs")
-      .then((res) => res.json())
-      .then((data: ApiFaq[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          const mergedFaqs = data.map((item, i) => {
-            const defaultFaq = defaultFaqs[i % defaultFaqs.length];
-            return {
-              ...defaultFaq,
-              key: item.id,
-              question: item.question,
-              answer: item.answer,
-              emoji: item.icon || defaultFaq.emoji,
-            };
-          });
-          setFaqs(mergedFaqs);
-        }
-      })
-      .catch((err) => console.error("Failed to load faqs", err));
-  }, []);
 
   return (
     <section id="faq" className="section-sand-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">
