@@ -5,16 +5,48 @@ import { motion } from "framer-motion";
 import BackgroundDoodles from "./BackgroundDoodles";
 import { landingPainPoints } from "@/lib/landing-content";
 
-// Fallback image kalau field imageUrl belum diisi di database
+type PainPoint = {
+  id: string;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  order: number;
+};
+
+const problems: PainPoint[] = [
+  {
+    id: "where-to-play",
+    title: "Bingung Mau Ajak Anak Main ke Mana Lagi?",
+    description:
+      "Bosan dengan tempat rekreasi yang itu-itu saja dan cuma bikin anak muter-muter tanpa dapat manfaat atau stimulasi belajar yang berarti.",
+    icon: null,
+    order: 1,
+  },
+  {
+    id: "activity-ideas",
+    title: "Habis Ide Bikin Aktivitas Seru di Rumah",
+    description:
+      "Pengen banget dampingi anak main yang kreatif dan melatih logika, tapi sering kehabisan ide, bingung cari bahan mainnya, dan nggak ada waktu buat ngerancang sendiri dari nol.",
+    icon: null,
+    order: 2,
+  },
+  {
+    id: "boring-toys",
+    title: "Mainan Anak Cuma Jadi Pajangan & Gampang Bikin Bosan",
+    description:
+      "Sudah beli banyak mainan, tapi cuma dimainkan sekali-dua kali lalu ditinggal begitu saja karena kurang interaktif dan nggak ada alur permainan yang seru untuk dimainkan bareng.",
+    icon: null,
+    order: 3,
+  },
+];
+
 const fallbackImages = [
-  "/images/problemkids1.png",
-  "/images/problemkids2.png",
-  "/images/problemkids3.png",
+  "/images/problemkids1.webp",
+  "/images/problemkids2.webp",
+  "/images/problemkids3.webp",
 ];
 
 export default function ProblemSection() {
-  const problems = landingPainPoints;
-
   return (
     <section id="masalah" className="section-soft-bg relative overflow-hidden px-6 py-20 lg:px-10 lg:py-28">
       <BackgroundDoodles />

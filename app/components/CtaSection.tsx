@@ -4,14 +4,13 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, MapPin, MessageCircle } from "lucide-react";
 import { FaInstagram as Instagram } from "react-icons/fa6";
-import { landingCompany } from "@/lib/landing-content";
 
 export default function CtaSection() {
-  const phoneRaw = landingCompany.phone;
+  const phoneRaw = "+62 822 2149 1429";
   const phoneClean = phoneRaw.replace(/[^0-9+]/g, "");
   const waLink = `https://wa.me/${phoneClean.replace('+', '')}`;
-  const igLink = `https://instagram.com/${landingCompany.instagram.replace('@', '')}`;
-  const mapsLink = `https://maps.google.com/?q=${encodeURIComponent(landingCompany.address)}`;
+  const igLink = "https://instagram.com/kids.marica";
+  const mapsLink = "https://maps.google.com/?q=Marica+Experience+Store";
 
   const contacts = [
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, href: waLink },
@@ -136,7 +135,7 @@ export default function CtaSection() {
               transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
             >
               <Image
-                src="/images/trust-mascot.png"
+                src="/images/trust-mascot.webp"
                 alt="Maskot Marica"
                 width={280}
                 height={322}

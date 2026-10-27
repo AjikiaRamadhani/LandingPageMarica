@@ -15,11 +15,61 @@ type Testimonial = {
   order: number;
 };
 
-const avatarColors = [
-  "bg-marica-maroon",
-  "bg-marica-teal",
-  "bg-[#e0507a]",
-  "bg-marica-violet-deep",
+const testimonials: Testimonial[] = [
+  {
+    id: "sarah",
+    customerName: "Bunda Sarah Melati",
+    role: "Ibu Rumah Tangga & Ibu dari 2 Anak",
+    avatarUrl: null,
+    message:
+      "Akhirnya ketemu tempat main yang bikin anak betah berjam-jam tanpa perlu main HP! Tempatnya bersih, pilihan board game-nya banyak banget, dan stafnya telaten ngajarin cara mainnya. Jadi punya tempat quality time favorit baru bareng anak di akhir pekan.",
+    order: 1,
+  },
+  {
+    id: "anita",
+    customerName: "Bunda Anita Rahma, S.T.",
+    role: "Ibu Bekerja & Penggemar Edukasi Anak",
+    avatarUrl: null,
+    message:
+      "Workshop sains dan kriya mingguan di Marica selalu bikin si kecil antusias! Materi belajar yang biasanya membosankan di sekolah, di sini malah disajikan seru banget lewat praktik langsung. Sepulang dari workshop, anaknya makin kritis dan kreatif.",
+    order: 2,
+  },
+  {
+    id: "citra",
+    customerName: "Bunda Citra Kirana",
+    role: "Ibu Bekerja & Pelanggan Edu-Kit Bulanan",
+    avatarUrl: null,
+    message:
+      "Jujur sebagai working mom, saya sering kehabisan waktu dan ide buat ngerancang permainan edukatif di rumah. Berlangganan Edu-Kit Marica bener-bener menyelamatkan! Tiap bulan tinggal tunggu paket datang, semua bahan & panduannya sudah lengkap dan siap pakai.",
+    order: 3,
+  },
+  {
+    id: "maya",
+    customerName: "Bunda Maya Indah",
+    role: "Content Creator & Pegiat Parenting",
+    avatarUrl: null,
+    message:
+      "Koleksi buku cerita dan edugame dari Marica desainnya bagus-bagus banget dan alur permainannya edukatif. Anak saya jadi lebih cepat paham konsep logika sederhana lewat cara yang menyenangkan. Recommended banget buat koleksi di rumah!",
+    order: 4,
+  },
+  {
+    id: "ratna",
+    customerName: "Ibu Ratna Dewi, S.Pd.",
+    role: "Kepala Sekolah & Pendidik PAUD/TK",
+    avatarUrl: null,
+    message:
+      "Siswa-siswi kami sangat antusias saat ikutan acara kunjungan dan pelatihan media ajar edugame dari Marica. Konsep belajar sambil bermainnya sangat pas untuk membantu anak-anak memahami materi dengan lebih cepat dan ceria!",
+    order: 5,
+  },
+];
+
+const testimonialImages = [
+  "/images/testimoni1.webp",
+  "/images/testimoni2.webp",
+  "/images/testimoni3.webp",
+  "/images/testimoni4.webp",
+  "/images/testimoni5.webp",
+  "/images/testimoni22.webp",
 ];
 
 const AUTOPLAY_INTERVAL = 4500;
@@ -29,7 +79,6 @@ export default function TestimonialSection() {
   const trackRef = useRef<HTMLDivElement>(null);
   const controls = useAnimationControls();
 
-  const testimonials: Testimonial[] = landingTestimonials.map((item) => ({ ...item }));
   const [index, setIndex] = useState(0);
   const [cardStep, setCardStep] = useState(0);
   const [maxIndex, setMaxIndex] = useState(0);
@@ -132,14 +181,9 @@ export default function TestimonialSection() {
         </motion.p>
       </div>
 
-      {testimonials.length === 0 ? (
-        <div className="mt-12 text-center font-body text-sm text-marica-ink/60">
-          Belum ada testimoni.
-        </div>
-      ) : (
-        <>
-          {/* Carousel */}
-          <div className="relative z-10 mx-auto mt-12 max-w-6xl lg:mt-16">
+      <>
+        {/* Carousel */}
+        <div className="relative z-10 mx-auto mt-12 max-w-6xl lg:mt-16">
             <div ref={viewportRef} className="overflow-hidden">
               <motion.div
                 ref={trackRef}
@@ -166,23 +210,15 @@ export default function TestimonialSection() {
                     />
 
                     <div className="relative flex items-center gap-3">
-                      {t.avatarUrl ? (
-                        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-4 ring-white">
-                          <Image
-                            src={t.avatarUrl}
-                            alt={t.customerName}
-                            fill
-                            sizes="44px"
-                            className="object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-display text-base font-semibold text-white ring-4 ring-white ${avatarColors[i % avatarColors.length]}`}
-                        >
-                          {t.customerName.replace("Bunda ", "")[0]}
-                        </div>
-                      )}
+                      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-4 ring-white">
+                        <Image
+                          src={testimonialImages[i % testimonialImages.length]}
+                          alt={t.customerName}
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
+                      </div>
                       <div className="leading-tight">
                         <p className="font-display text-[15px] font-semibold text-marica-ink">
                           {t.customerName}
@@ -250,8 +286,7 @@ export default function TestimonialSection() {
               />
             ))}
           </div>
-        </>
-      )}
+      </>
     </section>
   );
 }

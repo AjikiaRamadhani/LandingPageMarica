@@ -3,8 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { landingCompany } from "@/lib/landing-content";
-import { MapPin } from "lucide-react";
 import {
   FaPhone as Phone,
   FaEnvelope as Mail,
@@ -15,20 +13,18 @@ import {
 } from "react-icons/fa6";
 
 const navigasi = [
-  { label: "Beranda", href: "/#beranda", active: true },
-  { label: "Masalah", href: "/#masalah" },
-  { label: "Manfaat", href: "/#manfaat" },
-  { label: "Testimoni", href: "/#testimoni" },
-  { label: "Cara Kerja", href: "/#cara-kerja" },
-  { label: "FAQ", href: "/#faq" },
+  { label: "Beranda", href: "#beranda", active: true },
+  { label: "Masalah", href: "#masalah" },
+  { label: "Manfaat", href: "#manfaat" },
+  { label: "Testimoni", href: "#testimoni" },
+  { label: "Cara Kerja", href: "#cara-kerja" },
+  { label: "FAQ", href: "#faq" },
 ];
 
 const layanan = [
-  { label: "Produk Edukasi", href: "/belanja" },
-  { label: "Edugames", href: "/edugames" },
-  { label: "Subscription Edu-Kit", href: "/subscription" },
-  { label: "Playpass & Reservasi", href: "/playpass" },
-  { label: "Event & Workshop", href: "/event" },
+  { label: "Books & Edugames", href: "/layanan" },
+  { label: "Subscription", href: "/layanan" },
+  { label: "Play & Interactive Zone", href: "/layanan" },
   { label: "Sekolah & Bisnis", href: "/b2b" },
 ];
 
@@ -37,21 +33,20 @@ function TikTokIcon({ className }: { className?: string }) {
 }
 
 export default function Footer() {
-  const company = landingCompany;
-  const description = company.description;
-  const phone = company.phone;
-  const email = company.email;
-  const website = company.website;
-  const instagramId = company.instagram;
-  const mapsLink = `https://maps.google.com/?q=${encodeURIComponent(company.address)}`;
+  const companyName = "Marica Experience Store";
+  const description = "Pusat pengalaman edukasi keluarga berkonsep phygital yang memadukan ritel buku, board game edukatif, dan aktivitas interaktif.";
+  const phone = "+62 858 7045 9329";
+  const email = "pt.sebangku@gmail.com";
+  const website = "www.marica.id";
+  const instagramId = "@kids.marica";
 
   // Clean phone for tel: link
   const phoneClean = phone.replace(/[^0-9+]/g, "");
 
   const socials = [
-    { key: "youtube", icon: Youtube, href: `https://youtube.com/${company.youtube}`, label: "YouTube" },
-    { key: "tiktok", icon: TikTokIcon, href: `https://tiktok.com/${company.tiktok}`, label: "TikTok" },
-    { key: "instagram", icon: Instagram, href: `https://instagram.com/${company.instagram.replace('@', '')}`, label: "Instagram" },
+    { key: "youtube", icon: Youtube, href: "#", label: "YouTube" },
+    { key: "tiktok", icon: TikTokIcon, href: "#", label: "TikTok" },
+    { key: "instagram", icon: Instagram, href: "https://instagram.com/kids.marica", label: "Instagram" },
   ];
 
   return (
@@ -78,8 +73,8 @@ export default function Footer() {
             className="w-32"
           >
             <Image
-              src={company?.logoUrl || "/images/logo.png"}
-              alt={`${company?.name || "Marica"} - Math with a Smile`}
+              src="/images/logo.png"
+              alt={`${companyName} - Math with a Smile`}
               width={200}
               height={80}
               className="h-auto w-full select-none"
@@ -189,18 +184,6 @@ export default function Footer() {
                 {website.replace(/^https?:\/\//, '')}
               </a>
             </li>
-
-            <li>
-              <a
-                href={mapsLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-start gap-2.5 font-body text-sm leading-relaxed text-marica-ink-soft transition-colors hover:text-marica-ink"
-              >
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{company.address}</span>
-              </a>
-            </li>
           </ul>
 
           <div className="mt-5 flex items-center gap-2.5">
@@ -254,7 +237,7 @@ export default function Footer() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-center font-body text-xs text-marica-ink-soft"
         >
-          © 2026 {company?.name || "Marica Experience Store"} - PT Sebangku Jaya Abadi. All rights
+          © 2025 {companyName} - PT Sebangku Jaya Abadi. All rights
           reserved.
         </motion.p>
       </div>

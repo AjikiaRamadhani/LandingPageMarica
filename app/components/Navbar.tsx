@@ -110,7 +110,6 @@ export default function Navbar() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const company = landingCompany;
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
@@ -543,16 +542,13 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center gap-3">
           <Image
-            src={company?.logoUrl || "/images/logo.png"}
-            alt={company?.name || "Marica"}
+            src="/images/logo.png"
+            alt="Marica"
             width={434}
             height={145}
             priority
             className="h-8 w-auto object-contain sm:h-9"
           />
-          {/* <span className="font-display text-base font-semibold text-marica-amber-text lg:text-xl">
-            {company?.name || "Marica"}
-          </span> */}
         </Link>
 
         {/* Desktop navigation */}
