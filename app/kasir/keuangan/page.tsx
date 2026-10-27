@@ -25,10 +25,12 @@ export default function CashierFinancePage() {
   const [shift, setShift] = useState<Shift | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [period, setPeriod] = useState<"day" | "month" | "year">("day");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/cashier/sales?limit=1", { cache: "no-store" }).then(async (response) => {
+      fetch(`/api/cashier/sales?limit=1&period=${period}&date=${date}`, { cache: "no-store" }).then(async (response) => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error ?? "Ringkasan keuangan gagal dimuat.");
         return data;
@@ -52,7 +54,7 @@ export default function CashierFinancePage() {
         setError(reason instanceof Error ? reason.message : "Ringkasan keuangan gagal dimuat.");
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [period, date]);
 
   return (
     <div className="mx-auto min-h-full max-w-375 pb-10 text-[#1c1b1b]">
@@ -67,6 +69,21 @@ export default function CashierFinancePage() {
           Ringkasan pendapatan dan posisi kas kasir.
         </p>
       </header>
+
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+        <label className="font-body text-sm font-semibold text-marica-ink">
+          Periode
+          <select value={period} onChange={(event) => setPeriod(event.target.value as typeof period)} className="ml-2 rounded-lg border border-black/10 px-3 py-2 font-normal">
+            <option value="day">Harian</option>
+            <option value="month">Bulanan</option>
+            <option value="year">Tahunan</option>
+          </select>
+        </label>
+        <label className="font-body text-sm font-semibold text-marica-ink">
+          Tanggal acuan
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="ml-2 rounded-lg border border-black/10 px-3 py-2 font-normal" />
+        </label>
+      </div>
 
       {isLoading ? (
         <div className="rounded-3xl border border-black/5 bg-white p-10 text-center font-body text-sm text-marica-ink-soft shadow-sm">

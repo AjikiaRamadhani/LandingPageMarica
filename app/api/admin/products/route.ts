@@ -29,9 +29,10 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
     const categorySlug = searchParams.get("category");
     const activeOnly = searchParams.get("activeOnly") === "true";
+    const status = searchParams.get("status");
 
     const where = {
-      ...(activeOnly ? { isActive: true } : {}),
+      ...(status === "inactive" ? { isActive: false } : status === "out_of_stock" ? { isActive: true, stock: { lte: 0 } } : status === "in_stock" ? { isActive: true, stock: { gt: 0 } } : activeOnly ? { isActive: true } : {}),
       ...(categorySlug && categorySlug !== "semua" ? { category: { slug: categorySlug } } : {}),
       ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
     };

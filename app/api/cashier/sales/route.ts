@@ -16,18 +16,27 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const page = Math.max(1, Number(params.get("page") ?? 1));
   const limit = Math.min(100, Math.max(1, Number(params.get("limit") ?? 25)));
+  const period = params.get("period") === "month" || params.get("period") === "year" ? params.get("period") : "day";
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(params.get("date") ?? "") ? params.get("date")! : new Date().toISOString().slice(0, 10);
+  const start = new Date(`${date}T00:00:00+07:00`);
+  const end = new Date(start);
+  if (period === "year") end.setUTCFullYear(end.getUTCFullYear() + 1);
+  else if (period === "month") end.setUTCMonth(end.getUTCMonth() + 1);
+  else end.setUTCDate(end.getUTCDate() + 1);
+  const dateFilter = { createdAt: { gte: start, lt: end } };
   const activeShift = await prisma.posShift.findFirst({
     where: { cashierId: session.user.id, status: "OPEN" },
     select: { id: true },
   });
   const [sales, total, completedSummary, currentShiftSummary] = await Promise.all([
-    prisma.cashierTransaction.findMany({ where: { cashierId: session.user.id }, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit, include: { items: true, customer: { select: { id: true, name: true, email: true, whatsapp: true } }, shift: true } }),
-    prisma.cashierTransaction.count({ where: { cashierId: session.user.id } }),
-    prisma.cashierTransaction.aggregate({ where: { cashierId: session.user.id, status: "COMPLETED", paymentMethod: "CASH" }, _count: { _all: true }, _sum: { total: true } }),
+    prisma.cashierTransaction.findMany({ where: { cashierId: session.user.id, ...dateFilter }, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit, include: { items: true, customer: { select: { id: true, name: true, email: true, whatsapp: true } }, shift: true } }),
+    prisma.cashierTransaction.count({ where: { cashierId: session.user.id, ...dateFilter } }),
+    prisma.cashierTransaction.aggregate({ where: { cashierId: session.user.id, ...dateFilter, status: "COMPLETED", paymentMethod: "CASH" }, _count: { _all: true }, _sum: { total: true } }),
     prisma.cashierTransaction.aggregate({
       where: {
         cashierId: session.user.id,
         shiftId: activeShift?.id ?? "__no_active_shift__",
+        ...dateFilter,
         status: "COMPLETED",
         paymentMethod: "CASH",
       },
@@ -44,6 +53,7 @@ export async function GET(request: Request) {
       currentShiftTransactions: currentShiftSummary._count._all,
       currentShiftCashRevenue: currentShiftSummary._sum.total ?? 0,
     },
+    period: { type: period, date, from: start.toISOString(), until: end.toISOString() },
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
 }

@@ -1546,6 +1546,12 @@ model PointTransaction {
   @@map("point_transactions")
 }
 
+enum VoucherStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
 model Voucher {
   id             String        @id @default(cuid())
   code           String        @unique
@@ -1554,6 +1560,7 @@ model Voucher {
   pointsCost     Int
   discountAmount Int
   isActive       Boolean       @default(true)
+  status         VoucherStatus @default(DRAFT)
   expiresAt      DateTime?
   userVouchers   UserVoucher[]
   createdAt      DateTime      @default(now())
