@@ -4,6 +4,9 @@ Website Marica untuk katalog dan transaksi retail, printable anak, artikel
 parenting, event/workshop, Playpass, reservasi meja, F&B, loyalty points, dan
 operasional POS.
 
+# Figma(UI/UX)
+https://www.figma.com/design/1uU2Cp7BFR6lpyEHNyC47P/Magang-Marica.id?node-id=0-1&t=6ipAvxlV1a5zwqgb-1
+
 ## Menjalankan project
 
 Pastikan Node.js dan PostgreSQL tersedia, lalu siapkan environment pada bagian
