@@ -8,6 +8,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const events = await prisma.event.findMany({
+    where: { isActive: true },
     orderBy: { eventDate: "asc" },
     include: {
       _count: { select: { bookings: true } },

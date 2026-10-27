@@ -341,6 +341,7 @@ export default function PosPage() {
   const total = subtotal - voucherDiscount;
   const paid = parseAmount(paidAmount);
   const change = Math.max(0, paid - total);
+
   const catalog =
     tab === "PRODUCT" ? products : tab === "PLAYPASS" ? playpasses : tableFees;
   const sortedCatalog =
@@ -1455,7 +1456,7 @@ export default function PosPage() {
               onChange={(event) =>
                 setPaidAmount(formatAmountInput(event.target.value))
               }
-              placeholder={money(total)}
+              placeholder="Masukkan nominal pembayaran"
               className="mt-1 w-full rounded-xl border border-marica-amber/50 px-3 py-3 font-body text-base font-bold outline-none focus:ring-4 focus:ring-marica-amber/15"
             />
             <div className="mt-3 flex justify-between font-body text-sm">

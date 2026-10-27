@@ -420,12 +420,10 @@ export default function ProductDetailPage() {
                       ({product.reviewCount} Ulasan)
                     </span>
                   </span>
-                  {product.soldCount > 0 && (
-                    <>
-                      <span className="text-marica-ink-soft/40">•</span>
-                      <span>Terjual {product.soldCount}+</span>
-                    </>
-                  )}
+                  <>
+                    <span className="text-marica-ink-soft/40">•</span>
+                    <span>Terjual {product.soldCount}+</span>
+                  </>
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-baseline gap-2.5">

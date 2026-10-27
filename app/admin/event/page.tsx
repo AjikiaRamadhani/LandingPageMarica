@@ -7,6 +7,7 @@ import {
   Plus,
   QrCode,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -294,6 +295,23 @@ export default function AdminEventPage() {
     });
   }
 
+  async function deleteEvent(event: EventRecord) {
+    if (!window.confirm(`Nonaktifkan event "${event.title}"? Event tidak akan tampil di halaman publik, tetapi riwayat booking tetap aman.`)) return;
+    const response = await fetch(`/api/admin/events/${event.id}`, { method: "DELETE" });
+    const data = await response.json().catch(() => ({}));
+    setNotice({
+      type: response.ok ? "success" : "error",
+      text: response.ok ? "Event berhasil dihapus dari daftar publik." : (data.error ?? "Gagal menghapus event"),
+    });
+    if (response.ok) {
+      if (editingId === event.id) {
+        setEditingId(null);
+        setForm(emptyForm);
+      }
+      await loadData();
+    }
+  }
+
   async function checkIn(scannedToken: string) {
     const response = await fetch("/api/event-tickets/scan/check-in", {
       method: "POST",
@@ -537,13 +555,22 @@ export default function AdminEventPage() {
                       {event.paidQuantity ?? 0}/{event.quota}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => editEvent(event)}
-                    className="mt-4 rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold transition hover:bg-marica-sky-light/40"
-                  >
-                    Edit event
-                  </button>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => editEvent(event)}
+                      className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold transition hover:bg-marica-sky-light/40"
+                    >
+                      Edit event
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void deleteEvent(event)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Hapus event
+                    </button>
+                  </div>
                 </article>
               ))}
           </section>
@@ -597,9 +624,9 @@ export default function AdminEventPage() {
                 type="button"
                 onClick={() => void resendTicket(booking.bookingNumber)}
                 disabled={booking.status !== "PAID"}
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-marica-amber-dark px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <CheckCircle2 className="h-3.5 w-3.5" /> Kirim ulang tiket
+                <RefreshCw className="h-3.5 w-3.5" /> Kirim ulang tiket
               </button>
             </article>
           ))}
