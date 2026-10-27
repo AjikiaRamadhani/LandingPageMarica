@@ -303,6 +303,7 @@ async function main() {
       pointsCost: 500,
       discountAmount: 10000,
       isActive: true,
+      status: 'ACTIVE',
     }
   });
   const v2 = await prisma.voucher.create({
@@ -313,6 +314,7 @@ async function main() {
       pointsCost: 1000,
       discountAmount: 25000,
       isActive: true,
+      status: 'ACTIVE',
     }
   });
   const v3 = await prisma.voucher.create({
@@ -323,6 +325,7 @@ async function main() {
       pointsCost: 1200,
       discountAmount: 30000,
       isActive: true,
+      status: 'ACTIVE',
     }
   });
   const v4 = await prisma.voucher.create({
@@ -333,6 +336,7 @@ async function main() {
       pointsCost: 800,
       discountAmount: 15000,
       isActive: true,
+      status: 'ACTIVE',
     }
   });
 

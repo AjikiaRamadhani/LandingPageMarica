@@ -15,6 +15,8 @@ import {
   Settings2,
   Truck,
   XCircle,
+  ChevronDown,
+  X,
 } from "lucide-react";
 
 type OrderStatus =
@@ -45,6 +47,7 @@ type AdminOrder = {
   shippingCourier: string | null;
   shippingService: string | null;
   trackingNumber: string | null;
+  fulfillmentNote: string | null;
   total: number;
   createdAt: string;
   user: { id: string; name: string | null; email: string | null };
@@ -147,6 +150,19 @@ function statusLabel(status: OrderStatus) {
   );
 }
 
+function nextActionLabel(status: OrderStatus) {
+  const labels: Partial<Record<OrderStatus, string>> = {
+    PENDING_PAYMENT: "Tunggu pembayaran atau batalkan",
+    PAID: "Lanjutkan ke proses packing",
+    PROCESSING: "Isi resi lalu tandai dikirim",
+    SHIPPED: "Tunggu konfirmasi penerimaan",
+    DELIVERED: "Pesanan selesai; pelanggan dapat memberi rating",
+    CANCELLED: "Tidak ada aksi lanjutan",
+    EXPIRED: "Tidak ada aksi lanjutan",
+  };
+  return labels[status] ?? "";
+}
+
 export default function AdminOrdersPage() {
   const [status, setStatus] = useState<"" | OrderStatus>("");
   const [page, setPage] = useState(1);
@@ -157,7 +173,9 @@ export default function AdminOrdersPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [savingFulfillmentId, setSavingFulfillmentId] = useState<string | null>(null);
-  const [fulfillmentDrafts, setFulfillmentDrafts] = useState<Record<string, { trackingNumber: string }>>({});
+  const [fulfillmentDrafts, setFulfillmentDrafts] = useState<Record<string, { trackingNumber: string; fulfillmentNote: string }>>({});
+  const [showFlow, setShowFlow] = useState(false);
+  const [detailOrder, setDetailOrder] = useState<AdminOrder | null>(null);
 
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
@@ -213,11 +231,12 @@ export default function AdminOrdersPage() {
   const getFulfillmentDraft = (order: AdminOrder) =>
     fulfillmentDrafts[order.id] ?? {
       trackingNumber: order.trackingNumber ?? "",
+      fulfillmentNote: order.fulfillmentNote ?? "",
     };
 
-  const updateFulfillmentDraft = (order: AdminOrder, value: string) => {
+  const updateFulfillmentDraft = (order: AdminOrder, field: "trackingNumber" | "fulfillmentNote", value: string) => {
     const current = getFulfillmentDraft(order);
-    setFulfillmentDrafts((drafts) => ({ ...drafts, [order.id]: { ...current, trackingNumber: value } }));
+    setFulfillmentDrafts((drafts) => ({ ...drafts, [order.id]: { ...current, [field]: value } }));
   };
 
   const saveFulfillment = async (order: AdminOrder) => {
@@ -233,6 +252,7 @@ export default function AdminOrdersPage() {
           shippingCourier: order.shippingCourier,
           shippingService: order.shippingService,
           trackingNumber: draft.trackingNumber || null,
+          fulfillmentNote: draft.fulfillmentNote || null,
         }),
       });
       const json = await response.json().catch(() => null);
@@ -298,7 +318,15 @@ export default function AdminOrdersPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => setShowFlow(true)} className="rounded-xl bg-marica-amber-dark px-4 py-3 font-body text-sm font-semibold text-white shadow-sm transition hover:brightness-105">Lihat alur pesanan</button>
+          <label className="flex items-center gap-2 font-body text-sm text-marica-ink-soft">Filter status
+            <select value={status} onChange={(event) => { setStatus(event.target.value as "" | OrderStatus); setPage(1); }} className="rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm text-marica-ink outline-none focus:border-marica-amber">
+              {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+        </div>
+        <div className="hidden">
           {STATUS_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -324,6 +352,15 @@ export default function AdminOrdersPage() {
           ))}
         </div>
 
+        {showFlow && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-marica-ink/40 p-4" role="dialog" aria-modal="true" aria-label="Alur pesanan">
+            <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-4"><div><p className="font-body text-xs font-semibold uppercase tracking-[0.14em] text-marica-amber-text">Panduan admin</p><h3 className="mt-1 font-display text-2xl font-semibold text-marica-ink">Alur pesanan</h3></div><button type="button" onClick={() => setShowFlow(false)} className="rounded-full p-2 hover:bg-black/5" aria-label="Tutup"><X className="h-5 w-5" /></button></div>
+              <div className="mt-5 grid gap-2">{STATUS_OPTIONS.filter((option) => option.value).map((option, index) => <div key={option.value} className="flex items-start gap-3 rounded-2xl bg-marica-sky-light/25 p-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-marica-amber-dark text-xs font-bold text-white">{index + 1}</span><div><p className="font-body text-sm font-semibold text-marica-ink">{option.label}</p><p className="font-body text-xs text-marica-ink-soft">{option.description}. Aksi berikutnya: {nextActionLabel(option.value as OrderStatus)}.</p></div></div>)}</div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <p className="mt-4 rounded-xl bg-marica-rose-deep/10 px-4 py-2.5 font-body text-sm text-marica-rose-deep">
             {error}
@@ -335,7 +372,7 @@ export default function AdminOrdersPage() {
           </p>
         )}
 
-        <div className="relative mt-6 min-h-80 overflow-x-auto rounded-2xl border border-black/5">
+        <div className="relative mt-6 min-h-80 overflow-hidden rounded-2xl border border-black/5">
           {isLoading && data && (
             <div className="absolute inset-0 z-10 flex items-start justify-center bg-white/55 pt-24 backdrop-blur-[1px]">
               <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 font-body text-xs font-semibold text-marica-ink-soft shadow-sm ring-1 ring-black/5">
@@ -345,24 +382,22 @@ export default function AdminOrdersPage() {
             </div>
           )}
           <table
-            className={`w-full min-w-300 border-collapse transition-opacity duration-200 ${isLoading && data ? "opacity-55" : "opacity-100"}`}
+            className={`w-full table-fixed border-collapse transition-opacity duration-200 ${isLoading && data ? "opacity-55" : "opacity-100"}`}
           >
             <thead className="bg-marica-sky-light/25">
-              <tr className="border-b border-black/5 text-left font-body text-xs font-semibold uppercase tracking-wide text-marica-ink-soft/60">
-                <th className="py-3 pr-4">Pesanan</th>
-                <th className="py-3 pr-4">Pelanggan</th>
-                <th className="py-3 pr-4">Produk</th>
-                <th className="py-3 pr-4">Total</th>
-                <th className="py-3 pr-4">Status</th>
-                <th className="py-3 pr-4">Pengiriman</th>
-                <th className="py-3 text-right">Aksi</th>
+              <tr className="border-b border-black/5 text-center font-body text-xs font-semibold uppercase tracking-wide text-marica-ink-soft/60">
+                <th className="w-[19%] px-3 py-3">Pesanan</th>
+                <th className="w-[21%] px-3 py-3">Pelanggan</th>
+                <th className="w-[25%] px-3 py-3">Produk</th>
+                <th className="w-[17%] px-3 py-3">Status</th>
+                <th className="w-[18%] px-3 py-3 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && !data && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={5}
                     className="py-12 text-center font-body text-sm text-marica-ink-soft"
                   >
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
@@ -372,7 +407,7 @@ export default function AdminOrdersPage() {
               {!isLoading && filteredOrders.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={5}
                     className="py-12 text-center font-body text-sm text-marica-ink-soft"
                   >
                     <Package className="mx-auto mb-2 h-6 w-6 opacity-40" />
@@ -385,15 +420,15 @@ export default function AdminOrdersPage() {
                   key={order.id}
                   className="border-b border-black/5 align-top transition-colors last:border-0 hover:bg-marica-sky-light/20"
                 >
-                  <td className="py-4 pr-4">
-                    <p className="font-body text-sm font-semibold text-marica-ink">
+                  <td className="break-words py-4 pr-3">
+                    <p className="font-body text-sm font-semibold leading-5 text-marica-ink">
                       {order.orderNumber}
                     </p>
                     <p className="mt-1 font-body text-xs text-marica-ink-soft">
                       {formatDate(order.createdAt)}
                     </p>
                   </td>
-                  <td className="py-4 pr-4">
+                  <td className="break-words py-4 pr-3">
                     <p className="font-body text-sm text-marica-ink">
                       {order.user?.name ?? order.shippingName}
                     </p>
@@ -404,54 +439,25 @@ export default function AdminOrdersPage() {
                       {order.shippingCity}, {order.shippingProvince}
                     </p>
                   </td>
-                  <td className="max-w-65 py-4 pr-4 font-body text-sm text-marica-ink-soft">
+                  <td className="break-words py-4 pr-3 font-body text-sm text-marica-ink-soft">
                     {order.items.map((item) => (
                       <p key={item.id}>
                         {item.productName} x {item.quantity}
                       </p>
                     ))}
                   </td>
-                  <td className="py-4 pr-4 whitespace-nowrap font-body text-sm font-semibold text-marica-ink">
-                    {formatRupiah(order.total)}
-                  </td>
-                  <td className="py-4 pr-4">
+                  <td className="break-words py-4 pr-3">
                     <span
                       className={`whitespace-nowrap rounded-full px-2.5 py-1 font-body text-xs font-semibold ${STATUS_STYLE[order.status]}`}
                     >
                       {statusLabel(order.status)}
                     </span>
+                    <p className="mt-2 max-w-32 font-body text-[10px] leading-4 text-marica-ink-soft">
+                      {nextActionLabel(order.status)}
+                    </p>
                   </td>
-                  <td className="min-w-72 py-4 pr-4">
-                    {(() => {
-                      const draft = getFulfillmentDraft(order);
-                      return (
-                        <div className="grid gap-2">
-                          <p className="font-body text-xs text-marica-ink-soft">
-                            Kurir: <strong className="text-marica-ink">{order.shippingCourier?.toUpperCase() ?? "Belum dipilih"}</strong>{" "}
-                            {order.shippingService ?? ""}
-                          </p>
-                          <div className="flex gap-2">
-                            <input
-                              value={draft.trackingNumber}
-                              onChange={(event) => updateFulfillmentDraft(order, event.target.value)}
-                              placeholder="Nomor resi"
-                              className="min-w-0 flex-1 rounded-lg border border-black/10 px-2.5 py-2 font-body text-xs text-marica-ink outline-none focus:border-marica-amber"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => void saveFulfillment(order)}
-                              disabled={savingFulfillmentId === order.id}
-                              className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-marica-amber-dark px-3 py-2 font-body text-xs font-semibold text-white disabled:opacity-50"
-                            >
-                              {savingFulfillmentId === order.id && <Loader2 className="h-3 w-3 animate-spin" />}
-                              Simpan
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </td>
-                  <td className="py-4 text-right">
+                  <td className="break-words py-4 text-center">
+                    <button type="button" onClick={() => setDetailOrder(order)} className="mb-2 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-black/10 px-2 py-2 font-body text-xs font-semibold text-marica-ink hover:bg-marica-sky-light/40"><ChevronDown className="h-3.5 w-3.5" /> Detail</button>
                     <select
                       value={order.status}
                       disabled={updatingId === order.id}
@@ -461,7 +467,7 @@ export default function AdminOrdersPage() {
                           event.target.value as OrderStatus,
                         )
                       }
-                      className="rounded-lg border border-black/10 bg-white px-2.5 py-2 font-body text-xs text-marica-ink outline-none focus:border-marica-amber disabled:opacity-50"
+                      className="w-full rounded-lg border border-black/10 bg-white px-1.5 py-2 font-body text-xs text-marica-ink outline-none focus:border-marica-amber disabled:opacity-50"
                       aria-label={`Ubah status ${order.orderNumber}`}
                     >
                       {STATUS_OPTIONS.filter((option) => option.value).map(
@@ -516,6 +522,15 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </div>
+      {detailOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-marica-ink/40 p-4" role="dialog" aria-modal="true" aria-label={`Detail ${detailOrder.orderNumber}`}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4"><div><p className="font-body text-xs font-semibold uppercase tracking-[0.14em] text-marica-amber-text">Detail pesanan</p><h3 className="mt-1 font-display text-2xl font-semibold text-marica-ink">{detailOrder.orderNumber}</h3></div><button type="button" onClick={() => setDetailOrder(null)} className="rounded-full p-2 hover:bg-black/5" aria-label="Tutup"><X className="h-5 w-5" /></button></div>
+            <div className="mt-5 grid gap-3"><details open className="rounded-2xl border border-black/5 p-4"><summary className="cursor-pointer font-body text-sm font-semibold text-marica-ink">Ringkasan pesanan</summary><div className="mt-3 space-y-1 text-sm text-marica-ink-soft">{detailOrder.items.map((item) => <p key={item.id}>{item.productName} × {item.quantity}</p>)}<p className="pt-2 font-semibold text-marica-ink">Total: {formatRupiah(detailOrder.total)}</p></div></details><details open className="rounded-2xl border border-black/5 p-4"><summary className="cursor-pointer font-body text-sm font-semibold text-marica-ink">Pelanggan dan alamat</summary><div className="mt-3 text-sm leading-6 text-marica-ink-soft">{detailOrder.user?.name ?? detailOrder.shippingName}<br />{detailOrder.user?.email ?? detailOrder.shippingPhone}<br />{detailOrder.shippingCity}, {detailOrder.shippingProvince} {detailOrder.shippingPostalCode}</div></details><details open className="rounded-2xl border border-black/5 p-4"><summary className="cursor-pointer font-body text-sm font-semibold text-marica-ink">Pengiriman dan tindakan</summary><div className="mt-3 text-sm text-marica-ink-soft">Status saat ini: <strong className="text-marica-ink">{statusLabel(detailOrder.status)}</strong><br />Aksi berikutnya: {nextActionLabel(detailOrder.status)}<br />Kurir: {detailOrder.shippingCourier ?? "Belum dipilih"} {detailOrder.shippingService ?? ""}</div><input value={getFulfillmentDraft(detailOrder).trackingNumber} onChange={(event) => updateFulfillmentDraft(detailOrder, "trackingNumber", event.target.value)} placeholder="Nomor resi" className="mt-3 w-full rounded-xl border border-black/10 p-3 text-sm text-marica-ink outline-none focus:border-marica-amber" /><textarea value={getFulfillmentDraft(detailOrder).fulfillmentNote} onChange={(event) => updateFulfillmentDraft(detailOrder, "fulfillmentNote", event.target.value)} placeholder="Catatan internal pesanan, contoh: sudah dipacking" className="mt-3 min-h-20 w-full rounded-xl border border-black/10 p-3 text-sm text-marica-ink outline-none focus:border-marica-amber" /></details></div>
+            <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={() => void saveFulfillment(detailOrder)} className="rounded-xl bg-marica-amber-dark px-4 py-2.5 text-sm font-semibold text-white">Simpan catatan & resi</button><button type="button" onClick={() => setDetailOrder(null)} className="rounded-xl border border-black/10 px-4 py-2.5 text-sm font-semibold text-marica-ink">Tutup detail</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -59,7 +59,6 @@ type ApiBundle = {
 
 const TABS = [
   { label: "Semua", value: "" },
-  { label: "Tersedia", value: "in_stock" },
   { label: "Stok Habis", value: "out_of_stock" },
   { label: "Nonaktif", value: "inactive" },
 ] as const;

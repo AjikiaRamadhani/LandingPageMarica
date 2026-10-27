@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Check,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Filter,
   Loader2,
   Pencil,
@@ -24,6 +22,7 @@ type Voucher = {
   pointsCost: number;
   discountAmount: number;
   isActive: boolean;
+  status: "DRAFT" | "ACTIVE" | "INACTIVE";
   expiresAt: string | null;
   createdAt: string;
 };
@@ -35,6 +34,7 @@ type FormState = {
   pointsCost: string;
   discountAmount: string;
   expiresAt: string;
+  status: "DRAFT" | "ACTIVE" | "INACTIVE";
 };
 
 type StatusFilter = "ALL" | "ACTIVE" | "DRAFT" | "INACTIVE";
@@ -46,6 +46,7 @@ const emptyForm: FormState = {
   pointsCost: "",
   discountAmount: "",
   expiresAt: "",
+  status: "DRAFT",
 };
 
 const money = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
@@ -98,7 +99,7 @@ export default function AdminVouchersPage() {
       all: vouchers.length,
       active: vouchers.filter((voucher) => voucher.isActive).length,
       inactive: vouchers.filter((voucher) => !voucher.isActive).length,
-      draft: 0,
+      draft: vouchers.filter((voucher) => voucher.status === "DRAFT").length,
     }),
     [vouchers],
   );
@@ -111,9 +112,9 @@ export default function AdminVouchersPage() {
         `${voucher.code} ${voucher.title}`.toLowerCase().includes(normalized);
       const matchesStatus =
         status === "ALL" ||
-        (status === "ACTIVE" && voucher.isActive) ||
-        (status === "INACTIVE" && !voucher.isActive) ||
-        status === "DRAFT";
+        (status === "ACTIVE" && voucher.status === "ACTIVE") ||
+        (status === "INACTIVE" && voucher.status === "INACTIVE") ||
+        (status === "DRAFT" && voucher.status === "DRAFT");
       return matchesQuery && matchesStatus;
     });
   }, [query, status, vouchers]);
@@ -133,6 +134,7 @@ export default function AdminVouchersPage() {
       pointsCost: String(voucher.pointsCost),
       discountAmount: String(voucher.discountAmount),
       expiresAt: voucher.expiresAt ? voucher.expiresAt.slice(0, 10) : "",
+      status: voucher.status,
     });
     setIsFormOpen(true);
   }
@@ -150,6 +152,7 @@ export default function AdminVouchersPage() {
       expiresAt: form.expiresAt
         ? new Date(`${form.expiresAt}T23:59:59`).toISOString()
         : null,
+      status: form.status,
     };
     const response = await fetch(
       editing ? `/api/admin/vouchers/${editing.id}` : "/api/admin/vouchers",
@@ -170,26 +173,6 @@ export default function AdminVouchersPage() {
       editing ? "Voucher berhasil diperbarui." : "Voucher berhasil dibuat.",
     );
     await loadVouchers();
-  }
-
-  async function toggleVoucher(voucher: Voucher) {
-    setActionId(voucher.id);
-    const response = await fetch(`/api/admin/vouchers/${voucher.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: !voucher.isActive }),
-    });
-    const data = await response.json().catch(() => ({}));
-    setActionId(null);
-    if (!response.ok) {
-      setNotice(data.error ?? "Gagal mengubah status voucher");
-      return;
-    }
-    setVouchers((current) =>
-      current.map((item) =>
-        item.id === voucher.id ? { ...item, isActive: !item.isActive } : item,
-      ),
-    );
   }
 
   async function deleteVoucher(voucher: Voucher) {
@@ -356,19 +339,11 @@ export default function AdminVouchersPage() {
                       <span
                         className={`rounded-full px-2.5 py-1 font-body text-xs font-bold ${voucher.isActive ? "bg-marica-green/15 text-green-700" : "bg-black/6 text-marica-ink-soft"}`}
                       >
-                        {voucher.isActive ? "Aktif" : "Nonaktif"}
+                        {voucher.status === "DRAFT" ? "Draft" : voucher.status === "ACTIVE" ? "Aktif" : "Nonaktif"}
                       </span>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-1">
-                        <button
-                          type="button"
-                          title="Lihat voucher"
-                          aria-label="Lihat voucher"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-marica-ink-soft hover:bg-marica-sky-light"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
                         <button
                           type="button"
                           title="Edit voucher"
@@ -377,18 +352,6 @@ export default function AdminVouchersPage() {
                           className="flex h-8 w-8 items-center justify-center rounded-lg text-marica-ink-soft hover:bg-marica-sky-light"
                         >
                           <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          title={voucher.isActive ? "Nonaktifkan" : "Aktifkan"}
-                          aria-label={
-                            voucher.isActive ? "Nonaktifkan" : "Aktifkan"
-                          }
-                          disabled={actionId === voucher.id}
-                          onClick={() => void toggleVoucher(voucher)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-marica-ink-soft hover:bg-marica-sky-light disabled:opacity-40"
-                        >
-                          <Check className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
@@ -511,6 +474,18 @@ export default function AdminVouchersPage() {
                       />
                     </label>
                   </div>
+                  <label className="mt-4 block font-body text-xs font-bold text-marica-ink-soft">
+                    Status voucher
+                    <select
+                      value={form.status}
+                      onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as FormState["status"] }))}
+                      className="mt-1 w-full rounded-xl border border-black/10 bg-marica-cream/45 px-3 py-3 font-body text-sm outline-none focus:border-marica-amber-dark"
+                    >
+                      <option value="DRAFT">Draft</option>
+                      <option value="ACTIVE">Aktif</option>
+                      <option value="INACTIVE">Nonaktif</option>
+                    </select>
+                  </label>
                   <label className="mt-4 block font-body text-xs font-bold text-marica-ink-soft">
                     Deskripsi singkat
                     <textarea

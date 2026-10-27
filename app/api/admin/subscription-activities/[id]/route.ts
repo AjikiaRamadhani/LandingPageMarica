@@ -10,7 +10,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const existing = await prisma.subscriptionActivity.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Activity tidak ditemukan" }, { status: 404 });
     const data: Record<string, unknown> = {};
-    for (const key of ["slug", "title", "description", "contentType", "videoUrl", "guideUrl", "thumbnailUrl"]) if (body[key] !== undefined) { if (typeof body[key] !== "string" || !body[key].trim()) return NextResponse.json({ error: `${key} tidak valid` }, { status: 400 }); data[key] = body[key].trim(); }
+    for (const key of ["slug", "title", "description", "contentType"]) if (body[key] !== undefined) { if (typeof body[key] !== "string" || !body[key].trim()) return NextResponse.json({ error: `${key} tidak valid` }, { status: 400 }); data[key] = body[key].trim(); }
+    for (const key of ["videoUrl", "guideUrl", "thumbnailUrl"]) if (body[key] !== undefined) { if (body[key] !== null && typeof body[key] !== "string") return NextResponse.json({ error: `${key} tidak valid` }, { status: 400 }); data[key] = typeof body[key] === "string" && body[key].trim() ? body[key].trim() : null; }
     for (const key of ["ageMin", "ageMax", "sortOrder"]) if (body[key] !== undefined) { if (!Number.isInteger(body[key]) || Number(body[key]) < 0) return NextResponse.json({ error: `${key} tidak valid` }, { status: 400 }); data[key] = body[key]; }
     if (body.isPublished !== undefined) { if (typeof body.isPublished !== "boolean") return NextResponse.json({ error: "isPublished tidak valid" }, { status: 400 }); data.isPublished = body.isPublished; }
     const updated = await prisma.subscriptionActivity.update({ where: { id }, data });
