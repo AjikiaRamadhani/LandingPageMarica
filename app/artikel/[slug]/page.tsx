@@ -17,7 +17,7 @@ import { categoryBadgeStyle, resolveCategoryColor } from "@/lib/category-color";
 // sekalian nambah view count di server), jadi artikel yang tampil beneran
 // artikel yang ada row-nya di database, bukan dummy data lagi.
 
-const FALLBACK_COVER = "/images/article-placeholder.png"; // TODO: pastikan file ini ada
+const FALLBACK_COVER = "/images/article-placeholder.svg";
 
 type ApiCategory = {
   id: string;

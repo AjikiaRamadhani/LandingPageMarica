@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { settleOrderPayment } from "@/lib/settle-order-payment";
 import { sendOrderPaymentEmailIfNeeded } from "@/lib/order-mailer";
@@ -9,12 +8,15 @@ import { sendPlaypassTicketEmailIfNeeded } from "@/lib/playpass-ticket-mailer";
 import { sendTableReservationEmailIfNeeded } from "@/lib/table-reservation-mailer";
 import { sendEventTicketEmailIfNeeded } from "@/lib/event-ticket-mailer";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
+import { verifyWinpayWebhook } from "@/lib/winpay-webhook";
 
 type WinpayCallback = { uuid?: string; ref?: string; amount?: number | string; invoice?: { ref?: string } };
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as WinpayCallback;
+    const rawBody = await request.text();
+    if (!verifyWinpayWebhook(request, rawBody)) return new Response("INVALID_SIGNATURE", { status: 401 });
+    const body = JSON.parse(rawBody) as WinpayCallback;
     const reference = body.ref || body.invoice?.ref;
     const amount = Number(body.amount);
     if (!reference || !Number.isFinite(amount)) return new Response("INVALID", { status: 400 });

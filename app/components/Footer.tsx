@@ -37,7 +37,7 @@ export default function Footer() {
   const description = "Pusat pengalaman edukasi keluarga berkonsep phygital yang memadukan ritel buku, board game edukatif, dan aktivitas interaktif.";
   const phone = "+62 858 7045 9329";
   const email = "pt.sebangku@gmail.com";
-  const website = "www.marica.id";
+  const website = "www.toko.marica.id";
   const instagramId = "@kids.marica";
 
   // Clean phone for tel: link
