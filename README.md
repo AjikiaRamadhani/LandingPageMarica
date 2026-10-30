@@ -1,204 +1,202 @@
-# Marica Web
+# Marica Web (toko.marica.id)
 
-Website Marica untuk katalog dan transaksi retail, printable anak, artikel
-parenting, event/workshop, Playpass, reservasi meja, F&B, loyalty points, dan
-operasional POS.
+Aplikasi web full-stack untuk Marica.id yang menggabungkan **etalase online** dan **sistem operasional toko fisik**. Terdiri dari halaman publik untuk pelanggan, area akun pengguna, dasbor admin, dan modul kasir (POS).
 
-## Menjalankan project
+- Situs produksi: https://toko.marica.id
+- Desain UI/UX: [Figma - Magang Marica.id](https://www.figma.com/design/1uU2Cp7BFR6lpyEHNyC47P/Magang-Marica.id?node-id=0-1&t=6ipAvxlV1a5zwqgb-1)
+- Dokumentasi API (lokal): http://localhost:3000/api-docs
 
-Pastikan Node.js dan PostgreSQL tersedia, lalu siapkan environment pada bagian
-berikut.
+## Fitur Utama
+
+| Kelompok | Fitur |
+| --- | --- |
+| Toko online | Katalog, kategori, keranjang, checkout, pembayaran, voucher, ulasan, pre-order, pelacakan pengiriman (RajaOngkir/Komerce) |
+| Konten | Artikel (kategori dan komentar), video, pengaturan konten landing page (hero, statistik, FAQ, testimoni) |
+| Event | Daftar event, pendaftaran, tiket QR, check-in, tiket via email |
+| Playpass dan reservasi | Booking Playpass, reservasi meja/space, pre-order F&B |
+| Printable dan edugames | Printable wajib login, unduhan via signed URL, kirim via email dan WhatsApp, edugames eksternal |
+| Poin dan voucher | Marica Points (perolehan, penukaran, pembatalan), katalog voucher, dompet voucher |
+| Langganan | Paket langganan, siklus tagihan, pengiriman berkala, profil anak |
+| B2B | Inquiry, item quotation, PDF penawaran |
+| POS / kasir | Shift, transaksi toko, pencarian member, tiket Playpass, table fee, pesanan F&B, stok Experience Store |
+| Admin | Produk, kategori, inventaris, pesanan, event, artikel, printable, voucher, langganan, B2B, analytics |
+
+## Peran Pengguna
+
+| Peran | Cakupan |
+| --- | --- |
+| `ADMIN` | Katalog, inventaris, event, CMS, printable, analytics, CRM, pengaturan poin |
+| `KASIR` | POS toko fisik, tiket area bermain, table fee, pencarian member, validasi check-in |
+| `USER` | Akun orang tua: belanja, booking event, printable, edugames, riwayat transaksi, saldo poin. Akun baru selalu dibuat sebagai `USER` |
+
+Detail matriks peran dan poin ada di [`docs/roles-and-points.md`](docs/roles-and-points.md).
+
+## Teknologi
+
+| Layer | Teknologi |
+| --- | --- |
+| Framework | Next.js 16 (App Router, output standalone), React 19, TypeScript 5 |
+| Styling | Tailwind CSS 4, Framer Motion, Lucide React, React Icons |
+| Database | PostgreSQL + Prisma 7 (`@prisma/adapter-pg`) |
+| Autentikasi | NextAuth (Auth.js) v5 beta, email/password (bcryptjs) dan Google OAuth |
+| Pembayaran | Midtrans atau WinPay (dipilih lewat `PAYMENT_PROVIDER`) |
+| Pengiriman | RajaOngkir via API Komerce |
+| Penyimpanan file | Supabase Storage (bucket `printables`) |
+| Email | Nodemailer (SMTP) |
+| Notifikasi | WhatsApp Cloud API (opsional) |
+| QR code | `qrcode` dan `html5-qrcode` |
+| Dokumentasi API | Swagger UI (`/api-docs`, `/api/swagger`) |
+| CI/CD | GitHub Actions, deploy ke hosting cPanel via FTP |
+
+## Memulai
+
+### Prasyarat
+
+- Node.js 20 atau lebih baru (CI memakai Node 20)
+- PostgreSQL (lokal atau hosted)
+- npm
+
+### Instalasi
 
 ```bash
+git clone https://github.com/AjikiaRamadhani/LandingPageMarica.git
+cd LandingPageMarica
 npm install
+```
+
+Buat file `.env` di root proyek (lihat bagian [Environment](#environment)), lalu:
+
+```bash
 npx prisma generate
+npx prisma migrate deploy
+npx prisma db seed        # opsional, data awal
 npm run dev
 ```
 
-Buka `http://localhost:3000`.
+Buka http://localhost:3000.
 
-Perintah penting:
+### Script
 
-```bash
-npm run build             # build production
-npm run lint              # pemeriksaan lint
-npx tsc --noEmit          # pemeriksaan TypeScript
-npx prisma migrate deploy
-npx prisma db seed
-```
+| Perintah | Fungsi |
+| --- | --- |
+| `npm run dev` | Jalankan server development |
+| `npm run build` | Build produksi (menjalankan `prisma generate` lalu `next build --webpack`) |
+| `npm run lint` | Pemeriksaan ESLint |
+| `npx tsc --noEmit` | Pemeriksaan tipe TypeScript |
+| `npm run test:points` | Uji logika poin |
+| `npm run test:smoke` | Smoke test backend (perlu `SMOKE_TEST=true`) |
 
 ## Environment
 
-Gunakan `.env` lokal atau secret manager pada hosting. Jangan commit nilai
-rahasia ke repository.
+Salin contoh berikut ke `.env`. **Jangan commit file `.env` dan jangan menaruh nilai asli di README.**
 
-### Database dan autentikasi
-
-```text
-DATABASE_URL=postgresql://...
-DIRECT_URL=postgresql://...                 # opsional
-AUTH_SECRET=...
+```env
+# Database dan auth
+DATABASE_URL=
+DIRECT_URL=                      # opsional
+AUTH_SECRET=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=...                        # opsional
-GOOGLE_CLIENT_SECRET=...                    # opsional
-```
+GOOGLE_CLIENT_ID=                # opsional
+GOOGLE_CLIENT_SECRET=            # opsional
 
-### Pembayaran
-
-```text
-PAYMENT_PROVIDER=midtrans                   # midtrans atau winpay
-MIDTRANS_SERVER_KEY=...
-MIDTRANS_CLIENT_KEY=...
+# Pembayaran
+PAYMENT_PROVIDER=midtrans        # midtrans atau winpay
+MIDTRANS_SERVER_KEY=
+MIDTRANS_CLIENT_KEY=
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=
 MIDTRANS_IS_PRODUCTION=false
-NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=...
-
-WINPAY_API_KEY=...
-WINPAY_SECRET_KEY=...
-WINPAY_BASE_URL=https://sandbox-checkout.winpay.id
+WINPAY_API_KEY=
+WINPAY_SECRET_KEY=
+WINPAY_BASE_URL=
 WINPAY_IS_PRODUCTION=false
-WINPAY_INVOICE_EXPIRY_MINUTES=120
-WINPAY_DISABLE_WHATSAPP_FALLBACK=false
-MARICA_WHATSAPP_NUMBER=628...
+WINPAY_INVOICE_EXPIRY_MINUTES=
+WINPAY_DISABLE_WHATSAPP_FALLBACK=
+MARICA_WHATSAPP_NUMBER=
+
+# Storage
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=       # hanya untuk server
+
+# Email SMTP
+SMTP_HOST=
+SMTP_PORT=
+SMTP_SECURE=
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+# Cadangan: GMAIL_USER, GMAIL_APP_PASSWORD
+
+# WhatsApp Cloud API (opsional)
+WHATSAPP_CLOUD_ACCESS_TOKEN=
+WHATSAPP_CLOUD_PHONE_NUMBER_ID=
+WHATSAPP_GRAPH_API_VERSION=
+WHATSAPP_PRINTABLE_TEMPLATE_NAME=
+WHATSAPP_PRINTABLE_TEMPLATE_LANGUAGE=
+
+# Pengiriman
+RAJAONGKIR_API_KEY=
 ```
 
-Webhook pembayaran:
+Daftarkan webhook pembayaran di dasbor penyedia:
 
-- Midtrans: `/api/webhooks/midtrans`
-- WinPay: `/api/webhooks/winpay`
+- `/api/webhooks/midtrans`
+- `/api/webhooks/winpay`
 
-Jika checkout WinPay gagal, aplikasi dapat menggunakan fallback WhatsApp.
+## Struktur Folder
 
-### Supabase Storage
-
-```text
-SUPABASE_URL=https://....supabase.co
-SUPABASE_SERVICE_ROLE_KEY=...
+```
+app/            Halaman Next.js dan route UI (publik, akun, /admin, /kasir)
+app/api/        API route backend
+lib/            Logika bisnis: pembayaran, poin, inventaris, email, storage, pengiriman
+prisma/         schema.prisma, migration, seed
+tests/          Unit test dan smoke test
+docs/           Dokumentasi tambahan (matriks peran dan poin)
+types/          Definisi tipe TypeScript
+public/         Aset statis
+proxy.ts        Proteksi route /admin (middleware)
+vercel.json     Definisi cron job langganan
+.github/workflows/deploy.yml   Pipeline deploy
 ```
 
-Bucket `printables` digunakan untuk file printable. Service role key hanya boleh
-digunakan di server.
+## Database
 
-### Email SMTP
+Skema ada di `prisma/schema.prisma` (PostgreSQL, 93 model dan 24 enum). Kelompok utama: akun dan autentikasi, konten landing page, artikel, produk dan toko, keranjang dan pesanan, inventaris, POS dan kasir, Playpass dan reservasi, event, printable, poin dan voucher, langganan, serta B2B.
 
-Untuk akun email cPanel, ambil nilai host dan port dari menu **Connect Devices**
-di cPanel. Port `465` memakai SSL, sedangkan port `587` memakai STARTTLS.
+Stok dipisah dua lokasi: `ONLINE_WAREHOUSE` (checkout website) dan `MARICA_STORE` (POS). Perpindahan stok dilakukan lewat **Admin > Inventaris**; stok gabungan tidak boleh diubah manual.
 
-```text
-SMTP_HOST=mail.example.com
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER=no-reply@example.com
-SMTP_PASSWORD=...
-SMTP_FROM=no-reply@example.com
-```
-
-Konfigurasi Gmail lama tetap didukung jika `SMTP_*` tidak diisi:
-
-```text
-GMAIL_USER=...
-GMAIL_APP_PASSWORD=...
-```
-
-Digunakan untuk email printable, tiket event, Playpass, reservasi, dan pesanan.
-
-### WhatsApp Cloud API (opsional)
-
-```text
-WHATSAPP_CLOUD_ACCESS_TOKEN=...
-WHATSAPP_CLOUD_PHONE_NUMBER_ID=...
-WHATSAPP_GRAPH_API_VERSION=vXX.X
-WHATSAPP_PRINTABLE_TEMPLATE_NAME=...
-WHATSAPP_PRINTABLE_TEMPLATE_LANGUAGE=id
-```
-
-Jika belum dikonfigurasi, link WhatsApp manual dan direct download printable
-tetap tersedia. Template Meta harus sudah disetujui dan menerima parameter nama,
-judul printable, serta URL download. Access token tidak boleh dikirim ke
-browser.
-
-`GAME_VISIT_POINTS` tidak perlu ditambahkan ke `.env`. Nilai poin kunjungan game
-dikontrol langsung oleh backend.
-
-## Database dan inventaris
-
-Terapkan migration sebelum deploy:
+## Pengujian
 
 ```bash
-npx prisma migrate deploy
+npm run lint
+npx tsc --noEmit
+npm run test:points
+SMOKE_TEST=true npm run test:smoke
 ```
 
-Stok dipisah menjadi dua lokasi:
+> Smoke test harus dijalankan terhadap **database khusus testing**, bukan production.
 
-- `ONLINE_WAREHOUSE`: stok untuk checkout website.
-- `MARICA_STORE`: stok Experience Store untuk POS.
+## Deployment
 
-Perpindahan stok dilakukan melalui Admin > Inventaris. Jangan mengubah stok
-gabungan secara manual. `Product.stock` tetap menjadi salinan stok gudang online
-untuk kompatibilitas katalog dan checkout.
+Deploy otomatis lewat GitHub Actions (`Deploy toko.marica.id`) setiap ada push ke branch `main`:
 
-## Fitur utama backend
+1. Checkout dan setup Node 20
+2. `npm ci`, `prisma generate`, dan pemeriksaan model Prisma
+3. `npm run build` (output standalone)
+4. Siapkan folder deploy dan tulis `tmp/restart.txt` (restart Passenger)
+5. Unggah ke hosting cPanel via FTP
 
-- Autentikasi credentials dan Google OAuth.
-- Katalog produk, keranjang, checkout, pembayaran, webhook, voucher, dan poin.
-- POS, shift kasir, transaksi retail, Playpass, F&B, dan stok Experience Store.
-- Event, booking tiket, QR check-in, kalender, dan email tiket.
-- Reservasi meja/space dan pre-order F&B.
-- Printable yang membutuhkan login, signed download URL, email, dan link WhatsApp.
-- Edugames eksternal dengan pencatatan kunjungan dan batas 20 poin per hari.
-- Artikel SEO, kategori, komentar, video, dan produk terkait.
-- Subscription, child profile, B2B inquiry, quotation, serta dashboard admin.
+Secret yang harus ada di GitHub (Settings > Secrets): `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `FTP_SERVER_DIR`.
 
-## Swagger API
+## Catatan untuk Pengembang Berikutnya
 
-Dokumentasi API tersedia pada:
+- **Cron langganan:** `vercel.json` mendefinisikan cron untuk `/api/cron/subscriptions`, tetapi aplikasi berjalan di cPanel sehingga cron Vercel tidak berjalan. Pastikan endpoint ini dipanggil lewat cron job cPanel, kalau tidak, proses langganan otomatis tidak jalan.
+- **Modul voucher:** `docs/roles-and-points.md` masih menyebut penukaran poin 1 poin = Rp1 sebagai mekanisme sementara, sementara skema dan API voucher sudah ada. Dokumen dan kode perlu disinkronkan.
+- **Autentikasi:** NextAuth v5 masih beta (`5.0.0-beta.32`). Pantau rilis stabil.
+- **Route uji:** `/test-login` dan `/test-upload` sebaiknya dinonaktifkan atau dihapus di produksi.
+- **Paket tidak terpakai:** `resend` dan `@vercel/blob` tidak terdeteksi dipakai. Verifikasi sebelum dihapus.
+- **Keamanan API:** `proxy.ts` melindungi `/admin`, tetapi `requireAdmin` pada tiap API route tetap wajib sebagai lapisan kedua.
+- **Dokumentasi API:** endpoint baru perlu ditambahkan ke `lib/swagger.ts`.
 
-- UI Swagger: `http://localhost:3000/api-docs`
-- OpenAPI JSON: `http://localhost:3000/api/swagger`
+## Kontak
 
-Setiap endpoint baru yang berhubungan dengan fitur backend perlu ditambahkan ke
-dokumentasi Swagger.
-
-## Smoke test backend
-
-Smoke test dijalankan terhadap server lokal dan database khusus testing. Test ini
-bersifat opt-in agar tidak mengubah data ketika project hanya dibuild.
-
-Terminal pertama:
-
-```bash
-npm run dev
-```
-
-Terminal kedua, PowerShell:
-
-```powershell
-$env:SMOKE_TEST="true"
-$env:SMOKE_BASE_URL="http://localhost:3000"
-$env:SMOKE_EMAIL="smoke@example.com"
-$env:SMOKE_PASSWORD="SmokeTest!123"
-$env:SMOKE_NAME="Marica Smoke Test"
-$env:SMOKE_PHONE="081234567890"
-$env:SMOKE_PRODUCT_ID="<id produk gudang online>"
-$env:MIDTRANS_SERVER_KEY="<server key sandbox>"
-$env:SMOKE_ADMIN_EMAIL="<email admin atau kasir>"
-$env:SMOKE_ADMIN_PASSWORD="<password admin atau kasir>"
-$env:SMOKE_POS_PRODUCT_ID="<id produk dengan stok Experience Store>"
-$env:SMOKE_FREE_EVENT_SLUG="<slug event gratis aktif>"
-$env:SMOKE_PRINTABLE_ID="<id printable gratis aktif>"
-npm run test:smoke
-```
-
-Smoke test mencakup register/login, checkout dan webhook Midtrans, pengurangan
-stok POS, booking event dan QR check-in, printable dan link WhatsApp, serta
-idempotensi dan batas poin game harian. Gunakan akun, produk, event, printable,
-dan database khusus testing; jangan arahkan test ke production.
-
-## Struktur penting
-
-```text
-app/api/          API route backend
-app/              halaman Next.js dan route UI
-lib/              service pembayaran, auth, email, storage, poin, dan inventory
-prisma/           schema, migration, dan seed database
-tests/            unit test dan smoke test backend
-```
+Pihak yang melanjutkan projek dapat menghubungi: [ISI: nama dan kontak PIC Marica.id]
