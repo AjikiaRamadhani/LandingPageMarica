@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Marica</title>
+  <desc id="desc">Gambar placeholder artikel Marica</desc>
+  <rect width="1200" height="675" fill="#f6ead7"/>
+  <circle cx="940" cy="150" r="180" fill="#f4c46b" opacity=".45"/>
+  <circle cx="210" cy="560" r="230" fill="#b8dce4" opacity=".55"/>
+  <path d="M0 520c180-110 310-55 455 8 170 74 305 71 745-86v233H0z" fill="#e7a72d" opacity=".72"/>
+  <text x="600" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="86" font-weight="700" fill="#3b3028">Marica</text>
+  <text x="600" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#735e4c">Cerita dan aktivitas edukatif</text>
+</svg>

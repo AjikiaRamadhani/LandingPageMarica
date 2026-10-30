@@ -13,7 +13,7 @@ import { categoryBadgeStyle, resolveCategoryColor } from "@/lib/category-color";
 // ada (/api/articles, /api/article-categories), yang di baliknya query ke
 // Postgres Supabase lewat Prisma.
 const ARTICLES_PER_PAGE = 5;
-const FALLBACK_COVER = "/images/article-placeholder.png"; // TODO: pastikan file ini ada, atau ganti ke gambar default yang tersedia
+const FALLBACK_COVER = "/images/article-placeholder.svg";
 
 type ApiCategory = {
   id: string;

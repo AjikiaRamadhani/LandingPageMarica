@@ -8,7 +8,7 @@ export const mailerFrom =
   process.env.SMTP_FROM?.trim() ||
   process.env.SMTP_USER?.trim() ||
   process.env.GMAIL_USER?.trim() ||
-  "no-reply@localhost";
+  "no-reply@toko.marica.id";
 
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST?.trim() || "smtp.gmail.com",

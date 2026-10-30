@@ -9,7 +9,6 @@ import {
   Pencil,
   Plus,
   Search,
-  TicketPercent,
   Trash2,
   X,
 } from "lucide-react";

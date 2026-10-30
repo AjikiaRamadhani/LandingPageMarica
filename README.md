@@ -107,6 +107,8 @@ NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=
 MIDTRANS_IS_PRODUCTION=false
 WINPAY_API_KEY=
 WINPAY_SECRET_KEY=
+WINPAY_CALLBACK_PUBLIC_KEY= # public key WinPay untuk verifikasi X-Signature callback
+WINPAY_REQUIRE_WEBHOOK_SIGNATURE=false # ubah true saat callback sandbox sudah menyediakan signature
 WINPAY_BASE_URL=
 WINPAY_IS_PRODUCTION=false
 WINPAY_INVOICE_EXPIRY_MINUTES=
@@ -189,13 +191,10 @@ Secret yang harus ada di GitHub (Settings > Secrets): `DATABASE_URL`, `DIRECT_UR
 
 ## Catatan untuk Pengembang Berikutnya
 
-- **Cron langganan:** `vercel.json` mendefinisikan cron untuk `/api/cron/subscriptions`, tetapi aplikasi berjalan di cPanel sehingga cron Vercel tidak berjalan. Pastikan endpoint ini dipanggil lewat cron job cPanel, kalau tidak, proses langganan otomatis tidak jalan.
-- **Modul voucher:** `docs/roles-and-points.md` masih menyebut penukaran poin 1 poin = Rp1 sebagai mekanisme sementara, sementara skema dan API voucher sudah ada. Dokumen dan kode perlu disinkronkan.
-- **Autentikasi:** NextAuth v5 masih beta (`5.0.0-beta.32`). Pantau rilis stabil.
-- **Route uji:** `/test-login` dan `/test-upload` sebaiknya dinonaktifkan atau dihapus di produksi.
-- **Paket tidak terpakai:** `resend` dan `@vercel/blob` tidak terdeteksi dipakai. Verifikasi sebelum dihapus.
-- **Keamanan API:** `proxy.ts` melindungi `/admin`, tetapi `requireAdmin` pada tiap API route tetap wajib sebagai lapisan kedua.
-- **Dokumentasi API:** endpoint baru perlu ditambahkan ke `lib/swagger.ts`.
+- **Cron langganan:** `vercel.json` mendefinisikan cron untuk `/api/cron/subscriptions`, tetapi aplikasi berjalan di cPanel sehingga cron Vercel tidak berjalan. Fitur ini memang dijadwalkan untuk fase pengembangan berikutnya. Saat diaktifkan, panggil endpoint dari Cron Job cPanel menggunakan `SUBSCRIPTION_CRON_SECRET` atau `CRON_SECRET` melalui header `x-cron-secret`.
+- **Autentikasi:** proyek memakai NextAuth/Auth.js v5 `5.0.0-beta.32`. Stable v5 belum tersedia; versi ini dipertahankan karena aplikasi sudah memakai API v5 (`auth()` dan `proxy.ts`). Upgrade hanya dilakukan setelah rilis stabil dan diuji.
+- **Keamanan API:** `proxy.ts` melindungi `/admin`, dan API admin memakai `requireAdmin` atau guard admin ekuivalen sebagai lapisan kedua.
+- **Dokumentasi API:** endpoint baru wajib ditambahkan ke `lib/swagger.ts`.
 
 ## Kontak
 

@@ -9,10 +9,19 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    "app/generated/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Existing client components intentionally initialize/fetch state on mount.
+      // Keep this as a warning until those components are migrated to a shared data layer.
+      "react-hooks/set-state-in-effect": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -28,6 +28,10 @@ Yang sudah tersedia:
 - Earn dari order produk dan booking event yang sudah `PAID`.
 - Earn dari download printable yang memiliki nilai poin.
 - Idempotency webhook dan reversal saat order dibatalkan.
-- Redeem sementara di checkout produk dengan aturan `1 poin = Rp1`.
+- Katalog voucher admin dengan status `DRAFT`, `ACTIVE`, dan `INACTIVE`.
+- Penukaran poin menjadi voucher melalui wallet voucher user.
+- Validasi voucher milik user saat checkout produk dan transaksi POS kasir.
+- Pembatalan/reversal poin saat transaksi yang memberi poin dibatalkan.
 
-Redeem langsung di checkout adalah mekanisme transisi. Tahap berikutnya perlu menggantinya dengan modul voucher: katalog voucher, penukaran poin menjadi voucher, wallet voucher user, validasi voucher di checkout, dan POS kasir.
+Poin digunakan untuk menukar voucher. Nilai diskon dan biaya penukaran diatur pada katalog voucher oleh admin.
+Checkout masih menerima `redeemPoints` sebagai kompatibilitas dengan alur lama (`1 poin = Rp1`); alur baru yang direkomendasikan adalah menukar poin menjadi voucher terlebih dahulu. Field lama dapat dihapus setelah seluruh client lama tidak lagi mengirimkannya.

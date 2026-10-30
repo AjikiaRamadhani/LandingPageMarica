@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
-  CheckCircle2,
   ClipboardList,
   Plus,
   QrCode,
