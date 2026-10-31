@@ -7,6 +7,20 @@ type PaymentParams = {
   item_details?: Array<{ id: string; price: number; quantity: number; name: string }>;
 };
 
+function siteUrl() {
+  return (envValue("NEXT_PUBLIC_SITE_URL") || envValue("NEXTAUTH_URL") || "http://localhost:3000").replace(/\/$/, "");
+}
+
+function finishRedirectUrl(orderId: string) {
+  const baseUrl = siteUrl();
+  const encoded = encodeURIComponent(orderId);
+  if (orderId.startsWith("TBL-")) return `${baseUrl}/reservasi/tiket/${encoded}`;
+  if (orderId.startsWith("PPB-")) return `${baseUrl}/playpass/tiket/${encoded}`;
+  if (orderId.startsWith("POR-")) return `${baseUrl}/preorder/hasil?reservation=${encoded}`;
+  if (orderId.startsWith("EVT-")) return `${baseUrl}/event/tiket/${encoded}`;
+  return `${baseUrl}/belanja/pesanan-saya?order=${encoded}`;
+}
+
 type PaymentResult = {
   token: string | null;
   redirect_url: string;
@@ -77,7 +91,10 @@ async function createWinpayInvoice(params: PaymentParams): Promise<PaymentResult
 
 export async function createPaymentTransaction(params: PaymentParams): Promise<PaymentResult> {
   if ((envValue("PAYMENT_PROVIDER") || "winpay").toLowerCase() === "midtrans") {
-    const transaction = await legacyMidtransSnap.createTransaction(params);
+    const transaction = await legacyMidtransSnap.createTransaction({
+      ...params,
+      callbacks: { finish: finishRedirectUrl(params.transaction_details.order_id) },
+    } as Parameters<typeof legacyMidtransSnap.createTransaction>[0]);
     return { token: transaction.token, redirect_url: transaction.redirect_url, provider: "MIDTRANS", external_id: transaction.token };
   }
   return createWinpayInvoice(params);

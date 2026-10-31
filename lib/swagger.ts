@@ -172,6 +172,7 @@ export const getApiDocs = () => {
     errorCodes: ["400", "401", "409", "500"],
   });
   add("/api/playpass-bookings/{bookingNumber}", "get", "Get the current user's Playpass booking", "Playpass", { auth: true, parameters: [pathParam("bookingNumber", "Playpass booking number.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
+  add("/api/playpass-bookings/{bookingNumber}", "post", "Refresh Playpass payment status from Midtrans", "Playpass", { auth: true, parameters: [pathParam("bookingNumber", "Playpass booking number.")], success: objectSchema, errorCodes: ["400", "401", "404", "502"] });
   add("/api/table-reservations", "get", "List table packages, availability, or current user reservations", "Table reservation", {
     parameters: [
       queryParam("packageId", "Table fee package ID; provide together with date for slot availability."),
@@ -201,6 +202,7 @@ export const getApiDocs = () => {
     errorCodes: ["400", "401", "409", "500"],
   });
   add("/api/table-reservations/{reservationNumber}", "get", "Get the current user's table reservation", "Table reservation", { auth: true, parameters: [pathParam("reservationNumber", "Reservation number.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
+  add("/api/table-reservations/{reservationNumber}", "post", "Refresh table reservation payment status from Midtrans", "Table reservation", { auth: true, parameters: [pathParam("reservationNumber", "Reservation number.")], success: objectSchema, errorCodes: ["401", "404", "400", "502"] });
   add("/api/cashier/table-reservations/check-in", "post", "Check in a table reservation QR", "Cashier", { auth: true, requestBody: { type: "object", description: "Provide qrToken or reservationNumber.", properties: { qrToken: { type: "string" }, reservationNumber: { type: "string" } } }, success: objectSchema, errorCodes: ["400", "401", "404", "409", "500"] });
   add("/api/cashier/table-fees/packages", "get", "List active table fee packages for cashier", "Cashier", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
   add("/api/cashier/vouchers", "get", "List active vouchers for cashier", "Cashier", { auth: true, success: objectSchema, errorCodes: ["401", "500"] });
@@ -256,6 +258,7 @@ export const getApiDocs = () => {
   add("/api/preorders", "get", "List published pre-order and exclusive release campaigns", "Pre-Orders", { success: arraySchema(), errorCodes: ["500"] });
   add("/api/preorders", "post", "Create a pre-order reservation and Midtrans payment", "Pre-Orders", { auth: true, requestBody: { type: "object", required: ["campaignId", "quantity"], properties: { campaignId: { type: "string" }, quantity: { type: "integer", minimum: 1 }, whatsapp: { type: "string" } } }, success: objectSchema, successStatus: "201", errorCodes: ["400", "401", "409", "500"] });
   add("/api/preorders/mine", "get", "List current user's pre-order reservations", "Pre-Orders", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });
+  add("/api/preorders/reservation/{reservationNumber}", "get", "Get current user's pre-order payment and reservation status", "Pre-Orders", { auth: true, parameters: [pathParam("reservationNumber", "Pre-order reservation number.")], success: objectSchema, errorCodes: ["401", "404", "500"] });
   add("/api/preorders/{slug}", "get", "Get published pre-order campaign detail", "Pre-Orders", { parameters: [pathParam("slug", "Campaign slug.")], success: objectSchema, errorCodes: ["404", "500"] });
   add("/api/subscriptions/plans", "get", "List active Edu-Kit subscription plans", "Subscriptions", { success: arraySchema(), errorCodes: ["500"] });
   add("/api/subscriptions", "get", "List current user's subscriptions and billing cycles", "Subscriptions", { auth: true, success: arraySchema(), errorCodes: ["401", "500"] });

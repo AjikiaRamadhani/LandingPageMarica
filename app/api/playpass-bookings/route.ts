@@ -7,7 +7,7 @@ import { getPlaypassSlotAvailability, combineDateAndMinutes, dateKey, parseDateI
 import { sendPlaypassTicketEmailIfNeeded } from "@/lib/playpass-ticket-mailer";
 import { validateInteger, validateOptionalText, validateText } from "@/lib/request-validation";
 import crypto from "crypto";
-import { normalizeParticipants, resolveFnbItems } from "@/lib/fnb";
+import { consumeFnbStock, normalizeParticipants, resolveFnbItems } from "@/lib/fnb";
 
 function bookingNumber() {
   return `PPB-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
@@ -81,6 +81,7 @@ export async function POST(request: Request) {
     if (booking.totalPrice === 0) {
       await prisma.$transaction(async (tx) => {
         await tx.playpassBooking.update({ where: { id: booking.id }, data: { paidAt: new Date() } });
+        await consumeFnbStock(tx, fnb.items);
         await tx.playpassTicket.create({ data: { ticketNumber: `${booking.bookingNumber}-1`, packageId: booking.packageId, bookingId: booking.id, customerId: booking.userId, cashierId: null, quantity: booking.quantity, total: 0, paymentMethod: "FREE", paidAmount: 0, changeAmount: 0, validFrom: booking.startTime, expiresAt: booking.endTime } });
       });
       await sendPlaypassTicketEmailIfNeeded(booking.id);
