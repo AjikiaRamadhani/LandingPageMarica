@@ -95,7 +95,7 @@ Salin contoh berikut ke `.env`. **Jangan commit file `.env` dan jangan menaruh n
 DATABASE_URL=
 DIRECT_URL=                      # opsional
 AUTH_SECRET=
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000 # URL publik aplikasi; dipakai untuk redirect selesai pembayaran
 GOOGLE_CLIENT_ID=                # opsional
 GOOGLE_CLIENT_SECRET=            # opsional
 

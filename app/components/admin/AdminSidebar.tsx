@@ -29,6 +29,7 @@ import {
   ChevronRight,
   History,
   WalletCards,
+  Sparkles,
 } from "lucide-react";
 
 // Struktur daftar navigasi utama
@@ -81,6 +82,12 @@ const navItems = [
     label: "B2B",
     href: "/admin/b2b",
     icon: BriefcaseBusiness,
+    enabled: true,
+  },
+  {
+    label: "Rilis Eksklusif",
+    href: "/admin/preorders",
+    icon: Sparkles,
     enabled: true,
   },
   {

@@ -119,6 +119,7 @@ export default function OrderDetailPage() {
     try {
       await payWithSnap(paymentReference, {
         onSuccess: () => {
+          router.push(`/belanja/pembayaran/berhasil?order=${encodeURIComponent(order.id)}`);
           void fetch(`/api/orders/${order.id}`, { method: "POST" })
             .catch(() => undefined)
             .finally(() => loadOrder());

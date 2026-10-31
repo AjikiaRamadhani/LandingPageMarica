@@ -125,6 +125,8 @@ export default function AdminB2BPage() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
   const [validUntil, setValidUntil] = useState("");
   const [isSavingQuotation, setIsSavingQuotation] = useState(false);
@@ -199,6 +201,7 @@ export default function AdminB2BPage() {
       if (!response.ok) throw new Error(json.error ?? "Gagal memuat detail inquiry");
       const detail = json as Inquiry;
       setSelected(detail);
+      setAdminNotes(detail.adminNotes ?? "");
       setQuotationItems(
         detail.quotationItems?.map((item) => ({
           ...item,
@@ -231,6 +234,28 @@ export default function AdminB2BPage() {
       setActionError(statusError instanceof Error ? statusError.message : "Gagal mengubah status");
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const saveAdminNotes = async () => {
+    if (!selected) return;
+    setIsSavingNotes(true);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/admin/b2b/inquiries/${selected.inquiryNumber}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminNotes }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? "Gagal menyimpan catatan negosiasi");
+      setSelected(json as Inquiry);
+      setAdminNotes((json as Inquiry).adminNotes ?? "");
+      await loadDashboard();
+    } catch (notesError) {
+      setActionError(notesError instanceof Error ? notesError.message : "Gagal menyimpan catatan negosiasi");
+    } finally {
+      setIsSavingNotes(false);
     }
   };
 
@@ -400,6 +425,7 @@ export default function AdminB2BPage() {
 
       {selected && <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-marica-ink/30 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" onClick={() => !isSavingQuotation && setSelected(null)}><div className="my-4 w-full max-w-5xl rounded-2xl bg-white shadow-2xl sm:my-8" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between border-b border-black/5 p-5 sm:p-7"><div><p className="font-body text-xs font-semibold uppercase tracking-wide text-marica-amber-dark">Detail inquiry</p><h2 className="mt-1 font-display text-xl font-semibold text-marica-ink">{selected.inquiryNumber}</h2><p className="mt-1 font-body text-sm text-marica-ink-soft">Dibuat {formatDate(selected.createdAt)}</p></div><button type="button" onClick={() => setSelected(null)} title="Tutup detail" className="rounded-lg p-2 text-marica-ink-soft hover:bg-black/5"><X className="h-5 w-5" /></button></div>
         {isDetailLoading ? <div className="p-12 text-center font-body text-sm text-marica-ink-soft"><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />Memuat detail...</div> : <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[1fr_1.15fr]"><div><div className="grid gap-3 sm:grid-cols-2"><Info label="Organisasi" value={`${selected.organizationName} (${selected.organizationType})`} /><Info label="PIC" value={selected.contactName} /><Info label="Email" value={selected.email} /><Info label="WhatsApp" value={selected.whatsapp} /><Info label="Jenis kebutuhan" value={selected.requestType} /><Info label="Peserta" value={selected.participantCount?.toString() ?? "-"} /><Info label="Tanggal acara" value={formatDate(selected.eventDate)} /><Info label="Budget" value={formatRupiah(selected.budget)} /></div><div className="mt-5 rounded-xl bg-marica-sky-light/20 p-4"><p className="font-body text-xs font-semibold uppercase tracking-wide text-marica-ink-soft">Catatan pemohon</p><p className="mt-2 whitespace-pre-wrap font-body text-sm text-marica-ink">{selected.notes || "Tidak ada catatan."}</p></div><div className="mt-5"><label className="font-body text-xs font-semibold uppercase tracking-wide text-marica-ink-soft">Status inquiry<select value={selected.status} onChange={(event) => void updateStatus(event.target.value as Status)} disabled={isUpdatingStatus} className="mt-2 block w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 font-body text-sm text-marica-ink outline-none focus:border-marica-amber">{(statuses.filter((item) => item.value && item.value !== "IN_PROGRESS") as { value: Status; label: string }[]).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label></div></div><div className="rounded-2xl border border-black/5 bg-marica-sky-light/15 p-4 sm:p-5"><div className="flex items-center justify-between gap-3"><div><h3 className="font-display text-lg font-semibold text-marica-ink">Quotation</h3><p className="mt-1 font-body text-xs text-marica-ink-soft">Tambah item dan kirim penawaran ke PIC.</p></div><FileText className="h-5 w-5 text-marica-amber-dark" /></div><div className="mt-4 space-y-3">{quotationItems.map((item, index) => <div key={item.id ?? index} className="rounded-xl border border-black/10 bg-white p-3"><div className="grid gap-2 sm:grid-cols-[1.4fr_0.7fr_1fr_1fr]"><input value={item.name} onChange={(event) => updateQuotationItem(index, "name", event.target.value)} placeholder="Nama item" className="field" /><input type="number" min="1" value={item.quantity} onChange={(event) => updateQuotationItem(index, "quantity", event.target.value)} placeholder="Qty" className="field" /><input type="number" min="0" value={item.unitPrice} onChange={(event) => updateQuotationItem(index, "unitPrice", event.target.value)} placeholder="Harga" className="field" /><input type="number" min="0" value={item.discount} onChange={(event) => updateQuotationItem(index, "discount", event.target.value)} placeholder="Diskon" className="field" /></div><div className="mt-2 flex items-center gap-2"><input value={item.description} onChange={(event) => updateQuotationItem(index, "description", event.target.value)} placeholder="Deskripsi item (opsional)" className="field flex-1" />{quotationItems.length > 1 && <button type="button" onClick={() => setQuotationItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} title="Hapus item" className="rounded-lg p-2 text-marica-rose-deep hover:bg-marica-rose-deep/10"><X className="h-4 w-4" /></button>}</div></div>)}</div><button type="button" onClick={() => setQuotationItems((current) => [...current, emptyQuotationItem()])} className="mt-3 inline-flex items-center gap-1.5 font-body text-sm font-semibold text-marica-amber-dark hover:underline"><Plus className="h-4 w-4" />Tambah item</button><div className="mt-4 flex items-end justify-between border-t border-black/10 pt-4"><label className="font-body text-xs text-marica-ink-soft">Berlaku sampai<input type="date" value={validUntil} onChange={(event) => setValidUntil(event.target.value)} className="mt-1 block rounded-lg border border-black/10 bg-white px-2.5 py-2 text-sm text-marica-ink" /></label><div className="text-right"><p className="font-body text-xs text-marica-ink-soft">Total</p><p className="font-display text-xl font-semibold text-marica-ink">{formatRupiah(quotationTotal)}</p></div></div><div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => void saveQuotation()} disabled={isSavingQuotation || isSendingQuotation} className="inline-flex items-center gap-2 rounded-full bg-marica-amber-dark px-4 py-2.5 font-body text-sm font-semibold text-white disabled:opacity-50">{isSavingQuotation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Simpan quotation</button>{selected.quotationNumber && <><button type="button" onClick={() => window.open(`/api/admin/b2b/inquiries/${selected.inquiryNumber}/quotation/pdf`, "_blank")} title="Download PDF" className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2.5 font-body text-sm font-semibold text-marica-ink-soft hover:bg-white"><Download className="h-4 w-4" />PDF</button><button type="button" onClick={() => void sendQuotation()} disabled={isSendingQuotation} className="inline-flex items-center gap-2 rounded-full border border-marica-blue/30 px-4 py-2.5 font-body text-sm font-semibold text-marica-blue hover:bg-marica-blue/5 disabled:opacity-50">{isSendingQuotation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}{selected.quotationSentAt ? "Kirim ulang" : "Kirim email"}</button></>}</div></div></div>}
+        {!isDetailLoading && <div className="mx-5 mb-5 rounded-xl border border-marica-amber/20 bg-marica-amber/5 p-4 sm:mx-7"><label className="font-body text-xs font-semibold uppercase tracking-wide text-marica-ink-soft">Catatan negosiasi internal<textarea value={adminNotes} onChange={(event) => setAdminNotes(event.target.value)} rows={3} maxLength={5000} placeholder="Catat hasil komunikasi atau perubahan kebutuhan..." className="mt-2 block w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 font-body text-sm text-marica-ink outline-none focus:border-marica-amber" /></label><button type="button" onClick={() => void saveAdminNotes()} disabled={isSavingNotes} className="mt-3 rounded-full border border-marica-amber/40 px-4 py-2 font-body text-xs font-semibold text-marica-amber-dark disabled:opacity-50">{isSavingNotes ? "Menyimpan..." : "Simpan catatan"}</button></div>}
         {actionError && <p className="mx-5 mb-5 rounded-xl bg-marica-rose-deep/10 px-4 py-3 font-body text-sm text-marica-rose-deep sm:mx-7">{actionError}</p>}
       </div></div>}
     </div>

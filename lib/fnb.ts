@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/app/generated/prisma/index.js";
 
 export type FnbSelection = {
   productId: string;
@@ -10,6 +11,23 @@ export type BookingParticipantInput = {
   age?: number;
   relationship?: string;
 };
+
+export async function consumeFnbStock(
+  transaction: Prisma.TransactionClient,
+  items: Array<{ fnbProductId: string; quantity: number }>,
+) {
+  for (const item of items) {
+    const changed = await transaction.fnbProduct.updateMany({
+      where: {
+        id: item.fnbProductId,
+        isActive: true,
+        stock: { gte: item.quantity },
+      },
+      data: { stock: { decrement: item.quantity } },
+    });
+    if (changed.count !== 1) throw new Error("FNB_STOCK_SHORTAGE");
+  }
+}
 
 export async function getActiveFnbProducts() {
   return prisma.fnbProduct.findMany({

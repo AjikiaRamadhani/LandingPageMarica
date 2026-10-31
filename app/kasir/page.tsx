@@ -1170,7 +1170,7 @@ export default function PosPage() {
                       </p>
                       {"stock" in item && (
                         <p className="mt-1 font-body text-xs text-marica-ink-soft">
-                          Stok {item.stock}
+                          {item.stock > 0 ? `Tersedia ${item.stock} stok` : "Stok habis"}
                         </p>
                       )}
                       {"durationMinutes" in item && (

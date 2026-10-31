@@ -32,7 +32,9 @@ export default function PreorderPage() {
       const data = await response.json();
       if (response.status === 401) return router.push(`/login?callbackUrl=${encodeURIComponent("/preorder")}`);
       if (!response.ok) throw new Error(data.error ?? "Pre-order gagal dibuat");
-      if (data.redirectUrl) window.location.href = data.redirectUrl;
+      if (data.reservation?.reservationNumber) {
+        router.push(`/preorder/hasil?reservation=${encodeURIComponent(data.reservation.reservationNumber)}`);
+      }
     } catch (submitError) { setError(submitError instanceof Error ? submitError.message : "Pre-order gagal dibuat"); setSubmitting(false); }
   }
 

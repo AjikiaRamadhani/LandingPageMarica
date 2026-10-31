@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
+import { consumeFnbStock } from "@/lib/fnb";
 import {
   PLAYPASS_CLOSE_MINUTES,
   PLAYPASS_OPEN_MINUTES,
@@ -52,13 +53,14 @@ export async function getTableReservationAvailability(packageId: string, dateInp
 
 export async function settleTableReservation(reservationId: string, transactionId: string) {
   return prisma.$transaction(async (transaction) => {
-    const reservation = await transaction.tableReservation.findUnique({ where: { id: reservationId }, include: { package: true } });
+    const reservation = await transaction.tableReservation.findUnique({ where: { id: reservationId }, include: { package: true, fnbItems: { select: { fnbProductId: true, quantity: true } } } });
     if (!reservation) return null;
     const changed = await transaction.tableReservation.updateMany({
       where: { id: reservation.id, status: "PENDING_PAYMENT" },
       data: { status: "PAID", midtransTransactionId: transactionId, paidAt: new Date() },
     });
     if (changed.count === 0) return reservation;
+    await consumeFnbStock(transaction, reservation.fnbItems);
     await awardPointsInTransaction(transaction, {
       userId: reservation.userId,
       points: calculateEarnedPoints(reservation.totalPrice),
