@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Clock3, ExternalLink, Loader2, XCircle } from "lucide-react";
@@ -20,7 +20,7 @@ type Reservation = {
 
 const money = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
 
-export default function PreorderResultPage() {
+function PreorderResultContent() {
   const searchParams = useSearchParams();
   const reservationNumber = searchParams.get("reservation");
   const [reservation, setReservation] = useState<Reservation | null>(null);
@@ -84,3 +84,7 @@ export default function PreorderResultPage() {
 }
 
 function Row({ label, value }: { label: string; value: string }) { return <div className="flex justify-between gap-4 border-b border-black/5 py-2.5 last:border-0"><span className="text-marica-ink-soft">{label}</span><strong className="text-right">{value}</strong></div>; }
+
+export default function PreorderResultPage() {
+  return <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#fdf8f1] text-marica-ink"><Loader2 className="h-8 w-8 animate-spin text-marica-amber-dark" /></div>}><PreorderResultContent /></Suspense>;
+}

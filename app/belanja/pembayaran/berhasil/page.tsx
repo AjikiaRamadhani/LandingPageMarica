@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Clock3, Loader2, Package } from "lucide-react";
@@ -8,7 +8,7 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import type { ApiOrder } from "@/app/components/belanja/types";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const params = useSearchParams();
   const orderId = params.get("order");
   const [order, setOrder] = useState<ApiOrder | null>(null);
@@ -29,3 +29,7 @@ export default function PaymentSuccessPage() {
 }
 
 function Row({ label, value }: { label: string; value: string }) { return <div className="flex justify-between gap-4 border-b border-black/5 py-2.5 last:border-0"><span className="text-marica-ink-soft">{label}</span><strong className="text-right">{value}</strong></div>; }
+
+export default function PaymentSuccessPage() {
+  return <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#fdf8f1] text-marica-ink"><Loader2 className="h-8 w-8 animate-spin text-marica-amber-dark" /></div>}><PaymentSuccessContent /></Suspense>;
+}
