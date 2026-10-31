@@ -177,6 +177,17 @@ SMOKE_TEST=true npm run test:smoke
 
 > Smoke test harus dijalankan terhadap **database khusus testing**, bukan production.
 
+### Status verifikasi terakhir
+
+- `npm run build`: berhasil.
+- `npx tsc --noEmit`: berhasil.
+- `npm run lint`: berhasil tanpa error; tersisa 29 warning non-blocking, terutama pola `set-state-in-effect`, penggunaan `<img>`, dan navigasi internal.
+- `npm run test:points`: 5/5 test berhasil.
+- Smoke test backend: 3 pass, 4 skip, 0 fail. Skenario yang skip membutuhkan fixture produk, akun admin, event aktif, atau printable aktif.
+- Black-box testing: 58 dari 59 skenario sesuai. Satu skenario yang belum sesuai adalah `PB-02`, yaitu stok belum berkurang setelah callback WinPay.
+
+Smoke test yang membuat akun uji harus memakai database testing. Setelah pengujian selesai, hapus akun dan data uji agar tidak tercampur dengan data operasional.
+
 ## Deployment
 
 Deploy otomatis lewat GitHub Actions (`Deploy toko.marica.id`) setiap ada push ke branch `main`:
@@ -192,6 +203,8 @@ Secret yang harus ada di GitHub (Settings > Secrets): `DATABASE_URL`, `DIRECT_UR
 ## Catatan untuk Pengembang Berikutnya
 
 - **Cron langganan:** `vercel.json` mendefinisikan cron untuk `/api/cron/subscriptions`, tetapi aplikasi berjalan di cPanel sehingga cron Vercel tidak berjalan. Fitur ini memang dijadwalkan untuk fase pengembangan berikutnya. Saat diaktifkan, panggil endpoint dari Cron Job cPanel menggunakan `SUBSCRIPTION_CRON_SECRET` atau `CRON_SECRET` melalui header `x-cron-secret`.
+- **WinPay:** integrasi checkout sudah memiliki fallback WhatsApp dan endpoint callback. Pengujian `PB-02` masih ditahan karena menunggu konfirmasi format callback dan konfigurasi signature dari pihak WinPay. Jangan menguji callback WinPay terhadap database produksi.
+- **Fixture smoke test:** checkout, POS, event, dan printable membutuhkan data uji khusus. Jangan mengisi ID fixture produksi ke konfigurasi lokal tanpa memastikan dampak stok, pesanan, dan poin.
 - **Autentikasi:** proyek memakai NextAuth/Auth.js v5 `5.0.0-beta.32`. Stable v5 belum tersedia; versi ini dipertahankan karena aplikasi sudah memakai API v5 (`auth()` dan `proxy.ts`). Upgrade hanya dilakukan setelah rilis stabil dan diuji.
 - **Keamanan API:** `proxy.ts` melindungi `/admin`, dan API admin memakai `requireAdmin` atau guard admin ekuivalen sebagai lapisan kedua.
 - **Dokumentasi API:** endpoint baru wajib ditambahkan ke `lib/swagger.ts`.

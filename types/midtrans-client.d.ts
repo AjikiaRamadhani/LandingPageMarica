@@ -1,3 +1,5 @@
+/* The SDK shim contains declaration-only classes used through typeof. */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 declare module "midtrans-client" {
   type TransactionDetails = {
     order_id: string;

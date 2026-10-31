@@ -262,7 +262,7 @@ async function main() {
     }
   });
 
-  const kasirUser = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'kasir@marica.id' },
     update: {},
     create: {
@@ -317,7 +317,7 @@ async function main() {
       status: 'ACTIVE',
     }
   });
-  const v3 = await prisma.voucher.create({
+  await prisma.voucher.create({
     data: {
       code: 'POTONGAN30K',
       title: 'Voucher Belanja Rp30.000',

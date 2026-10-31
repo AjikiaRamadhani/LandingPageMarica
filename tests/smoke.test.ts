@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 
-type JsonValue = Record<string, any> | any[] | string | number | boolean | null;
+type JsonValue = Record<string, unknown> | unknown[] | string | number | boolean | null;
 type HttpResult<T extends JsonValue = JsonValue> = { status: number; body: T };
 
 class ApiClient {
@@ -65,7 +65,7 @@ class ApiClient {
   }
 }
 
-function jsonBody<T extends Record<string, any>>(result: HttpResult, label: string) {
+function jsonBody<T extends Record<string, unknown>>(result: HttpResult, label: string) {
   assert.equal(result.status, 200, `${label} gagal: ${result.status} ${JSON.stringify(result.body)}`);
   assert.equal(typeof result.body, "object", `${label} bukan JSON object`);
   return result.body as T;

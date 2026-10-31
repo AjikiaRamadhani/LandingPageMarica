@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarClock, CheckCircle2, Clock3, Loader2, Package, Sparkles, Ticket, Users } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, Loader2, Package, Sparkles, Ticket, Users } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 
