@@ -6,7 +6,7 @@ import { auditAction } from "@/lib/audit";
 import { validateInteger, validateOptionalText, validateText } from "@/lib/request-validation";
 import { combineDateAndMinutes, dateKey, getTableReservationAvailability, parseDateInput, parseTimeInput, reservationNumber } from "@/lib/table-reservation";
 import { sendTableReservationEmailIfNeeded } from "@/lib/table-reservation-mailer";
-import { normalizeParticipants, resolveFnbItems } from "@/lib/fnb";
+import { consumeFnbStock, normalizeParticipants, resolveFnbItems } from "@/lib/fnb";
 
 const money = (value: number) => value;
 
@@ -59,7 +59,10 @@ export async function POST(request: Request) {
     const reservation = await prisma.tableReservation.create({ data: { reservationNumber: bookingNumber, userId: session.user.id, packageId: availability.package.id, customerName: session.user.name ?? "Pelanggan Marica", customerEmail: session.user.email, customerPhone: phone.value, partySize: partySize.value, visitDate: dateObject, startTime: start, endTime: end, totalPrice, status: totalPrice > 0 ? "PENDING_PAYMENT" : "PAID", expiresAt: totalPrice > 0 ? new Date(Date.now() + 30 * 60 * 1000) : null, fnbItems: { create: fnb.items }, participants: { create: participants.map((participant) => ({ name: participant.name, age: participant.age, relationship: participant.relationship })) } } });
 
     if (totalPrice === 0) {
-      await prisma.tableReservation.update({ where: { id: reservation.id }, data: { paidAt: new Date() } });
+      await prisma.$transaction(async (tx) => {
+        await consumeFnbStock(tx, fnb.items);
+        await tx.tableReservation.update({ where: { id: reservation.id }, data: { paidAt: new Date() } });
+      });
       await sendTableReservationEmailIfNeeded(reservation.id);
       return NextResponse.json({ reservation, redirectUrl: `/reservasi/tiket/${reservation.reservationNumber}` }, { status: 201 });
     }

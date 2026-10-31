@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { awardPointsInTransaction, calculateEarnedPoints } from "@/lib/points";
+import { consumeFnbStock } from "@/lib/fnb";
 
 export const PLAYPASS_OPEN_MINUTES = 9 * 60;
 export const PLAYPASS_CLOSE_MINUTES = 20 * 60;
@@ -95,7 +96,7 @@ export async function settlePlaypassBooking(bookingId: string, transactionId: st
   return prisma.$transaction(async (transaction) => {
     const booking = await transaction.playpassBooking.findUnique({
       where: { id: bookingId },
-      include: { package: true },
+      include: { package: true, fnbItems: { select: { fnbProductId: true, quantity: true } } },
     });
     if (!booking) return null;
 
@@ -108,6 +109,8 @@ export async function settlePlaypassBooking(bookingId: string, transactionId: st
       },
     });
     if (changed.count === 0) return booking;
+
+    await consumeFnbStock(transaction, booking.fnbItems);
 
     const existingTicket = await transaction.playpassTicket.findFirst({
       where: { bookingId: booking.id },

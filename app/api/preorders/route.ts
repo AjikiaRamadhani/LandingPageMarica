@@ -6,8 +6,13 @@ import { preorderIsOpen, preorderReservationNumber } from "@/lib/preorder";
 import { validateInteger, validateOptionalText } from "@/lib/request-validation";
 
 export async function GET() {
+  const now = new Date();
   const campaigns = await prisma.preOrderCampaign.findMany({
-    where: { status: "PUBLISHED" },
+    where: {
+      status: "PUBLISHED",
+      preorderOpenAt: { lte: now },
+      OR: [{ preorderCloseAt: null }, { preorderCloseAt: { gte: now } }],
+    },
     orderBy: { releaseAt: "asc" },
     include: { product: { include: { images: { orderBy: { order: "asc" }, take: 1 } } } },
   });
